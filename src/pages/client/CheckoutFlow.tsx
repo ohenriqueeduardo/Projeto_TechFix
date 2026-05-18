@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { CheckCircle2, Calendar, MapPin, CreditCard, ArrowRight } from 'lucide-react';
 import { services, professionals } from '@/data/mockData';
 import { formatCurrency } from '@/utils/formatters';
+import type { Professional, Service } from '@/types';
 import { toast } from 'sonner';
 
 const Stepper = ({ currentStep }: { currentStep: number }) => {
@@ -42,6 +43,15 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
   );
 };
 
+type ServiceStepProps = {
+  service: Service;
+};
+
+type ServiceAndProfessionalStepProps = {
+  service: Service;
+  professional: Professional;
+};
+
 const CheckoutFlow = () => {
   const { id } = useParams();
   const service = services.find(s => s.id === id);
@@ -52,17 +62,17 @@ const CheckoutFlow = () => {
   return (
     <div className="max-w-4xl mx-auto py-8">
       <Routes>
-        <Route path="/" element={<Step1 service={service} professional={professional} />} />
-        <Route path="/data-hora" element={<Step2 service={service} />} />
-        <Route path="/endereco" element={<Step3 service={service} />} />
-        <Route path="/pagamento/*" element={<Step4 service={service} />} />
-        <Route path="/confirmado" element={<OrderConfirmed service={service} professional={professional} />} />
+        <Route index element={<Step1 service={service} professional={professional} />} />
+        <Route path="data-hora" element={<Step2 service={service} />} />
+        <Route path="endereco" element={<Step3 service={service} />} />
+        <Route path="pagamento" element={<Step4 service={service} />} />
+        <Route path="confirmado" element={<OrderConfirmed service={service} professional={professional} />} />
       </Routes>
     </div>
   );
 };
 
-const Step1 = ({ service, professional }: any) => {
+const Step1 = ({ service, professional }: ServiceAndProfessionalStepProps) => {
   const navigate = useNavigate();
   return (
     <div className="animate-in fade-in slide-in-from-right-4">
@@ -89,7 +99,7 @@ const Step1 = ({ service, professional }: any) => {
   );
 };
 
-const Step2 = ({ service }: any) => {
+const Step2 = ({ service }: ServiceStepProps) => {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = React.useState('');
   const [selectedTime, setSelectedTime] = React.useState('');
@@ -152,7 +162,7 @@ const Step2 = ({ service }: any) => {
   );
 };
 
-const Step3 = ({ service }: any) => {
+const Step3 = ({ service }: ServiceStepProps) => {
   const navigate = useNavigate();
   return (
     <div className="animate-in fade-in slide-in-from-right-4">
@@ -196,7 +206,7 @@ const Step3 = ({ service }: any) => {
   );
 };
 
-const Step4 = ({ service }: any) => {
+const Step4 = ({ service }: ServiceStepProps) => {
   const navigate = useNavigate();
   const [method, setMethod] = React.useState('pix');
 
@@ -271,7 +281,7 @@ const Step4 = ({ service }: any) => {
   );
 };
 
-const OrderConfirmed = ({ service, professional }: any) => {
+const OrderConfirmed = ({ service, professional }: ServiceAndProfessionalStepProps) => {
   const navigate = useNavigate();
   return (
     <div className="text-center space-y-8 animate-in zoom-in-95 duration-500">
