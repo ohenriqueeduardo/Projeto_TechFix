@@ -49,7 +49,7 @@ const ClientLayout = () => {
       <aside className="hidden lg:flex flex-col w-80 border-r border-foreground/5 bg-card/30 sticky top-0 h-screen">
         <div className="p-10">
           <Link to="/" className="flex items-center justify-center">
-            <img src={logo} alt="TechFix Logo" className="h-20 w-auto object-contain hover:scale-105 transition-transform" />
+            <img src={logo} alt="TechFix Logo" className="h-24 w-auto object-contain hover:scale-105 transition-transform" />
           </Link>
         </div>
 
