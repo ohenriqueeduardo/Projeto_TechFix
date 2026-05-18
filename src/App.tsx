@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
 
 // Layouts
 import PublicLayout from "@/components/layout/PublicLayout";
@@ -21,37 +22,39 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster position="top-center" richColors />
-      <BrowserRouter>
-        <Routes>
-          {/* Public Routes */}
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/cadastro" element={<RegisterPage />} />
-          </Route>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+      <TooltipProvider>
+        <Toaster position="top-center" richColors />
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/cadastro" element={<RegisterPage />} />
+            </Route>
 
-          {/* Client Routes */}
-          <Route path="/cliente" element={<ClientLayout />}>
-            <Route path="dashboard" element={<ClientDashboardPage />} />
-            <Route path="servicos" element={<ExploreServicesPage />} />
-            <Route path="busca" element={<ExploreServicesPage />} />
-            <Route path="servico/:id" element={<ServiceDetailsPage />} />
-            <Route path="contratar/:id/*" element={<CheckoutFlow />} />
-            <Route path="meus-pedidos" element={<div className="p-8"><h1>Meus Pedidos</h1></div>} />
-            <Route path="perfil" element={<div className="p-8"><h1>Perfil</h1></div>} />
-            <Route path="chat/:id" element={<div className="p-8"><h1>Chat</h1></div>} />
-          </Route>
+            {/* Client Routes */}
+            <Route path="/cliente" element={<ClientLayout />}>
+              <Route path="dashboard" element={<ClientDashboardPage />} />
+              <Route path="servicos" element={<ExploreServicesPage />} />
+              <Route path="busca" element={<ExploreServicesPage />} />
+              <Route path="servico/:id" element={<ServiceDetailsPage />} />
+              <Route path="contratar/:id/*" element={<CheckoutFlow />} />
+              <Route path="meus-pedidos" element={<div className="p-8"><h1>Meus Pedidos</h1></div>} />
+              <Route path="perfil" element={<div className="p-8"><h1>Perfil</h1></div>} />
+              <Route path="chat/:id" element={<div className="p-8"><h1>Chat</h1></div>} />
+            </Route>
 
-          {/* Professional & Admin placeholders */}
-          <Route path="/profissional/dashboard" element={<div className="p-8"><h1>Professional Dashboard</h1></div>} />
-          <Route path="/admin/dashboard" element={<div className="p-8"><h1>Admin Dashboard</h1></div>} />
+            {/* Professional & Admin placeholders */}
+            <Route path="/profissional/dashboard" element={<div className="p-8"><h1>Professional Dashboard</h1></div>} />
+            <Route path="/admin/dashboard" element={<div className="p-8"><h1>Admin Dashboard</h1></div>} />
 
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
