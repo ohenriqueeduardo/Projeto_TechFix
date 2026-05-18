@@ -16,6 +16,8 @@ import ExploreServicesPage from "@/pages/client/ExploreServicesPage";
 import ServiceDetailsPage from "@/pages/client/ServiceDetailsPage";
 import ClientDashboardPage from "@/pages/client/ClientDashboardPage";
 import CheckoutFlow from "@/pages/client/CheckoutFlow";
+import HelpPage from "@/pages/client/HelpPage";
+import SettingsPage from "@/pages/client/SettingsPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +46,8 @@ const App = () => (
               <Route path="meus-pedidos" element={<div className="p-8"><h1>Meus Pedidos</h1></div>} />
               <Route path="perfil" element={<div className="p-8"><h1>Perfil</h1></div>} />
               <Route path="chat/:id" element={<div className="p-8"><h1>Chat</h1></div>} />
+              <Route path="ajuda" element={<HelpPage />} />
+              <Route path="configuracoes" element={<SettingsPage />} />
             </Route>
 
             {/* Professional & Admin placeholders */}

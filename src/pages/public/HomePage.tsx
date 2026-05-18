@@ -10,12 +10,9 @@ import {
   Zap, 
   ArrowRight, 
   CheckCircle2, 
-  Cpu, 
   Wrench, 
   Monitor, 
   Network, 
-  Database, 
-  HardDrive, 
   Settings,
   ShieldAlert
 } from 'lucide-react';
@@ -37,74 +34,78 @@ const HomePage = () => {
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
-      <section className="relative min-h-[85vh] flex items-center py-20 overflow-hidden">
+      <section className="relative min-h-[90vh] flex items-center justify-center py-20 overflow-hidden">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 z-0">
           <img 
             src={backgroundImg} 
             alt="Background" 
-            className="w-full h-full object-cover object-right md:object-center opacity-40 dark:opacity-30"
+            className="w-full h-full object-cover opacity-50 dark:opacity-40 scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-background/60 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/40 via-transparent to-background/40" />
         </div>
         
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold mb-8 animate-pulse">
-              <Zap className="w-4 h-4" />
+        <div className="container mx-auto px-4 relative z-10 text-center">
+          <div className="max-w-4xl mx-auto">
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-black mb-10 animate-pulse tracking-widest">
+              <Zap className="w-5 h-5" />
               A SOLUÇÃO DEFINITIVA PARA SEUS PROBLEMAS DE TI
             </div>
             
-            <h1 className="text-5xl md:text-8xl font-extrabold tracking-tight mb-8 leading-[1.1]">
-              Serviços de TI com <span className="gradient-text">Excelência Técnica.</span>
+            <h1 className="text-6xl md:text-9xl font-black tracking-tighter mb-10 leading-[0.95] drop-shadow-2xl">
+              Serviços de TI com <br />
+              <span className="gradient-text">Excelência Técnica.</span>
             </h1>
             
-            <p className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-xl leading-relaxed">
+            <p className="text-xl md:text-3xl text-muted-foreground mb-16 max-w-2xl mx-auto leading-relaxed font-medium">
               Conectamos você aos melhores especialistas para manutenção, montagem e suporte tecnológico de alto nível.
             </p>
 
-            <form onSubmit={handleSearch} className="relative max-w-2xl mb-12">
-              <div className="relative group">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors w-6 h-6" />
+            {/* Search Bar - Fixed Alignment */}
+            <form onSubmit={handleSearch} className="relative max-w-3xl mx-auto mb-20">
+              <div className="relative group flex items-center">
+                <div className="absolute left-6 text-muted-foreground group-focus-within:text-primary transition-colors">
+                  <Search className="w-7 h-7" />
+                </div>
                 <Input 
                   placeholder="O que você precisa resolver hoje? Ex: Montagem de PC" 
-                  className="h-20 pl-14 pr-40 bg-card/40 backdrop-blur-xl border-white/10 rounded-3xl text-xl focus:ring-primary/50 transition-all"
+                  className="h-24 pl-16 pr-48 bg-card/60 backdrop-blur-2xl border-white/10 rounded-[2rem] text-2xl focus:ring-primary/50 transition-all shadow-2xl"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <Button type="submit" className="absolute right-3 top-3 bottom-3 rounded-2xl px-8 btn-primary text-lg">
+                <Button type="submit" className="absolute right-4 h-16 rounded-2xl px-10 btn-primary text-xl font-bold">
                   Buscar
                 </Button>
               </div>
             </form>
 
-            <div className="flex flex-wrap gap-10">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center">
-                  <CheckCircle2 className="text-primary w-6 h-6" />
+            <div className="flex flex-wrap justify-center gap-12 md:gap-20">
+              <div className="flex items-center gap-4 group">
+                <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <CheckCircle2 className="text-primary w-8 h-8" />
                 </div>
-                <div>
-                  <span className="text-2xl font-bold block">+230</span>
-                  <span className="text-xs text-muted-foreground uppercase tracking-widest">Serviços</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center">
-                  <Star className="text-yellow-500 w-6 h-6 fill-yellow-500" />
-                </div>
-                <div>
-                  <span className="text-2xl font-bold block">4.9</span>
-                  <span className="text-xs text-muted-foreground uppercase tracking-widest">Avaliação</span>
+                <div className="text-left">
+                  <span className="text-3xl font-black block">+230</span>
+                  <span className="text-xs text-muted-foreground uppercase tracking-[0.2em] font-bold">Serviços</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center">
-                  <ShieldCheck className="text-green-500 w-6 h-6" />
+              <div className="flex items-center gap-4 group">
+                <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Star className="text-yellow-500 w-8 h-8 fill-yellow-500" />
                 </div>
-                <div>
-                  <span className="text-2xl font-bold block">100%</span>
-                  <span className="text-xs text-muted-foreground uppercase tracking-widest">Seguro</span>
+                <div className="text-left">
+                  <span className="text-3xl font-black block">4.9</span>
+                  <span className="text-xs text-muted-foreground uppercase tracking-[0.2em] font-bold">Avaliação</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 group">
+                <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <ShieldCheck className="text-green-500 w-8 h-8" />
+                </div>
+                <div className="text-left">
+                  <span className="text-3xl font-black block">100%</span>
+                  <span className="text-xs text-muted-foreground uppercase tracking-[0.2em] font-bold">Seguro</span>
                 </div>
               </div>
             </div>
@@ -113,32 +114,32 @@ const HomePage = () => {
       </section>
 
       {/* Categories */}
-      <section className="py-32 bg-card/10">
+      <section className="py-40 bg-card/10">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
-            <div>
-              <h2 className="text-4xl font-bold mb-4">Categorias Especializadas</h2>
-              <p className="text-muted-foreground text-lg">Soluções completas para cada necessidade tecnológica.</p>
+          <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
+            <div className="max-w-2xl">
+              <h2 className="text-5xl font-black mb-6 tracking-tight">Categorias Especializadas</h2>
+              <p className="text-muted-foreground text-xl leading-relaxed">Soluções completas para cada necessidade tecnológica, do hardware ao software.</p>
             </div>
-            <Link to="/cliente/servicos" className="text-primary flex items-center gap-2 font-bold text-lg hover:gap-4 transition-all">
-              Ver todas as categorias <ArrowRight className="w-6 h-6" />
+            <Link to="/cliente/servicos" className="text-primary flex items-center gap-3 font-black text-xl hover:gap-6 transition-all group">
+              Ver todas as categorias <ArrowRight className="w-8 h-8 group-hover:translate-x-2 transition-transform" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10">
             {[
               { name: 'Manutenção', icon: Wrench, desc: 'Limpeza e reparos', color: 'text-blue-500' },
               { name: 'Montagem', icon: Monitor, desc: 'PCs de alta performance', color: 'text-purple-500' },
               { name: 'Redes', icon: Network, desc: 'Wi-Fi e infraestrutura', color: 'text-cyan-500' },
               { name: 'Software', icon: Settings, desc: 'Otimização e sistemas', color: 'text-emerald-500' },
             ].map((cat) => (
-              <Link key={cat.name} to={`/cliente/busca?q=${cat.name}`} className="glass-card p-8 rounded-[2.5rem] hover:border-primary/50 transition-all group relative overflow-hidden">
-                <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-all" />
-                <div className={`w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform ${cat.color}`}>
-                  <cat.icon className="w-8 h-8" />
+              <Link key={cat.name} to={`/cliente/busca?q=${cat.name}`} className="glass-card p-10 rounded-[3rem] hover:border-primary/50 transition-all group relative overflow-hidden">
+                <div className="absolute -right-6 -top-6 w-32 h-32 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-all" />
+                <div className={`w-20 h-20 bg-white/5 rounded-[1.5rem] flex items-center justify-center mb-8 group-hover:scale-110 transition-transform ${cat.color}`}>
+                  <cat.icon className="w-10 h-10" />
                 </div>
-                <h3 className="font-bold text-2xl mb-2">{cat.name}</h3>
-                <p className="text-muted-foreground">{cat.desc}</p>
+                <h3 className="font-black text-3xl mb-3">{cat.name}</h3>
+                <p className="text-muted-foreground text-lg">{cat.desc}</p>
               </Link>
             ))}
           </div>
@@ -146,41 +147,41 @@ const HomePage = () => {
       </section>
 
       {/* Featured Services */}
-      <section className="py-32">
+      <section className="py-40">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-20">
-            <h2 className="text-4xl font-bold mb-4">Serviços em Destaque</h2>
-            <p className="text-muted-foreground text-lg">Os serviços mais solicitados pela nossa comunidade.</p>
+          <div className="text-center mb-24">
+            <h2 className="text-5xl font-black mb-6 tracking-tight">Serviços em Destaque</h2>
+            <p className="text-muted-foreground text-xl">Os serviços mais solicitados pela nossa comunidade de entusiastas.</p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {services.map((service) => (
-              <div key={service.id} className="glass-card rounded-[2.5rem] overflow-hidden group hover:translate-y-[-8px] transition-all duration-500">
-                <div className="h-64 overflow-hidden relative">
+              <div key={service.id} className="glass-card rounded-[3rem] overflow-hidden group hover:translate-y-[-12px] transition-all duration-500">
+                <div className="h-72 overflow-hidden relative">
                   <img src={service.image} alt={service.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   {service.badge && (
-                    <span className="absolute top-6 left-6 bg-primary text-background text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest">
+                    <span className="absolute top-8 left-8 bg-primary text-background text-xs font-black px-4 py-2 rounded-full uppercase tracking-widest">
                       {service.badge}
                     </span>
                   )}
                 </div>
-                <div className="p-8">
-                  <div className="flex justify-between items-start mb-4">
-                    <span className="text-xs font-black text-primary uppercase tracking-[0.2em]">{service.category}</span>
-                    <div className="flex items-center gap-1.5 text-yellow-500 font-bold">
-                      <Star className="w-4 h-4 fill-current" /> {service.rating}
+                <div className="p-10">
+                  <div className="flex justify-between items-start mb-6">
+                    <span className="text-xs font-black text-primary uppercase tracking-[0.3em]">{service.category}</span>
+                    <div className="flex items-center gap-2 text-yellow-500 font-black text-lg">
+                      <Star className="w-5 h-5 fill-current" /> {service.rating}
                     </div>
                   </div>
-                  <h3 className="text-2xl font-bold mb-4 group-hover:text-primary transition-colors">{service.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed mb-8 line-clamp-2">{service.description}</p>
-                  <div className="flex items-center justify-between pt-6 border-t border-white/5">
+                  <h3 className="text-3xl font-black mb-6 group-hover:text-primary transition-colors leading-tight">{service.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed mb-10 line-clamp-2 text-lg">{service.description}</p>
+                  <div className="flex items-center justify-between pt-8 border-t border-white/5">
                     <div>
-                      <span className="text-xs text-muted-foreground block mb-1">Investimento</span>
-                      <span className="text-2xl font-black text-primary">{formatCurrency(service.price)}</span>
+                      <span className="text-xs text-muted-foreground block mb-2 font-bold uppercase tracking-widest">Investimento</span>
+                      <span className="text-3xl font-black text-primary">{formatCurrency(service.price)}</span>
                     </div>
                     <Link to={`/cliente/servico/${service.id}`}>
-                      <Button variant="outline" className="rounded-2xl h-12 px-6 font-bold hover:bg-primary hover:text-background transition-all">
+                      <Button variant="outline" className="rounded-2xl h-14 px-8 font-black text-lg hover:bg-primary hover:text-background transition-all">
                         Detalhes
                       </Button>
                     </Link>
@@ -193,54 +194,54 @@ const HomePage = () => {
       </section>
 
       {/* Trust Section */}
-      <section className="py-32 bg-primary/5 relative overflow-hidden">
+      <section className="py-40 bg-primary/5 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-24">
             <div className="text-center group">
-              <div className="w-24 h-24 bg-primary/10 rounded-[2rem] flex items-center justify-center mx-auto mb-8 group-hover:rotate-6 transition-transform">
-                <ShieldCheck className="text-primary w-12 h-12" />
+              <div className="w-28 h-28 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-10 group-hover:rotate-12 transition-transform">
+                <ShieldCheck className="text-primary w-14 h-14" />
               </div>
-              <h3 className="text-2xl font-bold mb-4">Pagamento Protegido</h3>
-              <p className="text-muted-foreground leading-relaxed">Seu investimento fica seguro em nossa plataforma até que você aprove a conclusão do serviço.</p>
+              <h3 className="text-3xl font-black mb-6">Pagamento Protegido</h3>
+              <p className="text-muted-foreground text-lg leading-relaxed">Seu investimento fica seguro em nossa plataforma até que você aprove a conclusão do serviço.</p>
             </div>
             <div className="text-center group">
-              <div className="w-24 h-24 bg-primary/10 rounded-[2rem] flex items-center justify-center mx-auto mb-8 group-hover:-rotate-6 transition-transform">
-                <Users className="text-primary w-12 h-12" />
+              <div className="w-28 h-28 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-10 group-hover:-rotate-12 transition-transform">
+                <Users className="text-primary w-14 h-14" />
               </div>
-              <h3 className="text-2xl font-bold mb-4">Especialistas Verificados</h3>
-              <p className="text-muted-foreground leading-relaxed">Rigoroso processo de seleção e verificação de competências para garantir o melhor atendimento.</p>
+              <h3 className="text-3xl font-black mb-6">Especialistas Verificados</h3>
+              <p className="text-muted-foreground text-lg leading-relaxed">Rigoroso processo de seleção e verificação de competências para garantir o melhor atendimento.</p>
             </div>
             <div className="text-center group">
-              <div className="w-24 h-24 bg-primary/10 rounded-[2rem] flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-transform">
-                <ShieldAlert className="text-primary w-12 h-12" />
+              <div className="w-28 h-28 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mx-auto mb-10 group-hover:scale-110 transition-transform">
+                <ShieldAlert className="text-primary w-14 h-14" />
               </div>
-              <h3 className="text-xl font-bold mb-4">Garantia de Satisfação</h3>
-              <p className="text-muted-foreground leading-relaxed">Suporte dedicado e garantia em todos os serviços realizados através da TechFix.</p>
+              <h3 className="text-3xl font-black mb-6">Garantia de Satisfação</h3>
+              <p className="text-muted-foreground text-lg leading-relaxed">Suporte dedicado e garantia em todos os serviços realizados através da TechFix.</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-32">
+      <section className="py-40">
         <div className="container mx-auto px-4">
-          <div className="bg-gradient-to-br from-primary/20 to-blue-600/20 border border-primary/20 rounded-[3rem] p-12 md:p-24 text-center relative overflow-hidden group">
-            <div className="absolute -right-20 -top-20 w-96 h-96 bg-primary/10 blur-[120px] rounded-full group-hover:bg-primary/20 transition-all duration-1000" />
-            <div className="absolute -left-20 -bottom-20 w-96 h-96 bg-blue-600/10 blur-[120px] rounded-full group-hover:bg-blue-600/20 transition-all duration-1000" />
+          <div className="bg-gradient-to-br from-primary/20 to-blue-600/20 border border-primary/20 rounded-[4rem] p-16 md:p-32 text-center relative overflow-hidden group">
+            <div className="absolute -right-40 -top-40 w-[30rem] h-[30rem] bg-primary/10 blur-[150px] rounded-full group-hover:bg-primary/20 transition-all duration-1000" />
+            <div className="absolute -left-40 -bottom-40 w-[30rem] h-[30rem] bg-blue-600/10 blur-[150px] rounded-full group-hover:bg-blue-600/20 transition-all duration-1000" />
             
-            <h2 className="text-4xl md:text-6xl font-black mb-8 relative z-10">Pronto para elevar o nível do seu setup?</h2>
-            <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto relative z-10 leading-relaxed">
-              Junte-se a milhares de clientes que confiam na TechFix para cuidar de sua tecnologia.
+            <h2 className="text-5xl md:text-8xl font-black mb-10 relative z-10 tracking-tighter leading-none">Pronto para elevar o nível <br /> do seu setup?</h2>
+            <p className="text-2xl text-muted-foreground mb-16 max-w-3xl mx-auto relative z-10 leading-relaxed font-medium">
+              Junte-se a milhares de clientes que confiam na TechFix para cuidar de sua tecnologia com segurança e agilidade.
             </p>
-            <div className="flex flex-col md:flex-row justify-center gap-6 relative z-10">
+            <div className="flex flex-col md:flex-row justify-center gap-8 relative z-10">
               <Link to="/cliente/servicos">
-                <Button size="lg" className="btn-primary w-full md:w-auto h-16 px-12 text-xl rounded-2xl">
+                <Button size="lg" className="btn-primary w-full md:w-auto h-20 px-16 text-2xl rounded-3xl font-black">
                   Encontrar Técnico
                 </Button>
               </Link>
               <Link to="/cadastro">
-                <Button size="lg" variant="outline" className="w-full md:w-auto h-16 px-12 text-xl rounded-2xl border-white/10 hover:bg-white/5">
+                <Button size="lg" variant="outline" className="w-full md:w-auto h-20 px-16 text-2xl rounded-3xl border-white/10 hover:bg-white/5 font-black">
                   Quero ser um Técnico
                 </Button>
               </Link>
