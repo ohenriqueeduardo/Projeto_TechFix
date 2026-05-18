@@ -3,7 +3,7 @@ import { orders } from '@/data/mockData';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Clock, CheckCircle2, XCircle, ChevronRight, Search } from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, ChevronRight, Search, ClipboardList } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 import { Input } from '@/components/ui/input';
 
