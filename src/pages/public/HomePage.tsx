@@ -36,11 +36,11 @@ const HomePage = () => {
       {/* Hero Section */}
       <section className="relative min-h-[90vh] flex items-center py-20 overflow-hidden">
         {/* Background Image with Overlay */}
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0 overflow-hidden">
           <img 
             src={backgroundImg} 
             alt="Fundo Tecnológico" 
-            className="w-full h-full object-cover opacity-60 dark:opacity-40 scale-105 object-right"
+            className="w-full h-full object-cover opacity-60 dark:opacity-40 scale-105 object-right animate-in fade-in zoom-in-105 duration-1000 ease-out"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-background/20 via-transparent to-transparent" />
@@ -48,29 +48,29 @@ const HomePage = () => {
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl text-left">
-            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-black mb-10 animate-pulse tracking-widest">
-              <Zap className="w-5 h-5" />
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/10 border border-primary/30 text-primary text-sm font-black mb-10 tracking-widest animate-pulse-glow">
+              <Zap className="w-5 h-5 text-primary" />
               A SOLUÇÃO DEFINITIVA PARA SEUS PROBLEMAS DE TI
             </div>
             
-            <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-10 leading-[0.95] drop-shadow-2xl">
+            <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-10 leading-[0.95] drop-shadow-2xl animate-in fade-in slide-in-from-bottom-6 delay-100 duration-700 fill-mode-both">
               Serviços de TI com <br />
               <span className="gradient-text">Excelência Técnica.</span>
             </h1>
             
-            <p className="text-xl md:text-2xl text-muted-foreground mb-16 max-w-2xl leading-relaxed font-medium">
+            <p className="text-xl md:text-2xl text-muted-foreground mb-16 max-w-2xl leading-relaxed font-medium animate-in fade-in slide-in-from-bottom-6 delay-300 duration-700 fill-mode-both">
               Conectamos você aos melhores especialistas para manutenção, montagem e suporte tecnológico de alto nível com total segurança.
             </p>
 
             {/* Search Bar - Left Aligned */}
-            <form onSubmit={handleSearch} className="relative max-w-2xl mb-20">
+            <form onSubmit={handleSearch} className="relative max-w-2xl mb-20 animate-in fade-in slide-in-from-bottom-6 delay-500 duration-700 fill-mode-both">
               <div className="relative group flex items-center">
                 <div className="absolute left-6 text-muted-foreground group-focus-within:text-primary transition-colors">
                   <Search className="w-7 h-7" />
                 </div>
                 <Input 
                   placeholder="O que você precisa resolver hoje?" 
-                  className="h-24 pl-16 pr-48 bg-card/60 backdrop-blur-2xl border-white/10 rounded-[2rem] text-2xl focus:ring-primary/50 transition-all shadow-2xl"
+                  className="h-24 pl-16 pr-48 bg-card/60 backdrop-blur-2xl border-white/10 rounded-3xl text-2xl focus:ring-primary/50 transition-all shadow-2xl"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -133,9 +133,9 @@ const HomePage = () => {
               { name: 'Redes', icon: Network, desc: 'Wi-Fi e infraestrutura', color: 'text-cyan-500' },
               { name: 'Software', icon: Settings, desc: 'Otimização e sistemas', color: 'text-emerald-500' },
             ].map((cat) => (
-              <Link key={cat.name} to={`/cliente/busca?q=${cat.name}`} className="glass-card p-10 rounded-[3rem] hover:border-primary/50 transition-all group relative overflow-hidden">
+              <Link key={cat.name} to={`/cliente/busca?q=${cat.name}`} className="glass-card p-10 rounded-3xl hover:border-primary/50 transition-all group relative overflow-hidden">
                 <div className="absolute -right-6 -top-6 w-32 h-32 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-all" />
-                <div className={`w-20 h-20 bg-white/5 rounded-[1.5rem] flex items-center justify-center mb-8 group-hover:scale-110 transition-transform ${cat.color}`}>
+                <div className={`w-20 h-20 bg-white/5 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform ${cat.color}`}>
                   <cat.icon className="w-10 h-10" />
                 </div>
                 <h3 className="font-black text-3xl mb-3">{cat.name}</h3>
@@ -156,7 +156,7 @@ const HomePage = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {services.map((service) => (
-              <div key={service.id} className="glass-card rounded-[3rem] overflow-hidden group hover:translate-y-[-12px] transition-all duration-500">
+              <div key={service.id} className="glass-card rounded-3xl overflow-hidden group hover-card-service border border-white/5">
                 <div className="h-72 overflow-hidden relative">
                   <img src={service.image} alt={service.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -199,21 +199,21 @@ const HomePage = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-24">
             <div className="text-left group">
-              <div className="w-28 h-28 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mb-10 group-hover:rotate-12 transition-transform">
+              <div className="w-28 h-28 bg-primary/10 rounded-2xl flex items-center justify-center mb-10 group-hover:rotate-12 transition-transform">
                 <ShieldCheck className="text-primary w-14 h-14" />
               </div>
               <h3 className="text-3xl font-black mb-6">Pagamento Protegido</h3>
               <p className="text-muted-foreground text-lg leading-relaxed">Seu investimento fica seguro em nossa plataforma até que você aprove a conclusão do serviço.</p>
             </div>
             <div className="text-left group">
-              <div className="w-28 h-28 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mb-10 group-hover:-rotate-12 transition-transform">
+              <div className="w-28 h-28 bg-primary/10 rounded-2xl flex items-center justify-center mb-10 group-hover:-rotate-12 transition-transform">
                 <Users className="text-primary w-14 h-14" />
               </div>
               <h3 className="text-3xl font-black mb-6">Especialistas Verificados</h3>
               <p className="text-muted-foreground text-lg leading-relaxed">Rigoroso processo de seleção e verificação de competências para garantir o melhor atendimento.</p>
             </div>
             <div className="text-left group">
-              <div className="w-28 h-28 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mb-10 group-hover:scale-110 transition-transform">
+              <div className="w-28 h-28 bg-primary/10 rounded-2xl flex items-center justify-center mb-10 group-hover:scale-110 transition-transform">
                 <ShieldAlert className="text-primary w-14 h-14" />
               </div>
               <h3 className="text-3xl font-black mb-6">Garantia de Satisfação</h3>
@@ -226,7 +226,7 @@ const HomePage = () => {
       {/* CTA */}
       <section className="py-40">
         <div className="container mx-auto px-4">
-          <div className="bg-gradient-to-br from-primary/20 to-blue-600/20 border border-primary/20 rounded-[4rem] p-16 md:p-32 text-left relative overflow-hidden group">
+          <div className="bg-gradient-to-br from-primary/20 to-blue-600/20 border border-primary/20 rounded-3xl p-16 md:p-32 text-left relative overflow-hidden group">
             <div className="absolute -right-40 -top-40 w-[30rem] h-[30rem] bg-primary/10 blur-[150px] rounded-full group-hover:bg-primary/20 transition-all duration-1000" />
             <div className="absolute -left-40 -bottom-40 w-[30rem] h-[30rem] bg-blue-600/10 blur-[150px] rounded-full group-hover:bg-blue-600/20 transition-all duration-1000" />
             

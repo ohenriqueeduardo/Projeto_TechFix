@@ -3,11 +3,28 @@ import { orders } from '@/data/mockData';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Clock, CheckCircle2, XCircle, ChevronRight, Search, ClipboardList } from 'lucide-react';
-import { formatCurrency, formatDate } from '@/utils/formatters';
 import { Input } from '@/components/ui/input';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { 
+  Clock, 
+  CheckCircle2, 
+  XCircle, 
+  ChevronRight, 
+  Search, 
+  ClipboardList, 
+  ShieldCheck, 
+  Compass, 
+  DollarSign, 
+  Activity 
+} from 'lucide-react';
+import { formatCurrency } from '@/utils/formatters';
+import { Link } from 'react-router-dom';
+import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 
 const MyOrdersPage = () => {
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [activeTab, setActiveTab] = React.useState<'all' | 'active' | 'past'>('all');
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed': return <CheckCircle2 className="w-4 h-4 text-green-500" />;
@@ -27,67 +44,186 @@ const MyOrdersPage = () => {
     return labels[status] || status;
   };
 
+  // Filter orders for "Sofia Spencer" (u1)
+  const clientOrders = orders.filter(o => o.clientId === 'u1');
+
+  // Filter based on search term
+  const searchedOrders = clientOrders.filter(order => 
+    order.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.serviceTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.professionalName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Filter based on tab selection
+  const filteredOrders = searchedOrders.filter(order => {
+    const isActive = order.status !== 'completed' && order.status !== 'cancelled';
+    if (activeTab === 'active') return isActive;
+    if (activeTab === 'past') return !isActive;
+    return true;
+  });
+
+  // Calculate statistics
+  const totalSpent = clientOrders
+    .filter(o => o.status === 'completed')
+    .reduce((sum, o) => sum + o.price, 0);
+
+  const activeCount = clientOrders.filter(o => o.status !== 'completed' && o.status !== 'cancelled').length;
+  const completedCount = clientOrders.filter(o => o.status === 'completed').length;
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Meus Pedidos</h1>
-          <p className="text-muted-foreground">Acompanhe o status de todos os seus serviços contratados.</p>
-        </div>
+    <div className="space-y-8 animate-page-entrance">
+      <PageHeader 
+        title="Meus Pedidos" 
+        description="Gerencie seus reparos, upgrades e manutenções contratadas na plataforma com segurança."
+      >
         <div className="relative w-full md:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input placeholder="Buscar por código..." className="pl-10 bg-card/50 border-white/10 rounded-xl" />
+          <Input 
+            placeholder="Buscar por código ou serviço..." 
+            className="pl-10 bg-card/50 border-white/10 rounded-xl"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-      </div>
+      </PageHeader>
 
-      <div className="grid grid-cols-1 gap-4">
-        {orders.map((order) => (
-          <Card key={order.id} className="p-6 bg-card/30 border-white/5 rounded-2xl hover:border-primary/20 transition-all group">
-            <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6">
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
-                <Clock className="text-primary w-8 h-8" />
-              </div>
-              
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{order.code}</span>
-                  <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10 text-[10px] uppercase font-black">
-                    {order.paymentMethod}
-                  </Badge>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Content: Orders List (2/3 width) */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="flex border-b border-foreground/5 pb-px gap-6">
+            {[
+              { id: 'all', label: 'Todos os Pedidos', count: clientOrders.length },
+              { id: 'active', label: 'Em Andamento', count: activeCount },
+              { id: 'past', label: 'Histórico / Concluídos', count: completedCount }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`pb-4 text-sm font-bold transition-all relative ${
+                  activeTab === tab.id 
+                  ? 'text-primary border-b-2 border-primary' 
+                  : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {tab.label}
+                <Badge className="ml-2 bg-foreground/5 text-foreground hover:bg-foreground/5 rounded-md text-[10px] font-black px-1.5 py-0.5">
+                  {tab.count}
+                </Badge>
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-4">
+            {filteredOrders.map((order) => (
+              <Card key={order.id} className="p-6 bg-card/30 border-white/5 rounded-2xl hover:border-primary/20 transition-all group">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                  <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    <ClipboardList className="text-primary w-6 h-6" />
+                  </div>
+                  
+                  <div className="flex-1 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{order.code}</span>
+                      <Badge variant="outline" className="bg-primary/5 text-primary border-primary/15 text-[9px] uppercase font-black px-2 rounded-md">
+                        {order.paymentMethod}
+                      </Badge>
+                    </div>
+                    <h3 className="text-lg font-bold group-hover:text-primary transition-colors">{order.serviceTitle}</h3>
+                    <p className="text-xs text-muted-foreground">Técnico: <span className="text-foreground font-medium">{order.professionalName}</span></p>
+                  </div>
+
+                  <div className="flex sm:flex-col justify-between sm:justify-start items-center sm:items-end gap-2 w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-0 border-white/5">
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/5">
+                      {getStatusIcon(order.status)}
+                      <span className="text-[11px] font-bold">{getStatusLabel(order.status)}</span>
+                    </div>
+                    <p className="text-base font-black text-primary">{formatCurrency(order.price)}</p>
+                  </div>
+
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <Link to={`/cliente/chat/1`} className="flex-1 sm:flex-none">
+                      <Button variant="outline" className="w-full rounded-xl border-white/10 text-xs h-10 px-4">Chat</Button>
+                    </Link>
+                    <Button variant="ghost" size="icon" className="hidden sm:flex rounded-xl hover:bg-primary hover:text-background w-10 h-10">
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold group-hover:text-primary transition-colors">{order.serviceTitle}</h3>
-                <p className="text-sm text-muted-foreground">Técnico: <span className="text-foreground font-medium">{order.professionalName}</span></p>
-              </div>
+              </Card>
+            ))}
 
-              <div className="flex flex-row lg:flex-col items-center lg:items-end gap-4 lg:gap-1 w-full lg:w-auto pt-4 lg:pt-0 border-t lg:border-0 border-white/5">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/5">
-                  {getStatusIcon(order.status)}
-                  <span className="text-xs font-bold">{getStatusLabel(order.status)}</span>
+            {filteredOrders.length === 0 && (
+              <div className="text-center py-16 glass-card rounded-3xl border-white/5 p-8">
+                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 animate-float">
+                  <ClipboardList className="text-muted-foreground w-8 h-8" />
                 </div>
-                <p className="text-lg font-black text-primary ml-auto lg:ml-0">{formatCurrency(order.price)}</p>
+                <h3 className="text-xl font-bold mb-1">Nenhum pedido nesta aba</h3>
+                <p className="text-sm text-muted-foreground mb-6">
+                  {searchTerm ? 'Nenhum pedido atende aos seus critérios de busca.' : 'Você não possui pedidos nesta categoria.'}
+                </p>
+                <Link to="/cliente/servicos">
+                  <Button className="btn-primary px-6 h-12 rounded-xl text-sm gap-2 animate-pulse-glow">
+                    <Compass className="w-4 h-4" /> Explorar Serviços
+                  </Button>
+                </Link>
               </div>
+            )}
+          </div>
+        </div>
 
-              <div className="flex gap-2 w-full lg:w-auto">
-                <Button variant="outline" className="flex-1 lg:flex-none rounded-xl border-white/10">Detalhes</Button>
-                <Button variant="ghost" size="icon" className="hidden lg:flex rounded-xl hover:bg-primary hover:text-background">
-                  <ChevronRight className="w-5 h-5" />
-                </Button>
+        {/* Sidebar: Complementary Info & Stats (1/3 width) */}
+        <div className="space-y-6">
+          {/* Quick Stats Widget */}
+          <Card className="p-6 bg-card/30 border-white/5 rounded-3xl">
+            <h3 className="text-base font-bold mb-4 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-primary" /> Resumo de Atividades
+            </h3>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center p-3.5 rounded-xl bg-white/5 border border-white/5">
+                <span className="text-xs text-muted-foreground font-medium">Total Investido</span>
+                <span className="text-sm font-black text-primary">R$ <AnimatedCounter value={totalSpent} /></span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3.5 rounded-xl bg-white/5 border border-white/5 text-center">
+                  <p className="text-[10px] text-muted-foreground uppercase font-black mb-1">Ativos</p>
+                  <p className="text-lg font-black text-blue-500"><AnimatedCounter value={activeCount} /></p>
+                </div>
+                <div className="p-3.5 rounded-xl bg-white/5 border border-white/5 text-center">
+                  <p className="text-[10px] text-muted-foreground uppercase font-black mb-1">Concluídos</p>
+                  <p className="text-lg font-black text-green-500"><AnimatedCounter value={completedCount} /></p>
+                </div>
               </div>
             </div>
           </Card>
-        ))}
-      </div>
 
-      {orders.length === 0 && (
-        <div className="text-center py-20 glass-card rounded-[3rem]">
-          <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
-            <ClipboardList className="text-muted-foreground w-10 h-10" />
-          </div>
-          <h3 className="text-2xl font-bold mb-2">Nenhum pedido encontrado</h3>
-          <p className="text-muted-foreground mb-8">Você ainda não realizou nenhuma contratação.</p>
-          <Button className="btn-primary px-8 h-12">Explorar Serviços</Button>
+          {/* Quick CTA banner */}
+          <Card className="p-6 bg-gradient-to-br from-primary/10 via-blue-500/5 to-transparent border-primary/20 rounded-3xl relative overflow-hidden group">
+            <div className="absolute -top-10 -right-10 w-24 h-24 bg-primary/20 rounded-full blur-2xl group-hover:scale-150 transition-all duration-700"></div>
+            <h3 className="text-lg font-black mb-2 leading-tight">Precisa de outra solução tecnológica?</h3>
+            <p className="text-xs text-muted-foreground mb-6 leading-relaxed">
+              Conserte seu notebook, monte seu PC Gamer dos sonhos ou configure sua rede corporativa com nossos técnicos experientes.
+            </p>
+            <Link to="/cliente/servicos">
+              <Button className="btn-primary w-full h-12 rounded-xl text-xs gap-2">
+                <Compass className="w-4 h-4" /> Solicitar Novo Serviço
+              </Button>
+            </Link>
+          </Card>
+
+          {/* Platform Security advice */}
+          <Card className="p-6 bg-card/30 border-white/5 rounded-3xl border-dashed">
+            <div className="flex gap-4">
+              <ShieldCheck className="w-8 h-8 text-primary shrink-0" />
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-wider text-foreground mb-1">Garantia TechFix</h4>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Todos os serviços agendados e pagos diretamente pela nossa plataforma contam com nossa **Garantia de 90 dias** e suporte total contra imprevistos.
+                </p>
+              </div>
+            </div>
+          </Card>
         </div>
-      )}
+      </div>
     </div>
   );
 };

@@ -6,12 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, CheckCircle2, Star, Laptop, ArrowRight, Plus, MessageSquare, Shield } from 'lucide-react';
 import { orders, services } from '@/data/mockData';
 import { formatCurrency } from '@/utils/formatters';
+import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 
 const ClientDashboardPage = () => {
   const activeOrders = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled');
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-500">
+    <div className="space-y-10 animate-page-entrance">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h1 className="text-4xl font-black tracking-tight">Olá, Sofia! 👋</h1>
@@ -39,11 +40,13 @@ const ClientDashboardPage = () => {
           { label: 'Avaliações', value: 8, icon: Star, color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
           { label: 'Nível Atual', value: 'Prata', icon: Shield, color: 'text-primary', bg: 'bg-primary/10' },
         ].map((stat, i) => (
-          <Card key={i} className="p-8 bg-card/30 border-white/5 rounded-[2rem] hover:border-primary/20 transition-all group">
+          <Card key={i} className="p-8 bg-card/30 border-white/5 rounded-3xl hover:border-primary/20 transition-all group">
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-2">{stat.label}</p>
-                <h3 className="text-3xl font-black">{stat.value}</h3>
+                <h3 className="text-3xl font-black">
+                  <AnimatedCounter value={stat.value} />
+                </h3>
               </div>
               <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color} group-hover:scale-110 transition-transform`}>
                 <stat.icon className="w-6 h-6" />
@@ -63,7 +66,7 @@ const ClientDashboardPage = () => {
           
           <div className="space-y-4">
             {orders.map(order => (
-              <div key={order.id} className="glass-card p-6 rounded-[2rem] flex flex-col sm:flex-row items-center gap-6 hover:border-primary/30 transition-all group">
+              <div key={order.id} className="glass-card p-6 rounded-3xl flex flex-col sm:flex-row items-center gap-6 hover:border-primary/30 transition-all group">
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:rotate-6 transition-transform">
                   <Laptop className="text-primary w-8 h-8" />
                 </div>
@@ -94,7 +97,7 @@ const ClientDashboardPage = () => {
           <div className="space-y-6">
             {services.slice(0, 2).map(service => (
               <Link key={service.id} to={`/cliente/servico/${service.id}`} className="block group">
-                <div className="relative rounded-[2.5rem] overflow-hidden h-48 mb-4 shadow-xl">
+                <div className="relative rounded-3xl overflow-hidden h-48 mb-4 shadow-xl hover-card-service border border-white/5">
                   <img src={service.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                   <div className="absolute bottom-6 left-6">

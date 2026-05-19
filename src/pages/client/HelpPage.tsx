@@ -11,7 +11,7 @@ import { Search, MessageCircle, Mail, Phone, LifeBuoy } from "lucide-react";
 
 const HelpPage = () => {
   return (
-    <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in duration-500">
+    <div className="max-w-4xl mx-auto space-y-12 animate-page-entrance">
       <div className="text-center space-y-4">
         <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto">
           <LifeBuoy className="text-primary w-8 h-8" />

@@ -1,47 +1,44 @@
 import React from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { 
-  LayoutDashboard, 
-  Search, 
-  ClipboardList, 
-  User, 
-  MessageSquare, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  MessageSquare,
+  LogOut,
   Bell,
   Settings,
   HelpCircle,
-  ChevronRight,
-  CreditCard,
-  ShieldCheck
+  Wrench,
+  User,
+  DollarSign
 } from 'lucide-react';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from '@/components/ThemeToggle';
 import logo from '@/assets/logo.png';
 import logoImg from '@/assets/logo_img.png';
 
-const ClientLayout = () => {
+const ProfessionalLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/cliente/dashboard' },
-    { icon: Search, label: 'Explorar', path: '/cliente/servicos' },
-    { icon: ClipboardList, label: 'Meus Pedidos', path: '/cliente/meus-pedidos' },
-    { icon: MessageSquare, label: 'Chat', path: '/cliente/chat/1' },
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/profissional/dashboard' },
+    { icon: Wrench, label: 'Serviços', path: '/profissional/servicos' },
+    { icon: DollarSign, label: 'Financeiro', path: '/profissional/financeiro' },
+    { icon: MessageSquare, label: 'Mensagens', path: '/profissional/chat/c1' },
   ];
 
   const notifications = [
-    { id: 1, title: "Pedido Confirmado", desc: "Seu pedido #TF-2024 foi aceito.", time: "2 min atrás", unread: true },
-    { id: 2, title: "Nova Mensagem", desc: "Carlos Mendes enviou uma mensagem.", time: "1h atrás", unread: true },
-    { id: 3, title: "Serviço Concluído", desc: "Avalie o serviço de manutenção.", time: "5h atrás", unread: false },
+    { id: 1, title: "Novo Pedido de Reparo", desc: "Sofia Spencer solicitou orçamento para manutenção preventiva.", time: "5 min atrás", unread: true },
+    { id: 2, title: "Orçamento Aprovado", desc: "Seu orçamento para reparo de notebook foi aceito pelo cliente.", time: "2h atrás", unread: true },
+    { id: 3, title: "Pagamento Liberado", desc: "O pagamento do serviço #TF-2024 foi depositado em sua conta.", time: "1 dia atrás", unread: false },
   ];
 
   return (
@@ -63,20 +60,19 @@ const ClientLayout = () => {
 
         <nav className="flex-1 px-4 py-8 space-y-2 select-none overflow-y-auto">
           <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.25em] mb-6 px-4 whitespace-nowrap text-center group-hover/sidebar:text-left transition-all">
-            <span className="hidden group-hover/sidebar:inline">Menu Principal</span>
+            <span className="hidden group-hover/sidebar:inline">Especialista</span>
             <span className="inline group-hover/sidebar:hidden">• • •</span>
           </p>
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
-              <Link 
-                key={item.path} 
+              <Link
+                key={item.path}
                 to={item.path}
-                className={`flex items-center gap-0 group-hover/sidebar:gap-4 px-5 py-4 rounded-2xl transition-all duration-300 group relative overflow-hidden justify-center group-hover/sidebar:justify-start ${
-                  isActive 
-                  ? 'text-primary-foreground font-black shadow-lg shadow-primary/20' 
-                  : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground'
-                }`}
+                className={`flex items-center gap-0 group-hover/sidebar:gap-4 px-5 py-4 rounded-2xl transition-all duration-300 group relative overflow-hidden justify-center group-hover/sidebar:justify-start ${isActive
+                    ? 'text-primary-foreground font-black shadow-lg shadow-primary/20'
+                    : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground'
+                  }`}
               >
                 {/* Background pill slide simulation */}
                 {isActive && (
@@ -101,13 +97,12 @@ const ClientLayout = () => {
               <span className="hidden group-hover/sidebar:inline">Suporte & Ajustes</span>
               <span className="inline group-hover/sidebar:hidden">• • •</span>
             </p>
-            <Link 
-              to="/cliente/ajuda" 
-              className={`flex items-center gap-0 group-hover/sidebar:gap-4 px-5 py-4 rounded-2xl transition-all duration-300 justify-center group-hover/sidebar:justify-start ${
-                location.pathname === '/cliente/ajuda' 
-                ? 'bg-primary/10 text-primary font-bold' 
-                : 'text-muted-foreground hover:bg-foreground/5'
-              }`}
+            <Link
+              to="/cliente/ajuda"
+              className={`flex items-center gap-0 group-hover/sidebar:gap-4 px-5 py-4 rounded-2xl transition-all duration-300 justify-center group-hover/sidebar:justify-start ${location.pathname === '/cliente/ajuda'
+                  ? 'bg-primary/10 text-primary font-bold'
+                  : 'text-muted-foreground hover:bg-foreground/5'
+                }`}
             >
               <div className="w-6 h-6 flex items-center justify-center shrink-0">
                 <HelpCircle className="w-5 h-5 text-primary" />
@@ -116,13 +111,12 @@ const ClientLayout = () => {
                 Ajuda
               </span>
             </Link>
-            <Link 
-              to="/cliente/configuracoes" 
-              className={`flex items-center gap-0 group-hover/sidebar:gap-4 px-5 py-4 rounded-2xl transition-all duration-300 justify-center group-hover/sidebar:justify-start ${
-                location.pathname === '/cliente/configuracoes' 
-                ? 'bg-primary/10 text-primary font-bold' 
-                : 'text-muted-foreground hover:bg-foreground/5'
-              }`}
+            <Link
+              to="/cliente/configuracoes"
+              className={`flex items-center gap-0 group-hover/sidebar:gap-4 px-5 py-4 rounded-2xl transition-all duration-300 justify-center group-hover/sidebar:justify-start ${location.pathname === '/cliente/configuracoes'
+                  ? 'bg-primary/10 text-primary font-bold'
+                  : 'text-muted-foreground hover:bg-foreground/5'
+                }`}
             >
               <div className="w-6 h-6 flex items-center justify-center shrink-0">
                 <Settings className="w-5 h-5 text-primary" />
@@ -152,20 +146,12 @@ const ClientLayout = () => {
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-24 border-b border-foreground/5 bg-background/50 backdrop-blur-md flex items-center justify-between px-10 sticky top-0 z-40">
           <h2 className="font-bold text-2xl hidden md:block bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80">
-            {location.pathname.includes('dashboard') ? 'Painel de Controle' : 
-             location.pathname.includes('servicos') || location.pathname.includes('busca') ? 'Explorar Serviços' :
-             location.pathname.includes('meus-pedidos') ? 'Meus Pedidos' :
-             location.pathname.includes('perfil') ? 'Meu Perfil' :
-             location.pathname.includes('chat') ? 'Chat & Conversas' :
-             location.pathname.includes('ajuda') ? 'Central de Ajuda' :
-             location.pathname.includes('configuracoes') ? 'Configurações' :
-             location.pathname.includes('contratar') ? 'Contratação' :
-             location.pathname.includes('servico/') ? 'Detalhes do Serviço' : 'TechFix'}
+            Painel do Especialista
           </h2>
-          
+
           <div className="flex items-center gap-6">
             <ThemeToggle />
-            
+
             {/* Notifications Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -189,10 +175,6 @@ const ClientLayout = () => {
                     </DropdownMenuItem>
                   ))}
                 </div>
-                <DropdownMenuSeparator className="bg-white/5" />
-                <DropdownMenuItem className="justify-center p-3 text-primary font-bold text-sm cursor-pointer rounded-xl">
-                  Ver todas as notificações
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -201,32 +183,26 @@ const ClientLayout = () => {
               <DropdownMenuTrigger asChild>
                 <div className="flex items-center gap-4 pl-6 border-l border-foreground/5 cursor-pointer group">
                   <div className="text-right hidden sm:block">
-                    <p className="text-sm font-bold group-hover:text-primary transition-colors">Sofia Spencer</p>
-                    <p className="text-[10px] text-primary font-black uppercase tracking-widest">Nível Prata</p>
+                    <p className="text-sm font-bold group-hover:text-primary transition-colors">Carlos Mendes</p>
+                    <p className="text-[10px] text-primary font-black uppercase tracking-widest">Hardware Expert</p>
                   </div>
                   <div className="relative">
-                    <img src="https://i.pravatar.cc/150?u=sofia" className="w-14 h-14 rounded-2xl border-2 border-primary/20 group-hover:border-primary transition-all" alt="Avatar" />
+                    <img src="https://i.pravatar.cc/150?u=carlos" className="w-14 h-14 rounded-2xl border-2 border-primary/20 group-hover:border-primary transition-all" alt="Avatar" />
                     <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-background rounded-full"></div>
                   </div>
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64 p-2 rounded-3xl glass-card border-white/10">
                 <DropdownMenuLabel className="px-4 py-3">
-                  <p className="font-bold">Minha Conta</p>
-                  <p className="text-xs text-muted-foreground font-normal">sofia@example.com</p>
+                  <p className="font-bold">Minha Conta Técnico</p>
+                  <p className="text-xs text-muted-foreground font-normal">carlos@example.com</p>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-white/5" />
                 <DropdownMenuItem onClick={() => navigate('/cliente/perfil')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
                   <User className="w-4 h-4 text-primary" /> Perfil
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/cliente/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                  <LayoutDashboard className="w-4 h-4 text-primary" /> Painel de Controle
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/cliente/meus-pedidos')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                  <ClipboardList className="w-4 h-4 text-primary" /> Meus Pedidos
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/cliente/configuracoes')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                  <Settings className="w-4 h-4 text-primary" /> Configurações
+                <DropdownMenuItem onClick={() => navigate('/profissional/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                  <LayoutDashboard className="w-4 h-4 text-primary" /> Painel Técnico
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-white/5" />
                 <DropdownMenuItem onClick={() => navigate('/login')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive">
@@ -237,7 +213,7 @@ const ClientLayout = () => {
           </div>
         </header>
 
-        <main className="flex-1 p-10 md:p-16">
+        <main className="flex-1 p-6 md:p-12 overflow-y-auto">
           <Outlet />
         </main>
 
@@ -246,19 +222,17 @@ const ClientLayout = () => {
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
-              <Link 
-                key={item.path} 
+              <Link
+                key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center justify-center gap-1.5 p-2.5 transition-all duration-300 relative ${
-                  isActive ? 'text-primary scale-110 -translate-y-1' : 'text-muted-foreground hover:text-foreground'
-                }`}
+                className={`flex flex-col items-center justify-center gap-1.5 p-2.5 transition-all duration-300 relative ${isActive ? 'text-primary scale-110 -translate-y-1' : 'text-muted-foreground hover:text-foreground'
+                  }`}
               >
                 <div className={`transition-transform duration-300 ${isActive ? 'animate-in zoom-in-75 duration-200' : ''}`}>
                   <item.icon className="w-6.5 h-6.5" />
                 </div>
-                <span className={`text-[9px] font-black uppercase tracking-wider transition-all duration-300 ${
-                  isActive ? 'opacity-100 scale-100 font-bold' : 'opacity-70 scale-95'
-                }`}>
+                <span className={`text-[9px] font-black uppercase tracking-wider transition-all duration-300 ${isActive ? 'opacity-100 scale-100 font-bold' : 'opacity-70 scale-95'
+                  }`}>
                   {item.label}
                 </span>
                 {isActive && (
@@ -273,4 +247,4 @@ const ClientLayout = () => {
   );
 };
 
-export default ClientLayout;
+export default ProfessionalLayout;

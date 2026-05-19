@@ -13,7 +13,7 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in duration-500">
+    <div className="max-w-4xl mx-auto space-y-10 animate-page-entrance">
       <div>
         <h1 className="text-3xl font-bold mb-2">Configurações</h1>
         <p className="text-muted-foreground">Gerencie sua conta e preferências de uso.</p>

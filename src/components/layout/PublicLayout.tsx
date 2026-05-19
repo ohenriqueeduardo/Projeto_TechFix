@@ -20,8 +20,8 @@ const PublicLayout = () => {
           <div className="hidden md:flex items-center gap-6">
             <ThemeToggle />
             <Link to="/login">
-              <Button variant="ghost" className="text-base font-bold gap-2 h-12 px-6">
-                <LogIn className="w-5 h-5" /> Entrar
+              <Button variant="outline" className="text-base font-bold gap-2 h-12 px-6 border-primary/20 hover:border-primary/50 text-foreground bg-foreground/5 hover:bg-foreground/10 transition-all rounded-xl">
+                <LogIn className="w-5 h-5 text-primary" /> Entrar
               </Button>
             </Link>
             <Link to="/cadastro">

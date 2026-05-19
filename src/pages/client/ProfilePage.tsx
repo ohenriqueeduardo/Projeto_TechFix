@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { Camera, Shield, Star, MapPin, Mail, Phone } from 'lucide-react';
+import { Camera, Shield, Star, MapPin, Award, CheckCircle, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 const ProfilePage = () => {
   const handleSave = (e: React.FormEvent) => {
@@ -13,97 +14,136 @@ const ProfilePage = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500">
-      <div className="relative h-48 rounded-[3rem] bg-gradient-to-r from-primary/20 to-blue-600/20 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
+    <div className="max-w-5xl mx-auto space-y-8 animate-page-entrance">
+      <PageHeader 
+        title="Meu Perfil" 
+        description="Gerencie suas informações pessoais, visualize seu nível de membro e suas conquistas na plataforma."
+      />
+
+      {/* Premium Graphic Banner (Capa) */}
+      <div className="relative h-64 rounded-3xl bg-gradient-to-r from-primary/40 via-cyan-900/30 to-blue-900/40 overflow-hidden border border-white/10 flex items-center justify-between p-8 md:p-12">
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
+        <div className="absolute -left-10 -top-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl"></div>
+        <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-blue-500/20 rounded-full blur-3xl"></div>
+
+        {/* Floating VIP Card Overlay on the right */}
+        <div className="hidden md:flex ml-auto glass-card p-6 rounded-2xl bg-card/40 backdrop-blur-xl border-white/15 max-w-sm w-80 shadow-2xl items-center gap-4 transition-all hover:scale-105">
+          <div className="p-3 bg-primary/20 rounded-xl text-primary animate-bounce">
+            <Award className="w-8 h-8" />
+          </div>
+          <div className="flex-1 space-y-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-black uppercase tracking-widest text-primary">Status da Conta</span>
+              <Sparkles className="w-3.5 h-3.5 text-yellow-500" />
+            </div>
+            <h4 className="font-black text-lg text-foreground">Sofia Spencer</h4>
+            <p className="text-xs text-muted-foreground font-medium">VIP Prata (Desconto Ativo)</p>
+          </div>
+        </div>
       </div>
 
-      <div className="px-8 -mt-20 relative z-10">
+      {/* Profile Avatar and Details Card overlay */}
+      <div className="px-8 -mt-24 relative z-10">
         <div className="flex flex-col md:flex-row items-end gap-6 mb-8">
-          <div className="relative group">
+          <div className="relative group shrink-0">
             <img 
               src="https://i.pravatar.cc/150?u=sofia" 
-              className="w-40 h-40 rounded-[2.5rem] border-8 border-background shadow-2xl object-cover" 
+              className="w-36 h-36 md:w-40 md:h-40 rounded-3xl border-8 border-background shadow-2xl object-cover" 
               alt="Avatar" 
             />
-            <button className="absolute bottom-2 right-2 p-3 bg-primary text-background rounded-2xl shadow-lg hover:scale-110 transition-transform">
-              <Camera className="w-5 h-5" />
+            <button className="absolute bottom-2 right-2 p-3 bg-primary text-primary-foreground rounded-2xl shadow-lg hover:scale-110 transition-transform">
+              <Camera className="w-4 h-4" />
             </button>
           </div>
-          <div className="flex-1 pb-4">
-            <h1 className="text-4xl font-black mb-1">Sofia Spencer</h1>
-            <div className="flex flex-wrap gap-4">
-              <span className="flex items-center gap-1.5 text-sm text-muted-foreground font-medium">
+          
+          <div className="flex-1 pb-4 text-center md:text-left">
+            <h2 className="text-3xl font-black mb-1.5">Sofia Spencer</h2>
+            <div className="flex flex-wrap justify-center md:justify-start gap-4">
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground font-bold">
                 <MapPin className="w-4 h-4 text-primary" /> São Paulo, SP
               </span>
-              <span className="flex items-center gap-1.5 text-sm text-muted-foreground font-medium">
-                <Shield className="w-4 h-4 text-primary" /> Cliente Prata
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground font-bold">
+                <Shield className="w-4 h-4 text-primary" /> Nível Prata
               </span>
             </div>
           </div>
-          <div className="flex gap-3 pb-4">
-            <Button variant="outline" className="rounded-xl border-white/10 h-12 px-6">Ver como Público</Button>
-            <Button className="btn-primary rounded-xl h-12 px-8">Editar Capa</Button>
+          
+          <div className="flex gap-3 pb-4 w-full md:w-auto justify-center">
+            <Button variant="outline" className="rounded-xl border-white/10 h-11 px-5 text-xs font-bold bg-background/50 hover:bg-white/5">Ver como Público</Button>
+            <Button className="btn-primary rounded-xl h-11 px-6 text-xs gap-2">
+              <Sparkles className="w-4 h-4" /> Alterar Capa
+            </Button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Form Column (2/3 width) */}
           <div className="lg:col-span-2 space-y-6">
-            <Card className="p-8 bg-card/30 border-white/5 rounded-[2.5rem]">
-              <h3 className="text-xl font-bold mb-6">Informações da Conta</h3>
+            <Card className="p-8 bg-card/30 border-white/5 rounded-3xl">
+              <h3 className="text-lg font-bold mb-6">Informações da Conta</h3>
               <form onSubmit={handleSave} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label className="font-bold ml-1">Nome Completo</Label>
-                    <Input defaultValue="Sofia Spencer" className="h-14 bg-background/50 border-white/10 rounded-2xl" />
+                    <Label className="font-bold text-xs ml-1">Nome Completo</Label>
+                    <Input defaultValue="Sofia Spencer" className="h-12 bg-background/50 border-white/10 rounded-xl text-sm" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="font-bold ml-1">E-mail</Label>
-                    <Input defaultValue="sofia@example.com" className="h-14 bg-background/50 border-white/10 rounded-2xl" />
+                    <Label className="font-bold text-xs ml-1">E-mail</Label>
+                    <Input defaultValue="sofia@example.com" className="h-12 bg-background/50 border-white/10 rounded-xl text-sm" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="font-bold ml-1">Telefone</Label>
-                    <Input defaultValue="(11) 99999-9999" className="h-14 bg-background/50 border-white/10 rounded-2xl" />
+                    <Label className="font-bold text-xs ml-1">Telefone</Label>
+                    <Input defaultValue="(11) 99999-9999" className="h-12 bg-background/50 border-white/10 rounded-xl text-sm" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="font-bold ml-1">Cidade</Label>
-                    <Input defaultValue="São Paulo, SP" className="h-14 bg-background/50 border-white/10 rounded-2xl" />
+                    <Label className="font-bold text-xs ml-1">Cidade</Label>
+                    <Input defaultValue="São Paulo, SP" className="h-12 bg-background/50 border-white/10 rounded-xl text-sm" />
                   </div>
                 </div>
                 <div className="pt-4">
-                  <Button type="submit" className="btn-primary w-full md:w-auto px-12 h-14 text-lg">Salvar Alterações</Button>
+                  <Button type="submit" className="btn-primary w-full md:w-auto px-10 h-12 text-sm">Salvar Alterações</Button>
                 </div>
               </form>
             </Card>
           </div>
 
+          {/* Right Column Stats and Progress (1/3 width) */}
           <div className="space-y-6">
-            <Card className="p-8 bg-card/30 border-white/5 rounded-[2.5rem]">
-              <h3 className="text-xl font-bold mb-6">Estatísticas</h3>
-              <div className="space-y-4">
+            {/* Quick Metrics */}
+            <Card className="p-6 bg-card/30 border-white/5 rounded-3xl">
+              <h3 className="text-base font-bold mb-5">Minhas Estatísticas</h3>
+              <div className="space-y-3">
                 {[
-                  { label: 'Serviços Contratados', value: '12', icon: Star, color: 'text-yellow-500' },
-                  { label: 'Membro desde', value: 'Jan 2024', icon: Shield, color: 'text-blue-500' },
-                  { label: 'Avaliações Dadas', value: '8', icon: Star, color: 'text-primary' },
+                  { label: 'Serviços Contratados', value: '12', icon: CheckCircle, color: 'text-green-500' },
+                  { label: 'Avaliações Enviadas', value: '8', icon: Star, color: 'text-yellow-500' },
+                  { label: 'Membro desde', value: 'Jan 2024', icon: Award, color: 'text-primary' },
                 ].map((stat, i) => (
-                  <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-white/5">
-                    <div className="flex items-center gap-3">
-                      <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                      <span className="text-sm font-medium text-muted-foreground">{stat.label}</span>
+                  <div key={i} className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 border border-white/5">
+                    <div className="flex items-center gap-2.5">
+                      <stat.icon className={`w-4 h-4 ${stat.color}`} />
+                      <span className="text-xs font-semibold text-muted-foreground">{stat.label}</span>
                     </div>
-                    <span className="font-bold">{stat.value}</span>
+                    <span className="text-xs font-black text-foreground">{stat.value}</span>
                   </div>
                 ))}
               </div>
             </Card>
 
-            <Card className="p-8 bg-primary/5 border-primary/10 rounded-[2.5rem]">
-              <h3 className="text-xl font-bold mb-2">Nível Prata</h3>
-              <p className="text-sm text-muted-foreground mb-6">Você está a 3 serviços de se tornar um cliente <strong>Ouro</strong> e ganhar 10% de desconto fixo.</p>
-              <div className="w-full h-3 bg-white/10 rounded-full overflow-hidden">
-                <div className="w-2/3 h-full bg-primary shadow-[0_0_15px_rgba(0,255,255,0.5)]"></div>
+            {/* VIP Silver progress bar card */}
+            <Card className="p-6 bg-gradient-to-br from-primary/10 to-blue-500/5 border-primary/20 rounded-3xl relative overflow-hidden">
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h3 className="text-base font-black">Nível Prata</h3>
+                  <p className="text-xs text-muted-foreground mt-1">Faltam **3 serviços** para alcançar o nível **Ouro** e ganhar 10% de desconto fixo.</p>
+                </div>
               </div>
-              <p className="text-[10px] font-black uppercase tracking-widest mt-3 text-right text-primary">70% Concluído</p>
+              <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden mt-5">
+                <div className="w-[70%] h-full bg-gradient-to-r from-primary to-blue-400 shadow-[0_0_15px_rgba(0,255,255,0.5)]"></div>
+              </div>
+              <div className="flex justify-between items-center mt-3">
+                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">7 / 10 Serviços</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-primary">70% Concluído</span>
+              </div>
             </Card>
           </div>
         </div>

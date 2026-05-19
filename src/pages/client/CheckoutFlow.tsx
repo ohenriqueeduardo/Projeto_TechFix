@@ -18,27 +18,43 @@ const Stepper = ({ currentStep }: { currentStep: number }) => {
     { icon: CreditCard, label: 'Pagamento' },
   ];
 
+  // Calculate dynamic progress percent
+  const progressPercent = ((currentStep - 1) / (steps.length - 1)) * 100;
+
   return (
-    <div className="flex items-center justify-between mb-12 max-w-2xl mx-auto">
-      {steps.map((step, i) => (
-        <React.Fragment key={i}>
-          <div className="flex flex-col items-center gap-2 relative">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-              i + 1 <= currentStep ? 'bg-primary border-primary text-background' : 'border-white/10 text-muted-foreground'
-            }`}>
-              <step.icon className="w-5 h-5" />
+    <div className="relative mb-16 max-w-2xl mx-auto">
+      {/* Background Track Line */}
+      <div className="absolute top-5 left-4 right-4 h-[2px] bg-white/10 -translate-y-1/2 -z-10" />
+      {/* Animated Colored Progress Bar */}
+      <div 
+        className="absolute top-5 left-4 h-[2px] bg-primary -translate-y-1/2 -z-10 transition-all duration-500 shadow-[0_0_10px_rgba(6,182,212,0.6)]" 
+        style={{ width: `calc(${progressPercent}% - 8px)` }}
+      />
+
+      <div className="flex items-center justify-between">
+        {steps.map((step, i) => {
+          const isCompleted = i + 1 < currentStep;
+          const isActive = i + 1 === currentStep;
+          return (
+            <div key={i} className="flex flex-col items-center gap-2 relative">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${
+                isCompleted 
+                ? 'bg-primary border-primary text-background' 
+                : isActive 
+                ? 'bg-background border-primary text-primary scale-110 shadow-[0_0_15px_rgba(6,182,212,0.35)]' 
+                : 'border-white/10 text-muted-foreground'
+              }`}>
+                <step.icon className={`w-5 h-5 transition-transform duration-500 ${isActive ? 'animate-bounce' : ''}`} />
+              </div>
+              <span className={`text-[10px] font-bold uppercase tracking-wider absolute -bottom-6 whitespace-nowrap transition-colors duration-500 ${
+                i + 1 <= currentStep ? 'text-primary' : 'text-muted-foreground'
+              }`}>
+                {step.label}
+              </span>
             </div>
-            <span className={`text-[10px] font-bold uppercase tracking-wider absolute -bottom-6 whitespace-nowrap ${
-              i + 1 <= currentStep ? 'text-primary' : 'text-muted-foreground'
-            }`}>
-              {step.label}
-            </span>
-          </div>
-          {i < steps.length - 1 && (
-            <div className={`flex-1 h-[2px] mx-4 ${i + 1 < currentStep ? 'bg-primary' : 'bg-white/10'}`} />
-          )}
-        </React.Fragment>
-      ))}
+          );
+        })}
+      </div>
     </div>
   );
 };
@@ -75,7 +91,7 @@ const CheckoutFlow = () => {
 const Step1 = ({ service, professional }: ServiceAndProfessionalStepProps) => {
   const navigate = useNavigate();
   return (
-    <div className="animate-in fade-in slide-in-from-right-4">
+    <div className="animate-in fade-in slide-in-from-right-8 duration-500">
       <Stepper currentStep={1} />
       <div className="glass-card p-8 rounded-3xl space-y-6">
         <h2 className="text-2xl font-bold">Resumo do Serviço</h2>
@@ -108,7 +124,7 @@ const Step2 = ({ service }: ServiceStepProps) => {
   const times = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
 
   return (
-    <div className="animate-in fade-in slide-in-from-right-4">
+    <div className="animate-in fade-in slide-in-from-right-8 duration-500">
       <Stepper currentStep={2} />
       <div className="glass-card p-8 rounded-3xl space-y-8">
         <h2 className="text-2xl font-bold">Escolha a Data e Hora</h2>
@@ -165,7 +181,7 @@ const Step2 = ({ service }: ServiceStepProps) => {
 const Step3 = ({ service }: ServiceStepProps) => {
   const navigate = useNavigate();
   return (
-    <div className="animate-in fade-in slide-in-from-right-4">
+    <div className="animate-in fade-in slide-in-from-right-8 duration-500">
       <Stepper currentStep={3} />
       <div className="glass-card p-8 rounded-3xl space-y-6">
         <h2 className="text-2xl font-bold">Endereço de Atendimento</h2>
@@ -216,7 +232,7 @@ const Step4 = ({ service }: ServiceStepProps) => {
   };
 
   return (
-    <div className="animate-in fade-in slide-in-from-right-4">
+    <div className="animate-in fade-in slide-in-from-right-8 duration-500">
       <Stepper currentStep={4} />
       <div className="glass-card p-8 rounded-3xl space-y-8">
         <h2 className="text-2xl font-bold">Forma de Pagamento</h2>

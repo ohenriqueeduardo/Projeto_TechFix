@@ -23,7 +23,7 @@ const ExploreServicesPage = () => {
   const categories = ['Todos', 'Manutenção', 'Montagem', 'Redes', 'Software'];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-page-entrance">
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="relative w-full md:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -61,7 +61,7 @@ const ExploreServicesPage = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredServices.map((service) => (
-          <Link key={service.id} to={`/cliente/servico/${service.id}`} className="glass-card rounded-2xl overflow-hidden group hover:border-primary/30 transition-all">
+          <Link key={service.id} to={`/cliente/servico/${service.id}`} className="glass-card rounded-2xl overflow-hidden group hover-card-service border border-white/5">
             <div className="h-40 overflow-hidden relative">
               <img src={service.image} alt={service.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
               <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2 py-1 rounded-lg flex items-center gap-1 text-yellow-500 text-xs font-bold">

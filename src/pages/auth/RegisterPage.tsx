@@ -3,111 +3,169 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User, Briefcase, ArrowLeft } from 'lucide-react';
+import { User, Briefcase, ArrowLeft, ShieldCheck, Cpu, CheckCircle2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const [step, setStep] = React.useState(1);
   const [role, setRole] = React.useState<'client' | 'professional' | 'admin'>('client');
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success('Conta criada com sucesso! Bem-vindo ao TechFix.');
-    if (role === 'client') navigate('/cliente/dashboard');
-    else navigate('/profissional/dashboard');
+    setIsLoading(true);
+    
+    setTimeout(() => {
+      setIsLoading(false);
+      toast.success('Conta criada com sucesso! Bem-vindo ao TechFix.');
+      if (role === 'client') navigate('/cliente/dashboard');
+      else navigate('/profissional/dashboard');
+    }, 1200);
   };
 
   return (
-    <div className="min-h-[calc(100vh-96px)] flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {step === 1 ? (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="text-center mb-10">
-              <h1 className="text-4xl font-black tracking-tight mb-3">Como você quer usar o TechFix?</h1>
-              <p className="text-muted-foreground">Escolha o tipo de conta ideal para sua necessidade</p>
-            </div>
+    <div className="min-h-[calc(100vh-96px)] grid grid-cols-1 lg:grid-cols-2 animate-in fade-in duration-500 overflow-hidden">
+      
+      {/* LEFT COLUMN: Benefits and Quality Panel (Hidden on mobile) */}
+      <div className="hidden lg:flex flex-col justify-between p-16 bg-gradient-to-tr from-cyan-950 via-slate-950 to-blue-950 relative border-r border-white/5 overflow-hidden">
+        {/* Subtle grid pattern background */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#083344_1px,transparent_1px),linear-gradient(to_bottom,#083344_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-35"></div>
+        <div className="absolute top-1/3 left-1/3 w-80 h-80 bg-primary/10 rounded-full blur-3xl"></div>
 
-            <div className="space-y-4">
-              <button 
-                onClick={() => { setRole('client'); setStep(2); }}
-                className="w-full p-8 rounded-[2rem] border border-white/10 bg-card/50 hover:border-primary/50 hover:bg-primary/5 transition-all text-left group"
-              >
-                <div className="flex items-center gap-6">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <User className="text-primary w-8 h-8" />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-xl mb-1">Quero contratar serviços</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">Encontre os melhores técnicos para resolver seus problemas de TI.</p>
-                  </div>
-                </div>
-              </button>
-
-              <button 
-                onClick={() => { setRole('professional'); setStep(2); }}
-                className="w-full p-8 rounded-[2rem] border border-white/10 bg-card/50 hover:border-primary/50 hover:bg-primary/5 transition-all text-left group"
-              >
-                <div className="flex items-center gap-6">
-                  <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Briefcase className="text-cyan-500 w-8 h-8" />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-xl mb-1">Quero oferecer serviços</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">Trabalhe como especialista e aumente sua renda mensal.</p>
-                  </div>
-                </div>
-              </button>
-            </div>
-
-            <p className="text-center mt-10 text-sm text-muted-foreground font-medium">
-              Já tem uma conta? <Link to="/login" className="text-primary font-black hover:underline">Entrar agora</Link>
-            </p>
+        <div className="relative space-y-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs text-primary font-black uppercase tracking-wider">
+            <Sparkles className="w-3.5 h-3.5" /> Junte-se à Comunidade
           </div>
-        ) : (
-          <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-            <Button variant="ghost" onClick={() => setStep(1)} className="mb-8 -ml-2 text-muted-foreground font-bold hover:text-primary">
-              <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
-            </Button>
-            <div className="mb-10">
-              <h1 className="text-3xl font-black tracking-tight">Crie sua conta de {role === 'client' ? 'Cliente' : 'Técnico'}</h1>
-              <p className="text-muted-foreground mt-2">Preencha os dados abaixo para começar sua jornada</p>
+          <h2 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">
+            Faça parte da maior rede de <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-400">suporte técnico.</span>
+          </h2>
+          <p className="text-muted-foreground text-base max-w-md leading-relaxed font-medium">
+            Seja como cliente precisando de soluções rápidas ou técnico querendo rentabilizar seu conhecimento, a TechFix é o seu lugar.
+          </p>
+        </div>
+
+        {/* Value Propositions / Key benefits */}
+        <div className="relative space-y-6 max-w-md bg-card/20 backdrop-blur-xl border border-white/10 p-6 rounded-2xl">
+          <h4 className="font-bold text-sm text-foreground uppercase tracking-widest mb-2">Por que escolher a TechFix?</h4>
+          {[
+            { title: 'Técnicos 100% Homologados', desc: 'Profissionais rigorosamente verificados através de testes técnicos e checagem de antecedentes.' },
+            { title: 'Pagamento Seguro Garantido', desc: 'O valor do serviço fica retido de forma segura e só é liberado para o técnico após a sua aprovação.' },
+            { title: 'Garantia de Qualidade de 90 dias', desc: 'Qualquer problema relacionado ao reparo efetuado é coberto pela nossa apólice de garantia.' },
+          ].map((item, i) => (
+            <div key={i} className="flex gap-3">
+              <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+              <div>
+                <h5 className="font-bold text-sm text-foreground">{item.title}</h5>
+                <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{item.desc}</p>
+              </div>
             </div>
+          ))}
+        </div>
 
-            <form onSubmit={handleRegister} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName" className="font-bold">Nome</Label>
-                  <Input id="firstName" placeholder="João" required className="h-14 bg-card/50 border-white/10 rounded-xl" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName" className="font-bold">Sobrenome</Label>
-                  <Input id="lastName" placeholder="Silva" required className="h-14 bg-card/50 border-white/10 rounded-xl" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email" className="font-bold">E-mail</Label>
-                <Input id="email" type="email" placeholder="joao@email.com" required className="h-14 bg-card/50 border-white/10 rounded-xl" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="font-bold">Senha</Label>
-                <Input id="password" type="password" placeholder="Mínimo 8 caracteres" required className="h-14 bg-card/50 border-white/10 rounded-xl" />
-              </div>
-
-              {role === 'professional' && (
-                <div className="space-y-2">
-                  <Label htmlFor="specialty" className="font-bold">Especialidade Principal</Label>
-                  <Input id="specialty" placeholder="Ex: Montagem de PC Gamer" required className="h-14 bg-card/50 border-white/10 rounded-xl" />
-                </div>
-              )}
-
-              <Button type="submit" className="w-full btn-primary h-14 text-lg font-black mt-4">
-                Criar Minha Conta
-              </Button>
-            </form>
-          </div>
-        )}
+        {/* Security badge advice */}
+        <div className="relative flex items-center gap-3.5 text-xs text-muted-foreground">
+          <ShieldCheck className="w-6 h-6 text-primary" />
+          <span>Sua privacidade e dados estão seguros de acordo com a LGPD.</span>
+        </div>
       </div>
+
+      {/* RIGHT COLUMN: Interactive Form */}
+      <div className="flex items-center justify-center p-8 md:p-16 bg-background">
+        <div className="w-full max-w-md space-y-8">
+          
+          {step === 1 ? (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+              <div className="text-center lg:text-left">
+                <h1 className="text-3xl font-black tracking-tight mb-2">Como você deseja começar?</h1>
+                <p className="text-sm text-muted-foreground">Selecione o tipo de conta que melhor se adapta às suas necessidades</p>
+              </div>
+
+              <div className="space-y-4">
+                <button 
+                  onClick={() => { setRole('client'); setStep(2); }}
+                  className="w-full p-6 rounded-2xl border border-white/10 bg-card/40 hover:border-primary/50 hover:bg-primary/5 transition-all text-left group"
+                >
+                  <div className="flex items-center gap-5">
+                    <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+                      <User className="text-primary w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-lg mb-1 leading-none">Quero contratar serviços</h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed mt-1">Encontre técnicos especialistas para resolver problemas em computadores, redes e softwares.</p>
+                    </div>
+                  </div>
+                </button>
+
+                <button 
+                  onClick={() => { setRole('professional'); setStep(2); }}
+                  className="w-full p-6 rounded-2xl border border-white/10 bg-card/40 hover:border-primary/50 hover:bg-primary/5 transition-all text-left group"
+                >
+                  <div className="flex items-center gap-5">
+                    <div className="w-14 h-14 rounded-xl bg-cyan-500/10 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+                      <Briefcase className="text-cyan-500 w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-lg mb-1 leading-none">Quero oferecer serviços</h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed mt-1">Trabalhe como especialista técnico, encontre chamados na sua região e aumente sua renda.</p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              <p className="text-center text-xs text-muted-foreground font-medium pt-4">
+                Já tem uma conta? <Link to="/login" className="text-primary font-black hover:underline">Entrar agora</Link>
+              </p>
+            </div>
+          ) : (
+            <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
+              <Button variant="ghost" onClick={() => setStep(1)} className="mb-4 -ml-2 text-xs text-muted-foreground font-bold hover:text-primary h-9 px-3">
+                <ArrowLeft className="w-4 h-4 mr-1.5" /> Voltar
+              </Button>
+              
+              <div className="space-y-1">
+                <h1 className="text-2xl font-black tracking-tight">Criar conta de {role === 'client' ? 'Cliente' : 'Técnico'}</h1>
+                <p className="text-xs text-muted-foreground">Preencha os dados básicos para habilitar seu painel de controle</p>
+              </div>
+
+              <form onSubmit={handleRegister} className="space-y-4 pt-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="firstName" className="font-bold text-xs">Nome</Label>
+                    <Input id="firstName" placeholder="João" required className="h-12 bg-card/50 border-white/10 rounded-xl text-sm" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="lastName" className="font-bold text-xs">Sobrenome</Label>
+                    <Input id="lastName" placeholder="Silva" required className="h-12 bg-card/50 border-white/10 rounded-xl text-sm" />
+                  </div>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="font-bold text-xs">E-mail</Label>
+                  <Input id="email" type="email" placeholder="joao@email.com" required className="h-12 bg-card/50 border-white/10 rounded-xl text-sm" />
+                </div>
+                
+                <div className="space-y-1.5">
+                  <Label htmlFor="password" className="font-bold text-xs">Senha</Label>
+                  <Input id="password" type="password" placeholder="Mínimo 8 caracteres" required className="h-12 bg-card/50 border-white/10 rounded-xl text-sm" />
+                </div>
+
+                {role === 'professional' && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="specialty" className="font-bold text-xs">Especialidade Principal</Label>
+                    <Input id="specialty" placeholder="Ex: Manutenção de PC Gamer" required className="h-12 bg-card/50 border-white/10 rounded-xl text-sm" />
+                  </div>
+                )}
+
+                <Button type="submit" className="w-full btn-primary h-12 text-sm font-black mt-6" disabled={isLoading}>
+                  {isLoading ? 'Registrando...' : 'Criar Minha Conta'}
+                </Button>
+              </form>
+            </div>
+          )}
+        </div>
+      </div>
+      
     </div>
   );
 };

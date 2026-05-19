@@ -7,6 +7,8 @@ import { ThemeProvider } from "next-themes";
 // Layouts
 import PublicLayout from "@/components/layout/PublicLayout";
 import ClientLayout from "@/components/layout/ClientLayout";
+import ProfessionalLayout from "@/components/layout/ProfessionalLayout";
+import AdminLayout from "@/components/layout/AdminLayout";
 
 // Pages
 import HomePage from "@/pages/public/HomePage";
@@ -21,6 +23,13 @@ import SettingsPage from "@/pages/client/SettingsPage";
 import MyOrdersPage from "@/pages/client/MyOrdersPage";
 import ProfilePage from "@/pages/client/ProfilePage";
 import ChatPage from "@/pages/client/ChatPage";
+import ProfessionalDashboardPage from "@/pages/professional/ProfessionalDashboardPage";
+import ProfessionalServicesPage from "@/pages/professional/ProfessionalServicesPage";
+import ProfessionalFinancePage from "@/pages/professional/ProfessionalFinancePage";
+import AdminDashboardPage from "@/pages/admin/AdminDashboardPage";
+import AdminUsersPage from "@/pages/admin/AdminUsersPage";
+import AdminWithdrawalsPage from "@/pages/admin/AdminWithdrawalsPage";
+import AdminServicesPage from "@/pages/admin/AdminServicesPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,9 +62,21 @@ const App = () => (
               <Route path="configuracoes" element={<SettingsPage />} />
             </Route>
 
-            {/* Professional & Admin placeholders */}
-            <Route path="/profissional/dashboard" element={<div className="p-8"><h1>Professional Dashboard</h1></div>} />
-            <Route path="/admin/dashboard" element={<div className="p-8"><h1>Admin Dashboard</h1></div>} />
+            {/* Professional Routes */}
+            <Route path="/profissional" element={<ProfessionalLayout />}>
+              <Route path="dashboard" element={<ProfessionalDashboardPage />} />
+              <Route path="servicos" element={<ProfessionalServicesPage />} />
+              <Route path="financeiro" element={<ProfessionalFinancePage />} />
+              <Route path="chat/:id" element={<ChatPage />} />
+            </Route>
+
+            {/* Admin Routes */}
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route path="dashboard" element={<AdminDashboardPage />} />
+              <Route path="usuarios" element={<AdminUsersPage />} />
+              <Route path="saques" element={<AdminWithdrawalsPage />} />
+              <Route path="servicos" element={<AdminServicesPage />} />
+            </Route>
 
             <Route path="*" element={<NotFound />} />
           </Routes>
