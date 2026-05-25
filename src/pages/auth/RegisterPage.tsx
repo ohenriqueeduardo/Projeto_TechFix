@@ -12,16 +12,83 @@ const RegisterPage = () => {
   const [role, setRole] = React.useState<'client' | 'professional' | 'admin'>('client');
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const handleRegister = (e: React.FormEvent) => {
+  // Form Fields
+  const [firstName, setFirstName] = React.useState('');
+  const [lastName, setLastName] = React.useState('');
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [specialty, setSpecialty] = React.useState('');
+
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    setTimeout(() => {
+
+    try {
+      const fullName = `${firstName} ${lastName}`.trim();
+
+      // Register the main user in PostgreSQL through Express API
+      const registerResponse = await fetch('http://localhost:3000/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: fullName,
+          email,
+          password,
+          role,
+        }),
+      });
+
+      const registerData = await registerResponse.json();
+
+      if (!registerResponse.ok) {
+        throw new Error(registerData.error || 'Erro ao registrar sua conta. Tente novamente.');
+      }
+
+      // Save token and user details to localStorage
+      localStorage.setItem('token', registerData.token);
+      localStorage.setItem('user', JSON.stringify(registerData.user));
+
+      // If registering as a professional, we also need to create their extended profile!
+      if (role === 'professional') {
+        const professionalResponse = await fetch('http://localhost:3000/api/professionals', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${registerData.token}`,
+          },
+          body: JSON.stringify({
+            userId: registerData.user.id,
+            specialty: specialty || 'Técnico de Hardware',
+            city: 'São Paulo', // Default city for demonstration
+            yearsExperience: 1,
+            bio: 'Técnico recém-cadastrado no TechFix.',
+          }),
+        });
+
+        const professionalData = await professionalResponse.json();
+
+        if (!professionalResponse.ok) {
+          console.error('Professional registration error:', professionalData);
+          toast.warning('Conta criada, mas houve um problema ao criar seu perfil profissional. Por favor, complete no painel.');
+        }
+      }
+
+      toast.success('Sua conta foi criada com sucesso! Bem-vindo ao TechFix.');
+
+      // Route to correct layout dashboard depending on role
+      if (role === 'professional') {
+        navigate('/profissional/dashboard');
+      } else {
+        navigate('/cliente/dashboard');
+      }
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      toast.error(error.message || 'Erro de conexão ao tentar registrar.');
+    } finally {
       setIsLoading(false);
-      toast.success('Conta criada com sucesso! Bem-vindo ao TechFix.');
-      if (role === 'client') navigate('/cliente/dashboard');
-      else navigate('/profissional/dashboard');
-    }, 1200);
+    }
   };
 
   return (
@@ -132,28 +199,65 @@ const RegisterPage = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="firstName" className="font-bold text-xs">Nome</Label>
-                    <Input id="firstName" placeholder="João" required className="h-12 bg-card/50 border-white/10 rounded-xl text-sm" />
+                    <Input 
+                      id="firstName" 
+                      placeholder="João" 
+                      value={firstName} 
+                      onChange={(e) => setFirstName(e.target.value)} 
+                      required 
+                      className="h-12 bg-card/50 border-white/10 rounded-xl text-sm" 
+                    />
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="lastName" className="font-bold text-xs">Sobrenome</Label>
-                    <Input id="lastName" placeholder="Silva" required className="h-12 bg-card/50 border-white/10 rounded-xl text-sm" />
+                    <Input 
+                      id="lastName" 
+                      placeholder="Silva" 
+                      value={lastName} 
+                      onChange={(e) => setLastName(e.target.value)} 
+                      required 
+                      className="h-12 bg-card/50 border-white/10 rounded-xl text-sm" 
+                    />
                   </div>
                 </div>
                 
                 <div className="space-y-1.5">
                   <Label htmlFor="email" className="font-bold text-xs">E-mail</Label>
-                  <Input id="email" type="email" placeholder="joao@email.com" required className="h-12 bg-card/50 border-white/10 rounded-xl text-sm" />
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="joao@email.com" 
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)} 
+                    required 
+                    className="h-12 bg-card/50 border-white/10 rounded-xl text-sm" 
+                  />
                 </div>
                 
                 <div className="space-y-1.5">
                   <Label htmlFor="password" className="font-bold text-xs">Senha</Label>
-                  <Input id="password" type="password" placeholder="Mínimo 8 caracteres" required className="h-12 bg-card/50 border-white/10 rounded-xl text-sm" />
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    placeholder="Mínimo 6 caracteres" 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                    required 
+                    className="h-12 bg-card/50 border-white/10 rounded-xl text-sm" 
+                  />
                 </div>
 
                 {role === 'professional' && (
                   <div className="space-y-1.5">
                     <Label htmlFor="specialty" className="font-bold text-xs">Especialidade Principal</Label>
-                    <Input id="specialty" placeholder="Ex: Manutenção de PC Gamer" required className="h-12 bg-card/50 border-white/10 rounded-xl text-sm" />
+                    <Input 
+                      id="specialty" 
+                      placeholder="Ex: Manutenção de PC Gamer" 
+                      value={specialty} 
+                      onChange={(e) => setSpecialty(e.target.value)} 
+                      required 
+                      className="h-12 bg-card/50 border-white/10 rounded-xl text-sm" 
+                    />
                   </div>
                 )}
 

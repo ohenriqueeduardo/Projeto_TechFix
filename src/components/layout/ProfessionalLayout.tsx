@@ -27,6 +27,14 @@ import logoImg from '@/assets/logo_img.png';
 const ProfessionalLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/profissional/dashboard' },
@@ -40,6 +48,14 @@ const ProfessionalLayout = () => {
     { id: 2, title: "Orçamento Aprovado", desc: "Seu orçamento para reparo de notebook foi aceito pelo cliente.", time: "2h atrás", unread: true },
     { id: 3, title: "Pagamento Liberado", desc: "O pagamento do serviço #TF-2024 foi depositado em sua conta.", time: "1 dia atrás", unread: false },
   ];
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
+  const userAvatar = currentUser?.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(currentUser?.name || 'Carlos')}`;
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -129,16 +145,14 @@ const ProfessionalLayout = () => {
         </nav>
 
         <div className="p-6 border-t border-foreground/5 shrink-0">
-          <Link to="/login">
-            <Button variant="ghost" className="w-full flex items-center gap-0 group-hover/sidebar:gap-4 h-14 rounded-2xl text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all duration-300 justify-center group-hover/sidebar:justify-start">
-              <div className="w-6 h-6 flex items-center justify-center shrink-0">
-                <LogOut className="w-5 h-5" />
-              </div>
-              <span className="transition-all duration-300 opacity-0 w-0 overflow-hidden group-hover/sidebar:opacity-100 group-hover/sidebar:w-auto whitespace-nowrap">
-                Sair da Conta
-              </span>
-            </Button>
-          </Link>
+          <Button onClick={handleLogout} variant="ghost" className="w-full flex items-center gap-0 group-hover/sidebar:gap-4 h-14 rounded-2xl text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all duration-300 justify-center group-hover/sidebar:justify-start">
+            <div className="w-6 h-6 flex items-center justify-center shrink-0">
+              <LogOut className="w-5 h-5" />
+            </div>
+            <span className="transition-all duration-300 opacity-0 w-0 overflow-hidden group-hover/sidebar:opacity-100 group-hover/sidebar:w-auto whitespace-nowrap">
+              Sair da Conta
+            </span>
+          </Button>
         </div>
       </aside>
 
@@ -183,11 +197,11 @@ const ProfessionalLayout = () => {
               <DropdownMenuTrigger asChild>
                 <div className="flex items-center gap-4 pl-6 border-l border-foreground/5 cursor-pointer group">
                   <div className="text-right hidden sm:block">
-                    <p className="text-sm font-bold group-hover:text-primary transition-colors">Carlos Mendes</p>
-                    <p className="text-[10px] text-primary font-black uppercase tracking-widest">Hardware Expert</p>
+                    <p className="text-sm font-bold group-hover:text-primary transition-colors">{currentUser?.name || 'Carlos Mendes'}</p>
+                    <p className="text-[10px] text-primary font-black uppercase tracking-widest">{currentUser?.specialty || 'Técnico Especialista'}</p>
                   </div>
                   <div className="relative">
-                    <img src="https://i.pravatar.cc/150?u=carlos" className="w-14 h-14 rounded-2xl border-2 border-primary/20 group-hover:border-primary transition-all" alt="Avatar" />
+                    <img src={userAvatar} className="w-14 h-14 rounded-2xl border-2 border-primary/20 group-hover:border-primary transition-all object-cover" alt="Avatar" />
                     <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-background rounded-full"></div>
                   </div>
                 </div>
@@ -195,7 +209,7 @@ const ProfessionalLayout = () => {
               <DropdownMenuContent align="end" className="w-64 p-2 rounded-3xl glass-card border-white/10">
                 <DropdownMenuLabel className="px-4 py-3">
                   <p className="font-bold">Minha Conta Técnico</p>
-                  <p className="text-xs text-muted-foreground font-normal">carlos@example.com</p>
+                  <p className="text-xs text-muted-foreground font-normal">{currentUser?.email || 'carlos@example.com'}</p>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-white/5" />
                 <DropdownMenuItem onClick={() => navigate('/cliente/perfil')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
@@ -205,7 +219,7 @@ const ProfessionalLayout = () => {
                   <LayoutDashboard className="w-4 h-4 text-primary" /> Painel Técnico
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-white/5" />
-                <DropdownMenuItem onClick={() => navigate('/login')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive">
+                <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive">
                   <LogOut className="w-4 h-4" /> Sair da Conta
                 </DropdownMenuItem>
               </DropdownMenuContent>
