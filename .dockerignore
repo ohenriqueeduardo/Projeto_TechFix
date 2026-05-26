@@ -1,0 +1,8 @@
+node_modules
+.git
+.gitignore
+dist
+out
+drizzle-kit.config.ts.timestamp*
+.env
+README.md

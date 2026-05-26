@@ -58,8 +58,8 @@ export const orders = pgTable('orders', {
   code: text('code').notNull().unique(),
   serviceId: text('service_id').references(() => services.id, { onDelete: 'restrict' }),
   serviceTitle: text('service_title').notNull(),
-  clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
-  professionalId: text('professional_id').notNull().references(() => professionals.userId, { onDelete: 'restrict' }),
+  clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  professionalId: text('professional_id').notNull().references(() => professionals.userId, { onDelete: 'cascade' }),
   date: text('date').notNull(),
   time: text('time').notNull(),
   status: text('status').notNull(), // 'pending', 'scheduled', 'in_progress', 'completed', 'cancelled'
