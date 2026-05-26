@@ -3,39 +3,56 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Cpu, Chrome, Apple, ShieldCheck, Sparkles, Star, ArrowRight } from 'lucide-react';
+import { Cpu, Chrome, Apple, ShieldCheck, Sparkles, Star, ArrowRight, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const [role, setRole] = React.useState<'client' | 'professional' | 'admin'>('client');
   const [isLoading, setIsLoading] = React.useState(false);
-  const [email, setEmail] = React.useState('sofia@example.com');
-  const [password, setPassword] = React.useState('12345678');
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
 
-  // Automatically update suggested email when role selector is clicked
-  const handleRoleChange = (selectedRole: 'client' | 'professional' | 'admin') => {
-    setRole(selectedRole);
-    if (selectedRole === 'client') {
-      setEmail('sofia@example.com');
-    } else if (selectedRole === 'professional') {
-      setEmail('carlos@example.com');
-    } else {
-      setEmail('admin@techfix.com');
-    }
-  };
-
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    setTimeout(() => {
+
+    try {
+      // Connects directly to our backend Express API running on port 3000
+      const response = await fetch('http://localhost:3000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Credenciais inválidas. Verifique seu login e senha.');
+      }
+
+      // Save token and user info to localStorage to maintain active session
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      toast.success(`Bem-vindo de volta, ${data.user.name}! Acesso concedido.`);
+
+      // Strict role-based navigation based on real PostgreSQL data
+      const userRole = data.user.role;
+      if (userRole === 'admin') {
+        navigate('/admin/dashboard');
+      } else if (userRole === 'professional') {
+        navigate('/profissional/dashboard');
+      } else {
+        navigate('/cliente/dashboard');
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast.error(error.message || 'Falha na conexão com o servidor de autenticação.');
+    } finally {
       setIsLoading(false);
-      toast.success(`Bem-vindo de volta! Acesso concedido.`);
-      if (role === 'client') navigate('/cliente/dashboard');
-      else if (role === 'professional') navigate('/profissional/dashboard');
-      else navigate('/admin/dashboard');
-    }, 1200);
+    }
   };
 
   return (
@@ -59,45 +76,22 @@ const LoginPage = () => {
           </p>
         </div>
 
-        {/* Credentials Quick Guide Box (Test accounts) */}
+        {/* Security & Clean Setup Badge */}
         <div className="relative glass-card p-6 rounded-2xl bg-card/25 backdrop-blur-xl border-white/10 shadow-2xl max-w-md space-y-4">
           <div className="flex items-center gap-2.5">
             <ShieldCheck className="w-5 h-5 text-primary" />
-            <h4 className="font-bold text-sm text-foreground">Ambiente de Demonstração</h4>
+            <h4 className="font-bold text-sm text-foreground">Segurança Avançada</h4>
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Use os botões de perfil no formulário ao lado para carregar e testar as credenciais fictícias automaticamente:
+            Sua conta está assegurada por encriptação ponta a ponta (JWT e Hashing seguro no PostgreSQL). Crie sua conta ou faça login para acessar suas informações privadas.
           </p>
-          <div className="space-y-2.5 text-xs">
-            <div className="flex justify-between items-center py-1 border-b border-white/5">
-              <span className="font-bold text-muted-foreground">Cliente (Sofia):</span>
-              <code className="text-primary font-mono bg-white/5 px-1.5 py-0.5 rounded">sofia@example.com</code>
-            </div>
-            <div className="flex justify-between items-center py-1 border-b border-white/5">
-              <span className="font-bold text-muted-foreground">Técnico (Carlos):</span>
-              <code className="text-primary font-mono bg-white/5 px-1.5 py-0.5 rounded">carlos@example.com</code>
-            </div>
-            <div className="flex justify-between items-center py-1">
-              <span className="font-bold text-muted-foreground">Administrador:</span>
-              <code className="text-primary font-mono bg-white/5 px-1.5 py-0.5 rounded">admin@techfix.com</code>
-            </div>
-          </div>
         </div>
 
-        {/* Testimonial */}
+        {/* Platform Proposition */}
         <div className="relative border-l-2 border-primary pl-6 py-2">
           <p className="text-sm italic text-muted-foreground leading-relaxed">
-            "Excelente atendimento! O técnico montou meu PC Gamer com um gerenciamento de cabos impecável e realizou testes extensivos de estresse."
+            Conectando clientes que buscam reparos de alto nível e profissionais especialistas em montagem e manutenção de hardware.
           </p>
-          <div className="flex items-center gap-3 mt-4">
-            <img src="https://i.pravatar.cc/150?u=sofia" className="w-10 h-10 rounded-full border border-primary/20" alt="" />
-            <div>
-              <p className="text-xs font-bold">Sofia Spencer</p>
-              <div className="flex text-yellow-500 gap-0.5 mt-0.5">
-                {[...Array(5)].map((_, i) => <Star key={i} className="w-3 h-3 fill-current" />)}
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -110,25 +104,7 @@ const LoginPage = () => {
               <Cpu className="text-primary w-7 h-7" />
             </div>
             <h1 className="text-3xl font-black tracking-tight">Acesse sua conta</h1>
-            <p className="text-sm text-muted-foreground mt-2">Escolha seu tipo de perfil para demonstração rápida</p>
-          </div>
-
-          {/* Profile Selector Buttons */}
-          <div className="grid grid-cols-3 gap-2.5">
-            {(['client', 'professional', 'admin'] as const).map((r) => (
-              <button
-                type="button"
-                key={r}
-                onClick={() => handleRoleChange(r)}
-                className={`py-3.5 px-2 text-[10px] font-black uppercase tracking-wider rounded-xl border transition-all ${
-                  role === r 
-                  ? 'bg-primary/10 border-primary text-primary shadow-lg shadow-primary/10' 
-                  : 'border-white/5 text-muted-foreground hover:border-white/15'
-                }`}
-              >
-                {r === 'client' ? 'Cliente' : r === 'professional' ? 'Técnico' : 'Admin'}
-              </button>
-            ))}
+            <p className="text-sm text-muted-foreground mt-2">Entre com seu e-mail e senha cadastrados</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
