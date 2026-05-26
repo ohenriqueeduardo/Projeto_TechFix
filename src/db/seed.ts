@@ -14,6 +14,12 @@ async function seed() {
   console.log('🌱 Starting database seeding...');
 
   try {
+    const existingUsers = await db.select().from(users).limit(1);
+    if (existingUsers.length > 0) {
+      console.log('⚠️ O banco de dados já possui dados semeados. Pulando seed.');
+      return;
+    }
+
     const defaultPassword = hashPassword('12345678'); // Seed password for everyone is 12345678
 
     const allUsersToInsert = [

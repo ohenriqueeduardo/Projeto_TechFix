@@ -73,7 +73,52 @@ PORT=3000
 
 ---
 
-## 🏃‍♂️ Como Executar o Projeto no Estado Atual
+## 🐳 Como Executar com Docker e Docker Compose (Recomendado) 🚀
+
+Agora o projeto está 100% conteinerizado. Você não precisa se preocupar em instalar o Node.js, PostgreSQL ou gerenciar múltiplos terminais em sua máquina.
+
+### Pré-requisitos
+- **Docker** e **Docker Compose** instalados e em execução.
+
+### Passo 1: Configurar Variáveis de Ambiente
+O Docker Compose utiliza as variáveis padrão para conteinerização de forma automática. Se desejar documentar suas chaves locais, utilize o arquivo `.env.example` como base.
+
+### Passo 2: Iniciar o Ambiente Integrado
+Para construir as imagens e iniciar os serviços (PostgreSQL, Backend, Frontend e Drizzle Studio) integrados de uma só vez, execute na raiz do projeto:
+
+```bash
+docker compose up --build
+```
+
+O contêiner do backend coordenará automaticamente os seguintes passos:
+1. Aguardará o PostgreSQL estar online (`wait.ts`).
+2. Sincronizará a estrutura de dados automaticamente (`drizzle-kit push`).
+3. Semeia o banco com dados de testes apenas na primeira execução (`seed.ts` de forma idempotente).
+4. Inicia a API REST na porta `3000`.
+
+O contêiner do frontend iniciará a UI do React na porta `8080` com suporte a **Hot-Reloading** (qualquer alteração salva no host reflete na hora dentro do contêiner).
+
+### Passo 3: Acessar os Serviços
+
+| Serviço | URL | Descrição |
+| :--- | :--- | :--- |
+| **Frontend Web** | [http://localhost:8080](http://localhost:8080) | Interface premium com suporte a Dark Mode e rotas de Cliente/Profissional. |
+| **API Server** | [http://localhost:3000](http://localhost:3000) | Endpoints e rota de Health Check da API. |
+| **Drizzle Studio** | [https://local.drizzle.studio?host=127.0.0.1](https://local.drizzle.studio?host=127.0.0.1) | Interface administrativa visual do banco de dados PostgreSQL. |
+
+> [!IMPORTANT]
+> **Acesso ao Drizzle Studio:** Devido a restrições de segurança do Windows sobre conexões a endereços do tipo `0.0.0.0`, acesse sempre utilizando **`host=127.0.0.1`** ou **`host=localhost`** na URL para garantir a conexão WebSocket segura.
+
+### Passo 4: Redefinir o Banco de Dados (Opcional)
+Se desejar reiniciar o banco de dados completamente limpo e recriar os dados de teste, execute:
+```bash
+docker compose down -v
+docker compose up --build
+```
+
+---
+
+## 🏃‍♂️ Como Executar o Projeto Localmente (Sem Docker)
 
 O projeto possui comandos unificados que sincronizam o banco e disparam todos os processos necessários em paralelo. Siga os passos abaixo:
 

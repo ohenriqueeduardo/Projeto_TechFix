@@ -1,0 +1,74 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: techfix_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: techfix
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      target: backend
+    container_name: techfix_backend
+    restart: always
+    command: sh -c "npx tsx src/db/wait.ts && npx drizzle-kit push && npx tsx src/db/seed.ts && npm run dev:server"
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:admin@postgres:5432/techfix
+      - JWT_SECRET=techfix-super-secret-key
+      - PORT=3000
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      target: frontend
+    container_name: techfix_frontend
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+  drizzle-studio:
+    build:
+      context: .
+      target: studio
+    container_name: techfix_studio
+    restart: always
+    ports:
+      - "4983:4983"
+    environment:
+      - DATABASE_URL=postgresql://postgres:admin@postgres:5432/techfix
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
