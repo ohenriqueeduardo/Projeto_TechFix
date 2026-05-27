@@ -1,19 +1,31 @@
 import { Request, Response } from 'express';
 import { db } from '../../src/db/index.js';
-import { services, serviceTags } from '../../src/db/schema.js';
-import { eq, and, like, sql } from 'drizzle-orm';
+import { services, serviceTags, categories } from '../../src/db/schema.js';
+import { eq, and, like } from 'drizzle-orm';
 import crypto from 'crypto';
 
 // GET /api/services
 export const getServices = async (req: Request, res: Response) => {
   try {
-    const { category, search, professionalId } = req.query;
+    const { categoryId, search, professionalId } = req.query;
 
-    let query = db.select().from(services);
+    let query = db.select({
+      id: services.id,
+      professionalId: services.professionalId,
+      categoryId: services.categoryId,
+      categoryName: categories.name,
+      title: services.title,
+      description: services.description,
+      basePrice: services.basePrice,
+      estimatedDuration: services.estimatedDuration,
+      createdAt: services.createdAt,
+    })
+    .from(services)
+    .leftJoin(categories, eq(services.categoryId, categories.id));
 
     const conditions = [];
-    if (category) {
-      conditions.push(eq(services.category, category as string));
+    if (categoryId) {
+      conditions.push(eq(services.categoryId, categoryId as string));
     }
     if (professionalId) {
       conditions.push(eq(services.professionalId, professionalId as string));
@@ -38,6 +50,8 @@ export const getServices = async (req: Request, res: Response) => {
           .where(eq(serviceTags.serviceId, service.id));
         return {
           ...service,
+          price: service.basePrice,
+          duration: service.estimatedDuration,
           tags: tags.map((t) => t.tag),
         };
       })
@@ -54,7 +68,20 @@ export const getServices = async (req: Request, res: Response) => {
 export const getServiceById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const serviceList = await db.select().from(services).where(eq(services.id, id)).limit(1);
+    const serviceList = await db.select({
+      id: services.id,
+      professionalId: services.professionalId,
+      categoryId: services.categoryId,
+      categoryName: categories.name,
+      title: services.title,
+      description: services.description,
+      basePrice: services.basePrice,
+      estimatedDuration: services.estimatedDuration,
+      createdAt: services.createdAt,
+    })
+    .from(services)
+    .leftJoin(categories, eq(services.categoryId, categories.id))
+    .where(eq(services.id, id)).limit(1);
 
     if (serviceList.length === 0) {
       return res.status(404).json({ error: 'Service not found' });
@@ -68,6 +95,8 @@ export const getServiceById = async (req: Request, res: Response) => {
 
     res.json({
       ...service,
+      price: service.basePrice,
+      duration: service.estimatedDuration,
       tags: tags.map((t) => t.tag),
     });
   } catch (error) {
@@ -79,9 +108,9 @@ export const getServiceById = async (req: Request, res: Response) => {
 // POST /api/services
 export const createService = async (req: Request, res: Response) => {
   try {
-    const { title, category, description, price, duration, professionalId, badge, image, tags } = req.body;
+    const { title, categoryId, description, basePrice, estimatedDuration, professionalId, tags } = req.body;
 
-    if (!title || !category || !description || price === undefined || !duration || !professionalId) {
+    if (!title || !categoryId || !description || basePrice === undefined || !estimatedDuration || !professionalId) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -90,14 +119,11 @@ export const createService = async (req: Request, res: Response) => {
     const newService = await db.insert(services).values({
       id: serviceId,
       title,
-      category,
+      categoryId,
       description,
-      price: Number(price),
-      duration,
+      basePrice: Number(basePrice),
+      estimatedDuration,
       professionalId,
-      badge: badge || null,
-      image: image || null,
-      rating: 0,
       createdAt: new Date()
     }).returning();
 
@@ -123,7 +149,7 @@ export const createService = async (req: Request, res: Response) => {
 export const updateService = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, category, description, price, duration, badge, image, tags } = req.body;
+    const { title, categoryId, description, basePrice, estimatedDuration, tags } = req.body;
 
     const existingService = await db.select().from(services).where(eq(services.id, id)).limit(1);
     if (existingService.length === 0) {
@@ -133,12 +159,10 @@ export const updateService = async (req: Request, res: Response) => {
     const updatedService = await db.update(services)
       .set({
         ...(title !== undefined && { title }),
-        ...(category !== undefined && { category }),
+        ...(categoryId !== undefined && { categoryId }),
         ...(description !== undefined && { description }),
-        ...(price !== undefined && { price: Number(price) }),
-        ...(duration !== undefined && { duration }),
-        ...(badge !== undefined && { badge }),
-        ...(image !== undefined && { image }),
+        ...(basePrice !== undefined && { basePrice: Number(basePrice) }),
+        ...(estimatedDuration !== undefined && { estimatedDuration }),
       })
       .where(eq(services.id, id))
       .returning();

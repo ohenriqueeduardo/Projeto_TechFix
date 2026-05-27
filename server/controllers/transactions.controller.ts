@@ -1,16 +1,16 @@
 import { Request, Response } from 'express';
 import { db } from '../../src/db/index.js';
-import { transactions } from '../../src/db/schema.js';
+import { payments, orders } from '../../src/db/schema.js';
 import { eq, desc } from 'drizzle-orm';
 import crypto from 'crypto';
 
 // GET /api/transactions
 export const getTransactions = async (req: Request, res: Response) => {
   try {
-    const list = await db.select().from(transactions).orderBy(desc(transactions.createdAt));
+    const list = await db.select().from(payments).orderBy(desc(payments.createdAt));
     res.json(list);
   } catch (error) {
-    console.error('Error fetching transactions:', error);
+    console.error('Error fetching payments:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
@@ -25,12 +25,29 @@ export const getTransactionsForProfessional = async (req: Request, res: Response
     }
 
     const list = await db
-      .select()
-      .from(transactions)
-      .where(eq(transactions.professionalId, professionalId))
-      .orderBy(desc(transactions.createdAt));
+      .select({
+        id: payments.id,
+        orderId: payments.orderId,
+        amount: payments.amount,
+        paymentMethod: payments.paymentMethod,
+        status: payments.status,
+        createdAt: payments.createdAt,
+        title: orders.id, // For backward compat
+      })
+      .from(payments)
+      .innerJoin(orders, eq(payments.orderId, orders.id))
+      .where(eq(orders.professionalId, professionalId))
+      .orderBy(desc(payments.createdAt));
 
-    res.json(list);
+    const formattedList = list.map(item => ({
+      ...item,
+      type: 'income',
+      value: item.amount,
+      date: item.createdAt.toISOString().split('T')[0],
+      title: `Pagamento do Pedido ${item.orderId}`
+    }));
+
+    res.json(formattedList);
   } catch (error) {
     console.error('Error fetching transactions for professional:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -40,37 +57,26 @@ export const getTransactionsForProfessional = async (req: Request, res: Response
 // POST /api/transactions
 export const createTransaction = async (req: Request, res: Response) => {
   try {
-    const { professionalId, type, title, value, date, status } = req.body;
+    const { orderId, amount, paymentMethod, status } = req.body;
 
-    if (!professionalId || !type || !title || value === undefined || !status) {
+    if (!orderId || amount === undefined || !status) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    if (!['income', 'expense'].includes(type)) {
-      return res.status(400).json({ error: 'Invalid transaction type. Must be income or expense' });
-    }
+    const paymentId = `pay_${crypto.randomBytes(4).toString('hex')}`;
 
-    if (!['completed', 'pending', 'failed'].includes(status)) {
-      return res.status(400).json({ error: 'Invalid status. Must be completed, pending, or failed' });
-    }
-
-    const transactionId = `t_${crypto.randomBytes(4).toString('hex')}`;
-    const txDate = date || new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-
-    const newTransaction = await db.insert(transactions).values({
-      id: transactionId,
-      professionalId,
-      type,
-      title,
-      value: Number(value),
-      date: txDate,
+    const newPayment = await db.insert(payments).values({
+      id: paymentId,
+      orderId,
+      amount: Number(amount),
+      paymentMethod: paymentMethod || 'pix',
       status,
       createdAt: new Date()
     }).returning();
 
-    res.status(201).json(newTransaction[0]);
+    res.status(201).json(newPayment[0]);
   } catch (error) {
-    console.error('Error creating transaction:', error);
+    console.error('Error creating payment:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };

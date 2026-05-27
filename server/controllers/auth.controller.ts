@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { db } from '../../src/db/index.js';
-import { users } from '../../src/db/schema.js';
+import { users, userProfiles } from '../../src/db/schema.js';
 import { eq } from 'drizzle-orm';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
@@ -39,13 +39,23 @@ export const register = async (req: Request, res: Response) => {
 
     const newUser = await db.insert(users).values({
       id: userId,
-      name,
       email,
-      password: hashedPassword,
+      passwordHash: hashedPassword,
       role: userRole,
-      avatar: avatar || null,
       status: 'active',
       createdAt: new Date(),
+      updatedAt: new Date(),
+    }).returning();
+
+    const nameParts = (name || '').split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    const newProfile = await db.insert(userProfiles).values({
+      userId: userId,
+      firstName,
+      lastName,
+      avatarUrl: avatar || null,
     }).returning();
 
     // Generate JWT Token (1 hour session duration limit)
@@ -55,11 +65,12 @@ export const register = async (req: Request, res: Response) => {
       { expiresIn: '2h' } // Limited session duration
     );
 
-    const { password: _, ...userWithoutPassword } = newUser[0];
+    const { passwordHash, ...userWithoutPassword } = newUser[0];
+    const userWithProfile = { ...userWithoutPassword, name: `${newProfile[0].firstName} ${newProfile[0].lastName}`.trim(), avatar: newProfile[0].avatarUrl };
 
     res.status(201).json({
       message: 'User registered successfully',
-      user: userWithoutPassword,
+      user: userWithProfile,
       token,
     });
   } catch (error) {
@@ -82,7 +93,7 @@ export const login = async (req: Request, res: Response) => {
     const user = userList[0];
 
     // Verify Password
-    const isPasswordValid = verifyPassword(password, user.password);
+    const isPasswordValid = verifyPassword(password, user.passwordHash);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
@@ -91,18 +102,26 @@ export const login = async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Your account has been deactivated.' });
     }
 
+    const profileList = await db.select().from(userProfiles).where(eq(userProfiles.userId, user.id)).limit(1);
+    const profile = profileList.length > 0 ? profileList[0] : null;
+
     // Generate JWT Token (Limited session to 2 hours)
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       JWT_SECRET,
-      { expiresIn: '2h' } // Session strictly limited to 2h for enhanced security
+      { expiresIn: '2h' }
     );
 
-    const { password: _, ...userWithoutPassword } = user;
+    const { passwordHash, ...userWithoutPassword } = user;
+    const userWithProfile = { 
+      ...userWithoutPassword, 
+      name: profile ? `${profile.firstName} ${profile.lastName}`.trim() : '', 
+      avatar: profile?.avatarUrl || null 
+    };
 
     res.json({
       message: 'Login successful',
-      user: userWithoutPassword,
+      user: userWithProfile,
       token,
     });
   } catch (error) {
@@ -124,8 +143,18 @@ export const getMe = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'User session not found.' });
     }
 
-    const { password: _, ...userWithoutPassword } = userList[0];
-    res.json({ user: userWithoutPassword });
+    const user = userList[0];
+    const profileList = await db.select().from(userProfiles).where(eq(userProfiles.userId, user.id)).limit(1);
+    const profile = profileList.length > 0 ? profileList[0] : null;
+
+    const { passwordHash, ...userWithoutPassword } = user;
+    const userWithProfile = { 
+      ...userWithoutPassword, 
+      name: profile ? `${profile.firstName} ${profile.lastName}`.trim() : '', 
+      avatar: profile?.avatarUrl || null 
+    };
+
+    res.json({ user: userWithProfile });
   } catch (error) {
     console.error('Verify Session Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });

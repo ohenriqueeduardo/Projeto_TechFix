@@ -1,46 +1,78 @@
-import { pgTable, text, integer, real, serial, primaryKey, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, real, serial, primaryKey, timestamp, boolean } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
   id: text('id').primaryKey(),
-  name: text('name').notNull(),
   email: text('email').notNull().unique(),
-  password: text('password').notNull(), // Added password column for secure login hashing
+  passwordHash: text('password_hash').notNull(),
   role: text('role').notNull(), // 'client', 'professional', 'admin'
-  avatar: text('avatar'),
-  level: text('level'),
   status: text('status').notNull().default('active'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const userProfiles = pgTable('user_profiles', {
+  userId: text('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  firstName: text('first_name').notNull(),
+  lastName: text('last_name').notNull(),
+  avatarUrl: text('avatar_url'),
+  phone: text('phone'),
+  documentCpf: text('document_cpf'),
+});
+
+export const addresses = pgTable('addresses', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  street: text('street').notNull(),
+  number: text('number').notNull(),
+  complement: text('complement'),
+  neighborhood: text('neighborhood').notNull(),
+  city: text('city').notNull(),
+  state: text('state').notNull(),
+  zipCode: text('zip_code').notNull(),
+  isDefault: boolean('is_default').notNull().default(false),
+});
+
+export const categories = pgTable('categories', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  slug: text('slug').notNull().unique(),
+  iconUrl: text('icon_url'),
+  isActive: boolean('is_active').notNull().default(true),
 });
 
 export const professionals = pgTable('professionals', {
   userId: text('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
-  specialty: text('specialty').notNull(),
-  city: text('city').notNull(),
-  rating: real('rating').notNull().default(0),
-  reviewCount: integer('review_count').notNull().default(0),
-  jobs: integer('jobs').notNull().default(0),
-  yearsExperience: integer('years_experience').notNull().default(0),
-  satisfaction: integer('satisfaction').notNull().default(100),
+  categoryId: text('category_id').references(() => categories.id, { onDelete: 'set null' }),
   bio: text('bio'),
+  yearsExperience: integer('years_experience').notNull().default(0),
+  rating: real('rating').notNull().default(0),
+  jobsCompleted: integer('jobs_completed').notNull().default(0),
 });
 
-export const professionalPortfolioItems = pgTable('professional_portfolio_items', {
-  id: serial('id').primaryKey(),
+export const portfolioItems = pgTable('portfolio_items', {
+  id: text('id').primaryKey(),
   professionalId: text('professional_id').notNull().references(() => professionals.userId, { onDelete: 'cascade' }),
   imageUrl: text('image_url').notNull(),
+  title: text('title'),
+  description: text('description'),
+});
+
+export const availabilities = pgTable('availabilities', {
+  id: text('id').primaryKey(),
+  professionalId: text('professional_id').notNull().references(() => professionals.userId, { onDelete: 'cascade' }),
+  dayOfWeek: integer('day_of_week').notNull(), // 0 = Sunday, 1 = Monday, etc.
+  startTime: text('start_time').notNull(), // '09:00'
+  endTime: text('end_time').notNull(), // '18:00'
 });
 
 export const services = pgTable('services', {
   id: text('id').primaryKey(),
-  title: text('title').notNull(),
-  category: text('category').notNull(),
-  description: text('description').notNull(),
-  price: real('price').notNull(),
-  duration: text('duration').notNull(),
-  rating: real('rating').notNull().default(0),
   professionalId: text('professional_id').notNull().references(() => professionals.userId, { onDelete: 'cascade' }),
-  badge: text('badge'),
-  image: text('image'),
+  categoryId: text('category_id').references(() => categories.id, { onDelete: 'set null' }),
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  basePrice: real('base_price').notNull(),
+  estimatedDuration: text('estimated_duration').notNull(), // '2 hours'
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
@@ -55,57 +87,51 @@ export const serviceTags = pgTable('service_tags', {
 
 export const orders = pgTable('orders', {
   id: text('id').primaryKey(),
-  code: text('code').notNull().unique(),
-  serviceId: text('service_id').references(() => services.id, { onDelete: 'restrict' }),
-  serviceTitle: text('service_title').notNull(),
   clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   professionalId: text('professional_id').notNull().references(() => professionals.userId, { onDelete: 'cascade' }),
-  date: text('date').notNull(),
-  time: text('time').notNull(),
-  status: text('status').notNull(), // 'pending', 'scheduled', 'in_progress', 'completed', 'cancelled'
-  price: real('price').notNull(),
-  paymentMethod: text('payment_method').notNull(), // 'pix', 'debit', 'credit'
-  address: text('address').notNull(),
+  serviceId: text('service_id').references(() => services.id, { onDelete: 'set null' }),
+  addressId: text('address_id').references(() => addresses.id, { onDelete: 'set null' }),
+  scheduledDate: text('scheduled_date').notNull(),
+  scheduledTime: text('scheduled_time').notNull(),
+  status: text('status').notNull(), // 'pending', 'accepted', 'rejected', 'in_progress', 'completed', 'cancelled'
+  totalPrice: real('total_price').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
-export const transactions = pgTable('transactions', {
+export const payments = pgTable('payments', {
   id: text('id').primaryKey(),
-  professionalId: text('professional_id').references(() => professionals.userId, { onDelete: 'set null' }),
-  type: text('type').notNull(), // 'income', 'expense'
-  title: text('title').notNull(),
-  value: real('value').notNull(),
-  date: text('date').notNull(),
-  status: text('status').notNull(), // 'completed', 'pending', 'failed'
+  orderId: text('order_id').notNull().references(() => orders.id, { onDelete: 'cascade' }),
+  amount: real('amount').notNull(),
+  paymentMethod: text('payment_method').notNull(), // 'credit_card', 'pix'
+  gatewayTransactionId: text('gateway_transaction_id'),
+  status: text('status').notNull(), // 'pending', 'paid', 'failed', 'refunded'
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
 export const reviews = pgTable('reviews', {
   id: text('id').primaryKey(),
-  serviceId: text('service_id').notNull().references(() => services.id, { onDelete: 'cascade' }),
-  professionalId: text('professional_id').notNull().references(() => professionals.userId, { onDelete: 'cascade' }),
-  clientId: text('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  orderId: text('order_id').notNull().references(() => orders.id, { onDelete: 'cascade' }),
   rating: integer('rating').notNull(),
   comment: text('comment'),
-  date: text('date').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-});
-
-export const reviewTags = pgTable('review_tags', {
-  reviewId: text('review_id').notNull().references(() => reviews.id, { onDelete: 'cascade' }),
-  tag: text('tag').notNull(),
-}, (table) => {
-  return {
-    pk: primaryKey({ columns: [table.reviewId, table.tag] }),
-  };
 });
 
 export const messages = pgTable('messages', {
   id: serial('id').primaryKey(),
+  orderId: text('order_id').notNull().references(() => orders.id, { onDelete: 'cascade' }),
   senderId: text('sender_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  receiverId: text('receiver_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   text: text('text').notNull(),
-  time: text('time').notNull(),
-  date: text('date').notNull(),
+  readAt: timestamp('read_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const notifications = pgTable('notifications', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  message: text('message').notNull(),
+  type: text('type').notNull(), // 'order_update', 'system'
+  isRead: boolean('is_read').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });

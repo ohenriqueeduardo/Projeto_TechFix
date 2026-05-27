@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { db } from '../../src/db/index.js';
-import { orders } from '../../src/db/schema.js';
+import { orders, payments, addresses, services } from '../../src/db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import crypto from 'crypto';
 
@@ -9,7 +9,21 @@ export const getOrders = async (req: Request, res: Response) => {
   try {
     const { clientId, professionalId } = req.query;
 
-    let query = db.select().from(orders);
+    let query = db.select({
+      id: orders.id,
+      clientId: orders.clientId,
+      professionalId: orders.professionalId,
+      serviceId: orders.serviceId,
+      addressId: orders.addressId,
+      scheduledDate: orders.scheduledDate,
+      scheduledTime: orders.scheduledTime,
+      status: orders.status,
+      totalPrice: orders.totalPrice,
+      createdAt: orders.createdAt,
+      serviceTitle: services.title,
+    })
+    .from(orders)
+    .leftJoin(services, eq(orders.serviceId, services.id));
 
     const conditions = [];
     if (clientId) {
@@ -26,7 +40,15 @@ export const getOrders = async (req: Request, res: Response) => {
       list = await query;
     }
 
-    res.json(list);
+    const formattedList = list.map(o => ({
+      ...o,
+      // map to frontend expected fields if needed
+      date: o.scheduledDate,
+      time: o.scheduledTime,
+      price: o.totalPrice,
+    }));
+
+    res.json(formattedList);
   } catch (error) {
     console.error('Error fetching orders:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -37,13 +59,35 @@ export const getOrders = async (req: Request, res: Response) => {
 export const getOrderById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const orderList = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+    const orderList = await db.select({
+      id: orders.id,
+      clientId: orders.clientId,
+      professionalId: orders.professionalId,
+      serviceId: orders.serviceId,
+      addressId: orders.addressId,
+      scheduledDate: orders.scheduledDate,
+      scheduledTime: orders.scheduledTime,
+      status: orders.status,
+      totalPrice: orders.totalPrice,
+      createdAt: orders.createdAt,
+      serviceTitle: services.title,
+    })
+    .from(orders)
+    .leftJoin(services, eq(orders.serviceId, services.id))
+    .where(eq(orders.id, id))
+    .limit(1);
 
     if (orderList.length === 0) {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    res.json(orderList[0]);
+    const o = orderList[0];
+    res.json({
+      ...o,
+      date: o.scheduledDate,
+      time: o.scheduledTime,
+      price: o.totalPrice,
+    });
   } catch (error) {
     console.error('Error fetching order by ID:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -53,30 +97,37 @@ export const getOrderById = async (req: Request, res: Response) => {
 // POST /api/orders
 export const createOrder = async (req: Request, res: Response) => {
   try {
-    const { serviceId, serviceTitle, clientId, professionalId, date, time, price, paymentMethod, address } = req.body;
+    const { serviceId, clientId, professionalId, date, time, price, paymentMethod, addressId } = req.body;
 
-    if (!serviceTitle || !clientId || !professionalId || !date || !time || price === undefined || !paymentMethod || !address) {
+    if (!clientId || !professionalId || !date || !time || price === undefined || !paymentMethod || !addressId) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
     const orderId = `o_${crypto.randomBytes(4).toString('hex')}`;
-    const code = `TF-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const newOrder = await db.insert(orders).values({
       id: orderId,
-      code,
       serviceId: serviceId || null,
-      serviceTitle,
       clientId,
       professionalId,
-      date,
-      time,
+      scheduledDate: date,
+      scheduledTime: time,
       status: 'pending',
-      price: Number(price),
-      paymentMethod,
-      address,
-      createdAt: new Date()
+      totalPrice: Number(price),
+      addressId,
+      createdAt: new Date(),
+      updatedAt: new Date()
     }).returning();
+
+    const paymentId = `pay_${crypto.randomBytes(4).toString('hex')}`;
+    await db.insert(payments).values({
+      id: paymentId,
+      orderId: orderId,
+      amount: Number(price),
+      paymentMethod,
+      status: 'pending',
+      createdAt: new Date(),
+    });
 
     res.status(201).json(newOrder[0]);
   } catch (error) {
@@ -89,7 +140,7 @@ export const createOrder = async (req: Request, res: Response) => {
 export const updateOrder = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { serviceTitle, date, time, price, paymentMethod, address, status } = req.body;
+    const { date, time, price, addressId, status } = req.body;
 
     const existingOrder = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
     if (existingOrder.length === 0) {
@@ -98,13 +149,12 @@ export const updateOrder = async (req: Request, res: Response) => {
 
     const updatedOrder = await db.update(orders)
       .set({
-        ...(serviceTitle !== undefined && { serviceTitle }),
-        ...(date !== undefined && { date }),
-        ...(time !== undefined && { time }),
-        ...(price !== undefined && { price: Number(price) }),
-        ...(paymentMethod !== undefined && { paymentMethod }),
-        ...(address !== undefined && { address }),
+        ...(date !== undefined && { scheduledDate: date }),
+        ...(time !== undefined && { scheduledTime: time }),
+        ...(price !== undefined && { totalPrice: Number(price) }),
+        ...(addressId !== undefined && { addressId }),
         ...(status !== undefined && { status }),
+        updatedAt: new Date()
       })
       .where(eq(orders.id, id))
       .returning();
@@ -122,7 +172,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const validStatuses = ['pending', 'scheduled', 'in_progress', 'completed', 'cancelled'];
+    const validStatuses = ['pending', 'accepted', 'rejected', 'in_progress', 'completed', 'cancelled', 'scheduled'];
     if (!status || !validStatuses.includes(status)) {
       return res.status(400).json({ error: 'Invalid or missing status' });
     }
@@ -133,7 +183,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     }
 
     const updatedOrder = await db.update(orders)
-      .set({ status })
+      .set({ status, updatedAt: new Date() })
       .where(eq(orders.id, id))
       .returning();
 

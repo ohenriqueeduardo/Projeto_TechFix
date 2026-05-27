@@ -2,57 +2,66 @@ export type UserRole = "client" | "professional" | "admin";
 
 export interface User {
   id: string;
-  name: string;
+  name: string; // aggregated from firstName + lastName
   email: string;
   role: UserRole;
-  avatar?: string;
+  avatar?: string; // from avatarUrl
   level?: string;
   status?: "active" | "inactive";
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  documentCpf?: string;
 }
 
 export interface Professional extends User {
-  specialty: string;
-  city: string;
-  rating: number;
-  reviewCount: number;
-  jobs: number;
+  categoryId: string;
+  categoryName?: string;
   yearsExperience: number;
-  satisfaction: number;
   bio: string;
-  portfolio?: string[];
+  rating: number;
+  jobsCompleted: number;
+  portfolio?: any[];
+  // Legacy fields for UI compatibility if needed temporarily
+  specialty?: string;
+  city?: string;
+  reviewCount?: number;
+  jobs?: number;
+  satisfaction?: number;
 }
 
 export interface Service {
   id: string;
-  title: string;
-  category: string;
-  description: string;
-  price: number;
-  duration: string;
-  rating: number;
   professionalId: string;
-  badge?: string;
-  tags: string[];
+  categoryId: string;
+  title: string;
+  description: string;
+  basePrice: number;
+  estimatedDuration: string;
+  tags?: string[];
+  // Legacy fields for UI
+  price?: number;
+  duration?: string;
   image?: string;
 }
 
-export type OrderStatus = "pending" | "scheduled" | "in_progress" | "completed" | "cancelled";
+export type OrderStatus = "pending" | "scheduled" | "in_progress" | "completed" | "cancelled" | "accepted" | "rejected";
 
 export interface Order {
   id: string;
-  code: string;
   serviceId: string;
-  serviceTitle: string;
-  clientName: string;
   clientId: string;
   professionalId: string;
-  professionalName: string;
-  date: string;
-  time: string;
+  scheduledDate: string;
+  scheduledTime: string;
   status: OrderStatus;
-  price: number;
-  paymentMethod: "pix" | "debit" | "credit";
-  address: string;
+  totalPrice: number;
+  addressId: string;
+  // Legacy fields
+  date?: string;
+  time?: string;
+  price?: number;
+  serviceTitle?: string;
 }
 
 export interface Transaction {
@@ -61,16 +70,13 @@ export interface Transaction {
   title: string;
   value: number;
   date: string;
-  status: "completed" | "pending" | "failed";
+  status: "completed" | "pending" | "failed" | "paid";
 }
 
 export interface Review {
   id: string;
-  serviceId: string;
-  professionalId: string;
-  clientName: string;
+  orderId: string;
   rating: number;
   comment: string;
-  tags: string[];
-  date: string;
+  createdAt: string;
 }

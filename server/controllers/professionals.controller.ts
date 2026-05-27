@@ -1,39 +1,36 @@
 import { Request, Response } from 'express';
 import { db } from '../../src/db/index.js';
-import { professionals, users, professionalPortfolioItems } from '../../src/db/schema.js';
+import { professionals, users, userProfiles, categories, portfolioItems } from '../../src/db/schema.js';
 import { eq, and, like } from 'drizzle-orm';
 
 // GET /api/professionals
 export const getProfessionals = async (req: Request, res: Response) => {
   try {
-    const { specialty, city } = req.query;
+    const { category, city } = req.query;
 
     let query = db
       .select({
         userId: professionals.userId,
-        name: users.name,
+        name: userProfiles.firstName, // We will concat this below
+        lastName: userProfiles.lastName,
         email: users.email,
-        avatar: users.avatar,
+        avatar: userProfiles.avatarUrl,
         role: users.role,
-        specialty: professionals.specialty,
-        city: professionals.city,
-        rating: professionals.rating,
-        reviewCount: professionals.reviewCount,
-        jobs: professionals.jobs,
-        yearsExperience: professionals.yearsExperience,
-        satisfaction: professionals.satisfaction,
+        category: categories.name,
         bio: professionals.bio,
+        rating: professionals.rating,
+        jobsCompleted: professionals.jobsCompleted,
+        yearsExperience: professionals.yearsExperience,
       })
       .from(professionals)
-      .innerJoin(users, eq(professionals.userId, users.id));
+      .innerJoin(users, eq(professionals.userId, users.id))
+      .leftJoin(userProfiles, eq(professionals.userId, userProfiles.userId))
+      .leftJoin(categories, eq(professionals.categoryId, categories.id));
 
     // Handle optional search filters
     const conditions = [];
-    if (specialty) {
-      conditions.push(like(professionals.specialty, `%${specialty}%`));
-    }
-    if (city) {
-      conditions.push(like(professionals.city, `%${city}%`));
+    if (category) {
+      conditions.push(like(categories.name, `%${category}%`));
     }
 
     if (conditions.length > 0) {
@@ -42,7 +39,12 @@ export const getProfessionals = async (req: Request, res: Response) => {
     }
 
     const list = await query;
-    res.json(list);
+    const formattedList = list.map(item => ({
+      ...item,
+      name: `${item.name || ''} ${item.lastName || ''}`.trim(),
+    }));
+
+    res.json(formattedList);
   } catch (error) {
     console.error('Error fetching professionals:', error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -57,21 +59,22 @@ export const getProfessionalById = async (req: Request, res: Response) => {
     const professionalList = await db
       .select({
         userId: professionals.userId,
-        name: users.name,
+        name: userProfiles.firstName,
+        lastName: userProfiles.lastName,
         email: users.email,
-        avatar: users.avatar,
+        avatar: userProfiles.avatarUrl,
         role: users.role,
-        specialty: professionals.specialty,
-        city: professionals.city,
-        rating: professionals.rating,
-        reviewCount: professionals.reviewCount,
-        jobs: professionals.jobs,
-        yearsExperience: professionals.yearsExperience,
-        satisfaction: professionals.satisfaction,
+        category: categories.name,
+        categoryId: professionals.categoryId,
         bio: professionals.bio,
+        rating: professionals.rating,
+        jobsCompleted: professionals.jobsCompleted,
+        yearsExperience: professionals.yearsExperience,
       })
       .from(professionals)
       .innerJoin(users, eq(professionals.userId, users.id))
+      .leftJoin(userProfiles, eq(professionals.userId, userProfiles.userId))
+      .leftJoin(categories, eq(professionals.categoryId, categories.id))
       .where(eq(professionals.userId, id))
       .limit(1);
 
@@ -81,11 +84,13 @@ export const getProfessionalById = async (req: Request, res: Response) => {
 
     const portfolio = await db
       .select()
-      .from(professionalPortfolioItems)
-      .where(eq(professionalPortfolioItems.professionalId, id));
+      .from(portfolioItems)
+      .where(eq(portfolioItems.professionalId, id));
 
+    const p = professionalList[0];
     const professional = {
-      ...professionalList[0],
+      ...p,
+      name: `${p.name || ''} ${p.lastName || ''}`.trim(),
       portfolio,
     };
 
@@ -99,10 +104,10 @@ export const getProfessionalById = async (req: Request, res: Response) => {
 // POST /api/professionals
 export const registerProfessional = async (req: Request, res: Response) => {
   try {
-    const { userId, specialty, city, yearsExperience, bio } = req.body;
+    const { userId, categoryId, yearsExperience, bio } = req.body;
 
-    if (!userId || !specialty || !city) {
-      return res.status(400).json({ error: 'userId, specialty, and city are required' });
+    if (!userId || !categoryId) {
+      return res.status(400).json({ error: 'userId and categoryId are required' });
     }
 
     // Check if the user exists
@@ -110,8 +115,6 @@ export const registerProfessional = async (req: Request, res: Response) => {
     if (userList.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
-
-    const user = userList[0];
 
     // Check if already a professional
     const existingProf = await db.select().from(professionals).where(eq(professionals.userId, userId)).limit(1);
@@ -125,14 +128,11 @@ export const registerProfessional = async (req: Request, res: Response) => {
     // Create professional profile
     const newProf = await db.insert(professionals).values({
       userId,
-      specialty,
-      city,
+      categoryId,
       yearsExperience: yearsExperience || 0,
       bio: bio || null,
       rating: 0,
-      reviewCount: 0,
-      jobs: 0,
-      satisfaction: 100,
+      jobsCompleted: 0,
     }).returning();
 
     res.status(201).json(newProf[0]);
@@ -146,7 +146,7 @@ export const registerProfessional = async (req: Request, res: Response) => {
 export const updateProfessional = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { specialty, city, yearsExperience, bio, rating, reviewCount, jobs, satisfaction } = req.body;
+    const { categoryId, yearsExperience, bio, rating, jobsCompleted } = req.body;
 
     const existingProf = await db.select().from(professionals).where(eq(professionals.userId, id)).limit(1);
     if (existingProf.length === 0) {
@@ -155,14 +155,11 @@ export const updateProfessional = async (req: Request, res: Response) => {
 
     const updatedProf = await db.update(professionals)
       .set({
-        ...(specialty !== undefined && { specialty }),
-        ...(city !== undefined && { city }),
+        ...(categoryId !== undefined && { categoryId }),
         ...(yearsExperience !== undefined && { yearsExperience }),
         ...(bio !== undefined && { bio }),
         ...(rating !== undefined && { rating }),
-        ...(reviewCount !== undefined && { reviewCount }),
-        ...(jobs !== undefined && { jobs }),
-        ...(satisfaction !== undefined && { satisfaction }),
+        ...(jobsCompleted !== undefined && { jobsCompleted }),
       })
       .where(eq(professionals.userId, id))
       .returning();
@@ -184,7 +181,6 @@ export const deleteProfessional = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Professional profile not found' });
     }
 
-    // Remove from professional table (cascade will remove portfolio items if defined, but not user)
     await db.delete(professionals).where(eq(professionals.userId, id));
     
     // Downgrade user's role back to client
@@ -201,7 +197,7 @@ export const deleteProfessional = async (req: Request, res: Response) => {
 export const addPortfolioItem = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { imageUrl } = req.body;
+    const { imageUrl, title, description } = req.body;
 
     if (!imageUrl) {
       return res.status(400).json({ error: 'imageUrl is required' });
@@ -212,9 +208,14 @@ export const addPortfolioItem = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Professional profile not found' });
     }
 
-    const newItem = await db.insert(professionalPortfolioItems).values({
+    const itemId = `pi_${crypto.randomBytes(4).toString('hex')}`;
+
+    const newItem = await db.insert(portfolioItems).values({
+      id: itemId,
       professionalId: id,
       imageUrl,
+      title: title || null,
+      description: description || null,
     }).returning();
 
     res.status(201).json(newItem[0]);
@@ -231,11 +232,11 @@ export const deletePortfolioItem = async (req: Request, res: Response) => {
 
     const existingItem = await db
       .select()
-      .from(professionalPortfolioItems)
+      .from(portfolioItems)
       .where(
         and(
-          eq(professionalPortfolioItems.id, parseInt(portfolioId)),
-          eq(professionalPortfolioItems.professionalId, id)
+          eq(portfolioItems.id, portfolioId),
+          eq(portfolioItems.professionalId, id)
         )
       )
       .limit(1);
@@ -244,7 +245,7 @@ export const deletePortfolioItem = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Portfolio item not found for this professional' });
     }
 
-    await db.delete(professionalPortfolioItems).where(eq(professionalPortfolioItems.id, parseInt(portfolioId)));
+    await db.delete(portfolioItems).where(eq(portfolioItems.id, portfolioId));
     res.json({ message: 'Portfolio item deleted successfully' });
   } catch (error) {
     console.error('Error deleting portfolio item:', error);
