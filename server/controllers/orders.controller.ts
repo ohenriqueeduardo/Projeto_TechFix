@@ -9,7 +9,7 @@ export const getOrders = async (req: Request, res: Response) => {
   try {
     const { clientId, professionalId } = req.query;
 
-    let query = db.select().from(orders);
+    const query = db.select().from(orders);
 
     const conditions = [];
     if (clientId) {
@@ -36,7 +36,7 @@ export const getOrders = async (req: Request, res: Response) => {
 // GET /api/orders/:id
 export const getOrderById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const orderList = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
 
     if (orderList.length === 0) {
@@ -88,7 +88,7 @@ export const createOrder = async (req: Request, res: Response) => {
 // PUT /api/orders/:id
 export const updateOrder = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { serviceTitle, date, time, price, paymentMethod, address, status } = req.body;
 
     const existingOrder = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
@@ -119,7 +119,7 @@ export const updateOrder = async (req: Request, res: Response) => {
 // PATCH /api/orders/:id/status
 export const updateOrderStatus = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { status } = req.body;
 
     const validStatuses = ['pending', 'scheduled', 'in_progress', 'completed', 'cancelled'];

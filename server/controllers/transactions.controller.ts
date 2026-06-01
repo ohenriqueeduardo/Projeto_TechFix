@@ -18,7 +18,7 @@ export const getTransactions = async (req: Request, res: Response) => {
 // GET /api/transactions/:professionalId
 export const getTransactionsForProfessional = async (req: Request, res: Response) => {
   try {
-    const { professionalId } = req.params;
+    const professionalId = req.params.professionalId as string;
 
     if (!professionalId) {
       return res.status(400).json({ error: 'professionalId is required' });

@@ -17,7 +17,8 @@ export const getMessages = async (req: Request, res: Response) => {
 // GET /api/messages/:userId/:contactId
 export const getChatHistory = async (req: Request, res: Response) => {
   try {
-    const { userId, contactId } = req.params;
+    const userId = req.params.userId as string;
+    const contactId = req.params.contactId as string;
 
     if (!userId || !contactId) {
       return res.status(400).json({ error: 'Missing userId or contactId' });
@@ -44,7 +45,7 @@ export const getChatHistory = async (req: Request, res: Response) => {
 // GET /api/messages/contacts/:userId
 export const getContacts = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
+    const userId = req.params.userId as string;
 
     if (!userId) {
       return res.status(400).json({ error: 'userId is required' });
@@ -58,7 +59,7 @@ export const getContacts = async (req: Request, res: Response) => {
       .orderBy(desc(messages.createdAt));
 
     // Extract unique contact IDs and their latest message
-    const contactsMap = new Map<string, any>();
+    const contactsMap = new Map<string, typeof messages.$inferSelect>();
     for (const msg of userMessages) {
       const contactId = msg.senderId === userId ? msg.receiverId : msg.senderId;
       if (!contactsMap.has(contactId)) {

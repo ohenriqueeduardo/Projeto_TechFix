@@ -9,7 +9,7 @@ export const getReviews = async (req: Request, res: Response) => {
   try {
     const { professionalId, serviceId } = req.query;
 
-    let query = db
+    const query = db
       .select({
         id: reviews.id,
         serviceId: reviews.serviceId,
@@ -63,7 +63,7 @@ export const getReviews = async (req: Request, res: Response) => {
 // GET /api/reviews/:id
 export const getReviewById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const list = await db
       .select({
         id: reviews.id,
@@ -104,7 +104,7 @@ export const getReviewById = async (req: Request, res: Response) => {
 // GET /api/reviews/service/:serviceId
 export const getReviewsForService = async (req: Request, res: Response) => {
   try {
-    const { serviceId } = req.params;
+    const serviceId = req.params.serviceId as string;
 
     const list = await db
       .select({
@@ -146,7 +146,7 @@ export const getReviewsForService = async (req: Request, res: Response) => {
 // GET /api/reviews/professional/:professionalId
 export const getReviewsForProfessional = async (req: Request, res: Response) => {
   try {
-    const { professionalId } = req.params;
+    const professionalId = req.params.professionalId as string;
 
     const list = await db
       .select({
@@ -259,7 +259,7 @@ export const createReview = async (req: Request, res: Response) => {
 // DELETE /api/reviews/:id
 export const deleteReview = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const existingReview = await db.select().from(reviews).where(eq(reviews.id, id)).limit(1);
     if (existingReview.length === 0) {

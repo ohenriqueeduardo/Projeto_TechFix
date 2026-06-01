@@ -169,3 +169,100 @@
 .typing-dot:nth-child(3) {
   animation-delay: 0.4s;
 }
+
+/* Efeitos de Spotlight e Mesh Gradient Premium (Linear/Vercel) */
+@keyframes meshGradientMove {
+  0% {
+    transform: translate(0px, 0px) scale(1) rotate(0deg);
+  }
+  33% {
+    transform: translate(40px, -60px) scale(1.15) rotate(120deg);
+  }
+  66% {
+    transform: translate(-30px, 30px) scale(0.9) rotate(240deg);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1) rotate(360deg);
+  }
+}
+
+.animate-mesh-gradient-1 {
+  animation: meshGradientMove 25s infinite alternate ease-in-out;
+}
+
+.animate-mesh-gradient-2 {
+  animation: meshGradientMove 35s infinite alternate-reverse ease-in-out;
+}
+
+.spotlight-card {
+  position: relative;
+}
+
+.spotlight-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 0px) var(--mouse-y, 0px),
+    rgba(6, 182, 212, 0.09),
+    transparent 45%
+  );
+  opacity: 0;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+.spotlight-card:hover::before {
+  opacity: 1;
+}
+
+.spotlight-border {
+  position: relative;
+}
+
+.spotlight-border::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  background: radial-gradient(
+    350px circle at var(--mouse-x, 0px) var(--mouse-y, 0px),
+    rgba(6, 182, 212, 0.35),
+    transparent 55%
+  );
+  opacity: 0;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  z-index: 0;
+  border-radius: inherit;
+  padding: 1px;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.spotlight-border:hover::after {
+  opacity: 1;
+}
+
+/* Animação do Fluxo de Energia Ciano de Conexão */
+@keyframes trustFlowDash {
+  to {
+    stroke-dashoffset: -80;
+  }
+}
+
+.animate-trust-line {
+  animation: trustFlowDash 8s linear infinite;
+}
+
+/* Hide scrollbars completely while keeping scroll functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important; /* IE and Edge */
+  scrollbar-width: none !important; /* Firefox */
+}
+

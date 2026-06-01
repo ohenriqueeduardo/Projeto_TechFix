@@ -45,22 +45,22 @@ const AdminLayout = () => {
   return (
     <div className="min-h-screen flex bg-background">
       {/* Sidebar Desktop */}
-      <aside className="hidden lg:flex flex-col w-24 hover:w-80 border-r border-foreground/5 bg-card/30 sticky top-0 h-screen transition-all duration-300 group/sidebar z-30 overflow-x-hidden">
-        <div className="p-6 flex items-center justify-center h-28 border-b border-white/5 shrink-0">
-          <Link to="/" className="flex items-center justify-center">
+      <aside className="hidden lg:flex flex-col w-24 hover:w-80 border-r border-foreground/5 bg-card/30 sticky top-0 h-screen transition-all duration-300 group/sidebar z-30 overflow-x-hidden no-scrollbar">
+        <div className="flex items-center justify-center h-28 border-b border-white/5 shrink-0 relative px-0">
+          <Link to="/" className="flex items-center justify-center relative w-14 group-hover/sidebar:w-full h-16 transition-all duration-300">
             {/* Logo Normal */}
-            <div className="hidden group-hover/sidebar:block transition-all duration-300 animate-in fade-in zoom-in-95">
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 scale-90 pointer-events-none group-hover/sidebar:opacity-100 group-hover/sidebar:scale-100 group-hover/sidebar:pointer-events-auto transition-all duration-300">
               <img src={logo} alt="TechFix Logo" className="h-16 w-auto object-contain hover:scale-105 transition-transform" />
             </div>
             {/* Logo Reduzida */}
-            <div className="block group-hover/sidebar:hidden transition-all duration-300 animate-in fade-in zoom-in-95">
+            <div className="absolute inset-0 flex items-center justify-center opacity-100 scale-100 pointer-events-auto group-hover/sidebar:opacity-0 group-hover/sidebar:scale-90 group-hover/sidebar:pointer-events-none transition-all duration-300">
               <img src={logoImg} alt="TechFix Icon" className="h-12 w-12 object-contain hover:scale-105 transition-transform" />
             </div>
           </Link>
         </div>
 
-        <nav className="flex-1 px-4 py-8 space-y-2 select-none overflow-y-auto">
-          <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.25em] mb-6 px-4 whitespace-nowrap text-center group-hover/sidebar:text-left transition-all">
+        <nav className="flex-1 px-4 py-8 space-y-2 select-none overflow-y-auto no-scrollbar flex flex-col items-center group-hover/sidebar:items-stretch">
+          <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.25em] mb-6 px-0 group-hover/sidebar:px-5 whitespace-nowrap text-center group-hover/sidebar:text-left transition-all">
             <span className="hidden group-hover/sidebar:inline">Administração</span>
             <span className="inline group-hover/sidebar:hidden">• • •</span>
           </p>
@@ -70,7 +70,7 @@ const AdminLayout = () => {
               <Link 
                 key={item.path} 
                 to={item.path}
-                className={`flex items-center gap-0 group-hover/sidebar:gap-4 px-5 py-4 rounded-2xl transition-all duration-300 group relative overflow-hidden justify-center group-hover/sidebar:justify-start ${
+                className={`flex items-center gap-0 group-hover/sidebar:gap-4 w-14 group-hover/sidebar:w-full h-14 rounded-2xl transition-all duration-300 group relative overflow-hidden justify-center group-hover/sidebar:justify-start px-0 group-hover/sidebar:px-5 shrink-0 ${
                   isActive 
                   ? 'text-primary-foreground font-black shadow-lg shadow-primary/20' 
                   : 'text-muted-foreground hover:bg-foreground/5 hover:text-foreground'
@@ -80,14 +80,10 @@ const AdminLayout = () => {
                 {isActive && (
                   <div className="absolute inset-0 bg-primary -z-10 animate-in fade-in duration-300" />
                 )}
-                {/* Active left indicator bar */}
-                {isActive && (
-                  <div className="absolute left-0 top-3 bottom-3 w-1 bg-white rounded-r-md transition-all duration-300 opacity-0 group-hover/sidebar:opacity-100" />
-                )}
                 <div className="w-6 h-6 flex items-center justify-center shrink-0">
                   <item.icon className={`w-5 h-5 transition-transform group-hover:scale-110 ${isActive ? 'text-primary-foreground' : 'text-primary'}`} />
                 </div>
-                <span className="transition-all duration-300 opacity-0 w-0 overflow-hidden group-hover/sidebar:opacity-100 group-hover/sidebar:w-auto whitespace-nowrap">
+                <span className="transition-all duration-300 opacity-0 max-w-0 overflow-hidden group-hover/sidebar:opacity-100 group-hover/sidebar:max-w-xs whitespace-nowrap">
                   {item.label}
                 </span>
               </Link>
@@ -101,7 +97,7 @@ const AdminLayout = () => {
             </p>
             <Link 
               to="/cliente/configuracoes" 
-              className={`flex items-center gap-0 group-hover/sidebar:gap-4 px-5 py-4 rounded-2xl transition-all duration-300 justify-center group-hover/sidebar:justify-start ${
+              className={`flex items-center gap-0 group-hover/sidebar:gap-4 w-14 group-hover/sidebar:w-full h-14 rounded-2xl transition-all duration-300 justify-center group-hover/sidebar:justify-start px-0 group-hover/sidebar:px-5 shrink-0 ${
                 location.pathname === '/cliente/configuracoes' 
                 ? 'bg-primary/10 text-primary font-bold' 
                 : 'text-muted-foreground hover:bg-foreground/5'
@@ -110,20 +106,20 @@ const AdminLayout = () => {
               <div className="w-6 h-6 flex items-center justify-center shrink-0">
                 <Settings className="w-5 h-5 text-primary" />
               </div>
-              <span className="transition-all duration-300 opacity-0 w-0 overflow-hidden group-hover/sidebar:opacity-100 group-hover/sidebar:w-auto whitespace-nowrap">
+              <span className="transition-all duration-300 opacity-0 max-w-0 overflow-hidden group-hover/sidebar:opacity-100 group-hover/sidebar:max-w-xs whitespace-nowrap">
                 Configurações
               </span>
             </Link>
           </div>
         </nav>
 
-        <div className="p-6 border-t border-foreground/5 shrink-0">
-          <Link to="/login">
-            <Button variant="ghost" className="w-full flex items-center gap-0 group-hover/sidebar:gap-4 h-14 rounded-2xl text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all duration-300 justify-center group-hover/sidebar:justify-start">
+        <div className="p-6 border-t border-foreground/5 shrink-0 flex justify-center group-hover/sidebar:block px-0 group-hover/sidebar:p-6 transition-all duration-300">
+          <Link to="/login" className="w-14 group-hover/sidebar:w-full">
+            <Button variant="ghost" className="w-full flex items-center justify-center group-hover/sidebar:justify-start px-0 group-hover/sidebar:px-5 gap-0 group-hover/sidebar:gap-4 h-14 rounded-2xl text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all duration-300 shrink-0">
               <div className="w-6 h-6 flex items-center justify-center shrink-0">
                 <LogOut className="w-5 h-5" />
               </div>
-              <span className="transition-all duration-300 opacity-0 w-0 overflow-hidden group-hover/sidebar:opacity-100 group-hover/sidebar:w-auto whitespace-nowrap">
+              <span className="transition-all duration-300 opacity-0 max-w-0 overflow-hidden group-hover/sidebar:opacity-100 group-hover/sidebar:max-w-xs whitespace-nowrap">
                 Sair da Conta
               </span>
             </Button>
@@ -133,9 +129,16 @@ const AdminLayout = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-24 border-b border-foreground/5 bg-background/50 backdrop-blur-md flex items-center justify-between px-10 sticky top-0 z-40">
-          <h2 className="font-bold text-2xl hidden md:block bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80">
-            Painel Administrativo
+        <header className="h-24 border-b border-foreground/5 bg-background/50 backdrop-blur-xl flex items-center justify-between px-10 sticky top-0 z-40">
+          <h2 className="font-bold text-2xl hidden md:block bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80 animate-in fade-in duration-300">
+            {(() => {
+              const path = location.pathname;
+              if (path.includes('/admin/dashboard')) return 'Painel Administrativo';
+              if (path.includes('/admin/usuarios')) return 'Gestão de Usuários';
+              if (path.includes('/admin/saques')) return 'Controle de Saques';
+              if (path.includes('/admin/servicos')) return 'Controle de Serviços';
+              return 'Painel Administrativo';
+            })()}
           </h2>
           
           <div className="flex items-center gap-6">

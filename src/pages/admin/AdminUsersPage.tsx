@@ -107,7 +107,7 @@ const AdminUsersPage = () => {
           ].map(btn => (
             <button
               key={btn.id}
-              onClick={() => setRoleFilter(btn.id as any)}
+              onClick={() => setRoleFilter(btn.id as 'all' | 'client' | 'professional')}
               className={`px-4 py-2 text-xs font-bold rounded-xl transition-all duration-300 ${
                 roleFilter === btn.id
                 ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'

@@ -1,5 +1,5 @@
 import React from 'react';
-import { orders } from '@/data/mockData';
+import { getLocalOrders } from '@/utils/localDb';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -15,7 +15,8 @@ import {
   ShieldCheck, 
   Compass, 
   DollarSign, 
-  Activity 
+  Activity,
+  Sparkles
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
 import { Link } from 'react-router-dom';
@@ -44,8 +45,8 @@ const MyOrdersPage = () => {
     return labels[status] || status;
   };
 
-  // Filter orders for "Sofia Spencer" (u1)
-  const clientOrders = orders.filter(o => o.clientId === 'u1');
+  // Filter orders for "Sofia Spencer" (u1) dynamically
+  const clientOrders = getLocalOrders().filter(o => o.clientId === 'u1');
 
   // Filter based on search term
   const searchedOrders = clientOrders.filter(order => 
@@ -76,14 +77,21 @@ const MyOrdersPage = () => {
         title="Meus Pedidos" 
         description="Gerencie seus reparos, upgrades e manutenções contratadas na plataforma com segurança."
       >
-        <div className="relative w-full md:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input 
-            placeholder="Buscar por código ou serviço..." 
-            className="pl-10 bg-card/50 border-white/10 rounded-xl"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto items-center">
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input 
+              placeholder="Buscar por código ou serviço..." 
+              className="pl-10 bg-card/50 border-white/10 rounded-xl"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <Link to="/cliente/novo-servico" className="w-full sm:w-auto shrink-0">
+            <Button className="btn-primary h-11 px-5 rounded-xl gap-2 font-black w-full sm:w-auto text-xs">
+              <Sparkles className="w-4 h-4" /> Solicitar Serviço Customizado
+            </Button>
+          </Link>
         </div>
       </PageHeader>
 
@@ -98,7 +106,7 @@ const MyOrdersPage = () => {
             ].map(tab => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id as 'all' | 'active' | 'past')}
                 className={`pb-4 text-sm font-bold transition-all relative ${
                   activeTab === tab.id 
                   ? 'text-primary border-b-2 border-primary' 
@@ -128,7 +136,9 @@ const MyOrdersPage = () => {
                         {order.paymentMethod}
                       </Badge>
                     </div>
-                    <h3 className="text-lg font-bold group-hover:text-primary transition-colors">{order.serviceTitle}</h3>
+                    <Link to={`/cliente/pedido/${order.id}/status`}>
+                      <h3 className="text-lg font-bold group-hover:text-primary transition-colors hover:underline">{order.serviceTitle}</h3>
+                    </Link>
                     <p className="text-xs text-muted-foreground">Técnico: <span className="text-foreground font-medium">{order.professionalName}</span></p>
                   </div>
 
@@ -141,12 +151,14 @@ const MyOrdersPage = () => {
                   </div>
 
                   <div className="flex gap-2 w-full sm:w-auto">
-                    <Link to={`/cliente/chat/1`} className="flex-1 sm:flex-none">
+                    <Link to={`/cliente/chat/${order.professionalId}`} className="flex-1 sm:flex-none">
                       <Button variant="outline" className="w-full rounded-xl border-white/10 text-xs h-10 px-4">Chat</Button>
                     </Link>
-                    <Button variant="ghost" size="icon" className="hidden sm:flex rounded-xl hover:bg-primary hover:text-background w-10 h-10">
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
+                    <Link to={`/cliente/pedido/${order.id}/status`}>
+                      <Button variant="ghost" size="icon" className="hidden sm:flex rounded-xl hover:bg-primary hover:text-background w-10 h-10">
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </Card>
@@ -161,9 +173,9 @@ const MyOrdersPage = () => {
                 <p className="text-sm text-muted-foreground mb-6">
                   {searchTerm ? 'Nenhum pedido atende aos seus critérios de busca.' : 'Você não possui pedidos nesta categoria.'}
                 </p>
-                <Link to="/cliente/servicos">
+                <Link to="/cliente/novo-servico">
                   <Button className="btn-primary px-6 h-12 rounded-xl text-sm gap-2 animate-pulse-glow">
-                    <Compass className="w-4 h-4" /> Explorar Serviços
+                    <Compass className="w-4 h-4" /> Solicitar Serviço
                   </Button>
                 </Link>
               </div>
@@ -203,7 +215,7 @@ const MyOrdersPage = () => {
             <p className="text-xs text-muted-foreground mb-6 leading-relaxed">
               Conserte seu notebook, monte seu PC Gamer dos sonhos ou configure sua rede corporativa com nossos técnicos experientes.
             </p>
-            <Link to="/cliente/servicos">
+            <Link to="/cliente/novo-servico">
               <Button className="btn-primary w-full h-12 rounded-xl text-xs gap-2">
                 <Compass className="w-4 h-4" /> Solicitar Novo Serviço
               </Button>

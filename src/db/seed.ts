@@ -33,8 +33,7 @@ async function seed() {
     ];
 
     console.log('Inserting Users...');
-    // In PostgreSQL, we can use onConflictDoNothing
-    await db.insert(users).values(allUsersToInsert as any).onConflictDoNothing();
+    await db.insert(users).values(allUsersToInsert).onConflictDoNothing();
 
     console.log('Inserting Professionals...');
     await db.insert(professionals).values(mockData.professionals.map(p => ({
@@ -83,7 +82,7 @@ async function seed() {
       price: o.price,
       paymentMethod: o.paymentMethod,
       address: o.address,
-    })) as any).onConflictDoNothing();
+    }))).onConflictDoNothing();
 
     console.log('Inserting Transactions...');
     await db.insert(transactions).values(mockData.transactions.map(t => ({
@@ -94,7 +93,7 @@ async function seed() {
       value: t.value,
       date: t.date,
       status: t.status,
-    })) as any).onConflictDoNothing();
+    }))).onConflictDoNothing();
 
     console.log('Inserting Messages...');
     const chatMessages = [

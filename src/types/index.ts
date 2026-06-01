@@ -8,6 +8,8 @@ export interface User {
   avatar?: string;
   level?: string;
   status?: "active" | "inactive";
+  specialty?: string;
+  city?: string;
 }
 
 export interface Professional extends User {
@@ -36,7 +38,7 @@ export interface Service {
   image?: string;
 }
 
-export type OrderStatus = "pending" | "scheduled" | "in_progress" | "completed" | "cancelled";
+export type OrderStatus = "pending" | "scheduled" | "in_progress" | "completed" | "cancelled" | "counter_offer";
 
 export interface Order {
   id: string;
@@ -74,3 +76,40 @@ export interface Review {
   tags: string[];
   date: string;
 }
+
+export interface Notification {
+  id: string;
+  title: string;
+  desc: string;
+  time: string;
+  unread: boolean;
+  type?: "info" | "success" | "warning" | "error";
+  date?: string;
+}
+
+export interface PaymentInstallment {
+  number: number;
+  value: number;
+  total: number;
+  formatted: string;
+}
+
+export interface Address {
+  cep: string;
+  street: string;
+  number: string;
+  complement?: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  color: string;
+}
+
+export type ThemeMode = "light" | "dark" | "system";

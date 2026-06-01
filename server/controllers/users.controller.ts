@@ -68,9 +68,10 @@ export const createUser = async (req: Request, res: Response) => {
     }).returning();
 
     res.status(201).json(newUser[0]);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating user:', error);
-    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.message?.includes('UNIQUE')) {
+    const err = error as { code?: string; message?: string };
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' || err.code === '23505' || err.message?.includes('UNIQUE')) {
       return res.status(400).json({ error: 'Email already exists' });
     }
     res.status(500).json({ error: 'Internal Server Error' });
@@ -101,9 +102,10 @@ export const updateUser = async (req: Request, res: Response) => {
       .returning();
 
     res.json(updatedUser[0]);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating user:', error);
-    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.message?.includes('UNIQUE')) {
+    const err = error as { code?: string; message?: string };
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' || err.code === '23505' || err.message?.includes('UNIQUE')) {
       return res.status(400).json({ error: 'Email already exists' });
     }
     res.status(500).json({ error: 'Internal Server Error' });

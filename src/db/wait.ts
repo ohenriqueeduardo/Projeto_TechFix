@@ -22,8 +22,9 @@ async function waitForDb() {
       client.release();
       console.log("✅ Banco de dados está online e respondendo!");
       process.exit(0);
-    } catch (err: any) {
-      console.log(`📡 Banco de dados inacessível: ${err.message}. Tentando novamente em 1s...`);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.log(`📡 Banco de dados inacessível: ${errMsg}. Tentando novamente em 1s...`);
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }

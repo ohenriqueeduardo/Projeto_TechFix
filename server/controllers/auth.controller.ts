@@ -114,7 +114,7 @@ export const login = async (req: Request, res: Response) => {
 // GET /api/auth/me
 export const getMe = async (req: Request, res: Response) => {
   try {
-    const userPayload = (req as any).user;
+    const userPayload = (req as Request & { user?: { id: string } }).user;
     if (!userPayload) {
       return res.status(401).json({ error: 'Session expired or invalid.' });
     }

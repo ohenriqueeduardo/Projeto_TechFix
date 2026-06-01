@@ -37,7 +37,7 @@ export const getProfessionals = async (req: Request, res: Response) => {
     }
 
     if (conditions.length > 0) {
-      // @ts-ignore
+      // @ts-expect-error - dynamic build where query parameters are polymorphic in Drizzle
       query = query.where(and(...conditions));
     }
 
@@ -52,7 +52,7 @@ export const getProfessionals = async (req: Request, res: Response) => {
 // GET /api/professionals/:id
 export const getProfessionalById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const professionalList = await db
       .select({
@@ -145,7 +145,7 @@ export const registerProfessional = async (req: Request, res: Response) => {
 // PUT /api/professionals/:id
 export const updateProfessional = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { specialty, city, yearsExperience, bio, rating, reviewCount, jobs, satisfaction } = req.body;
 
     const existingProf = await db.select().from(professionals).where(eq(professionals.userId, id)).limit(1);
@@ -177,7 +177,7 @@ export const updateProfessional = async (req: Request, res: Response) => {
 // DELETE /api/professionals/:id
 export const deleteProfessional = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const existingProf = await db.select().from(professionals).where(eq(professionals.userId, id)).limit(1);
     if (existingProf.length === 0) {
@@ -200,7 +200,7 @@ export const deleteProfessional = async (req: Request, res: Response) => {
 // POST /api/professionals/:id/portfolio
 export const addPortfolioItem = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { imageUrl } = req.body;
 
     if (!imageUrl) {
@@ -227,7 +227,8 @@ export const addPortfolioItem = async (req: Request, res: Response) => {
 // DELETE /api/professionals/:id/portfolio/:portfolioId
 export const deletePortfolioItem = async (req: Request, res: Response) => {
   try {
-    const { id, portfolioId } = req.params;
+    const id = req.params.id as string;
+    const portfolioId = req.params.portfolioId as string;
 
     const existingItem = await db
       .select()

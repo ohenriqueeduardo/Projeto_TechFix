@@ -7,11 +7,53 @@ import { Camera, Shield, Star, MapPin, Award, CheckCircle, Sparkles } from 'luci
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/ui/PageHeader';
 
+import { User } from '@/types';
+
 const ProfilePage = () => {
+  const [currentUser, setCurrentUser] = React.useState<User | null>(null);
+  const [name, setName] = React.useState('');
+  const [email, setEmail] = React.useState('');
+  const [phone, setPhone] = React.useState('(11) 99999-9999');
+  const [city, setCity] = React.useState('');
+
+  React.useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const parsed = JSON.parse(storedUser) as User;
+      setCurrentUser(parsed);
+      setName(parsed.name || '');
+      setEmail(parsed.email || '');
+      setCity(parsed.city || 'São Paulo, SP');
+    }
+  }, []);
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentUser) return;
+
+    const updatedUser = {
+      ...currentUser,
+      name,
+      email,
+      city
+    };
+
+    // 1. Update current session
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setCurrentUser(updatedUser);
+
+    // 2. Update users list in LocalStorage database
+    const localUsers = JSON.parse(localStorage.getItem('techfix_users') || '[]') as User[];
+    const updatedUsers = localUsers.map(u => u.id === currentUser.id ? updatedUser : u);
+    localStorage.setItem('techfix_users', JSON.stringify(updatedUsers));
+
     toast.success('Perfil atualizado com sucesso!');
   };
+
+  const displayName = name || currentUser?.name || 'Sofia Spencer';
+  const displayEmail = email || currentUser?.email || 'sofia@example.com';
+  const displayCity = city || currentUser?.city || 'São Paulo, SP';
+  const userLevel = currentUser?.level || 'Prata';
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-page-entrance">
@@ -36,8 +78,8 @@ const ProfilePage = () => {
               <span className="text-[10px] font-black uppercase tracking-widest text-primary">Status da Conta</span>
               <Sparkles className="w-3.5 h-3.5 text-yellow-500" />
             </div>
-            <h4 className="font-black text-lg text-foreground">Sofia Spencer</h4>
-            <p className="text-xs text-muted-foreground font-medium">VIP Prata (Desconto Ativo)</p>
+            <h4 className="font-black text-lg text-foreground">{displayName}</h4>
+            <p className="text-xs text-muted-foreground font-medium">VIP {userLevel} (Desconto Ativo)</p>
           </div>
         </div>
       </div>
@@ -47,7 +89,7 @@ const ProfilePage = () => {
         <div className="flex flex-col md:flex-row items-end gap-6 mb-8">
           <div className="relative group shrink-0">
             <img 
-              src="https://i.pravatar.cc/150?u=sofia" 
+              src={currentUser?.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(displayName)}`} 
               className="w-36 h-36 md:w-40 md:h-40 rounded-3xl border-8 border-background shadow-2xl object-cover" 
               alt="Avatar" 
             />
@@ -57,13 +99,13 @@ const ProfilePage = () => {
           </div>
           
           <div className="flex-1 pb-4 text-center md:text-left">
-            <h2 className="text-3xl font-black mb-1.5">Sofia Spencer</h2>
+            <h2 className="text-3xl font-black mb-1.5">{displayName}</h2>
             <div className="flex flex-wrap justify-center md:justify-start gap-4">
               <span className="flex items-center gap-1.5 text-xs text-muted-foreground font-bold">
-                <MapPin className="w-4 h-4 text-primary" /> São Paulo, SP
+                <MapPin className="w-4 h-4 text-primary" /> {displayCity}
               </span>
               <span className="flex items-center gap-1.5 text-xs text-muted-foreground font-bold">
-                <Shield className="w-4 h-4 text-primary" /> Nível Prata
+                <Shield className="w-4 h-4 text-primary" /> Nível {userLevel}
               </span>
             </div>
           </div>
@@ -85,19 +127,19 @@ const ProfilePage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label className="font-bold text-xs ml-1">Nome Completo</Label>
-                    <Input defaultValue="Sofia Spencer" className="h-12 bg-background/50 border-white/10 rounded-xl text-sm" />
+                    <Input value={name} onChange={(e) => setName(e.target.value)} className="h-12 bg-background/50 border-white/10 rounded-xl text-sm" />
                   </div>
                   <div className="space-y-2">
                     <Label className="font-bold text-xs ml-1">E-mail</Label>
-                    <Input defaultValue="sofia@example.com" className="h-12 bg-background/50 border-white/10 rounded-xl text-sm" />
+                    <Input value={email} onChange={(e) => setEmail(e.target.value)} className="h-12 bg-background/50 border-white/10 rounded-xl text-sm" />
                   </div>
                   <div className="space-y-2">
                     <Label className="font-bold text-xs ml-1">Telefone</Label>
-                    <Input defaultValue="(11) 99999-9999" className="h-12 bg-background/50 border-white/10 rounded-xl text-sm" />
+                    <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="h-12 bg-background/50 border-white/10 rounded-xl text-sm" />
                   </div>
                   <div className="space-y-2">
                     <Label className="font-bold text-xs ml-1">Cidade</Label>
-                    <Input defaultValue="São Paulo, SP" className="h-12 bg-background/50 border-white/10 rounded-xl text-sm" />
+                    <Input value={city} onChange={(e) => setCity(e.target.value)} className="h-12 bg-background/50 border-white/10 rounded-xl text-sm" />
                   </div>
                 </div>
                 <div className="pt-4">

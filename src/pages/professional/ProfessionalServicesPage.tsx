@@ -88,7 +88,7 @@ const ProfessionalServicesPage = () => {
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as 'all' | 'pending' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled')}
               className={`px-4 py-2 text-xs font-bold rounded-xl transition-all duration-300 ${
                 activeTab === tab.id 
                 ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20' 

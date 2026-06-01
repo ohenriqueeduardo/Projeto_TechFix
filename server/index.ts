@@ -29,7 +29,7 @@ app.get('/health', (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 // Global error handler - converts HTML error pages to clean JSON responses
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Unhandled internal error:', err);
   res.status(500).json({
     error: 'Internal Server Error',

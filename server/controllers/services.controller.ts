@@ -9,7 +9,7 @@ export const getServices = async (req: Request, res: Response) => {
   try {
     const { category, search, professionalId } = req.query;
 
-    let query = db.select().from(services);
+    const query = db.select().from(services);
 
     const conditions = [];
     if (category) {
@@ -53,7 +53,7 @@ export const getServices = async (req: Request, res: Response) => {
 // GET /api/services/:id
 export const getServiceById = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const serviceList = await db.select().from(services).where(eq(services.id, id)).limit(1);
 
     if (serviceList.length === 0) {
@@ -122,7 +122,7 @@ export const createService = async (req: Request, res: Response) => {
 // PUT /api/services/:id
 export const updateService = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const { title, category, description, price, duration, badge, image, tags } = req.body;
 
     const existingService = await db.select().from(services).where(eq(services.id, id)).limit(1);
@@ -173,7 +173,7 @@ export const updateService = async (req: Request, res: Response) => {
 // DELETE /api/services/:id
 export const deleteService = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
 
     const existingService = await db.select().from(services).where(eq(services.id, id)).limit(1);
     if (existingService.length === 0) {
