@@ -23,6 +23,8 @@ export const getProfessionals = async (req: Request, res: Response) => {
         yearsExperience: professionals.yearsExperience,
         satisfaction: professionals.satisfaction,
         bio: professionals.bio,
+        availableDays: professionals.availableDays,
+        availableTimes: professionals.availableTimes,
       })
       .from(professionals)
       .innerJoin(users, eq(professionals.userId, users.id));
@@ -69,6 +71,8 @@ export const getProfessionalById = async (req: Request, res: Response) => {
         yearsExperience: professionals.yearsExperience,
         satisfaction: professionals.satisfaction,
         bio: professionals.bio,
+        availableDays: professionals.availableDays,
+        availableTimes: professionals.availableTimes,
       })
       .from(professionals)
       .innerJoin(users, eq(professionals.userId, users.id))
@@ -146,7 +150,7 @@ export const registerProfessional = async (req: Request, res: Response) => {
 export const updateProfessional = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-    const { specialty, city, yearsExperience, bio, rating, reviewCount, jobs, satisfaction } = req.body;
+    const { specialty, city, yearsExperience, bio, rating, reviewCount, jobs, satisfaction, availableDays, availableTimes } = req.body;
 
     const existingProf = await db.select().from(professionals).where(eq(professionals.userId, id)).limit(1);
     if (existingProf.length === 0) {
@@ -163,6 +167,8 @@ export const updateProfessional = async (req: Request, res: Response) => {
         ...(reviewCount !== undefined && { reviewCount }),
         ...(jobs !== undefined && { jobs }),
         ...(satisfaction !== undefined && { satisfaction }),
+        ...(availableDays !== undefined && { availableDays }),
+        ...(availableTimes !== undefined && { availableTimes }),
       })
       .where(eq(professionals.userId, id))
       .returning();

@@ -22,6 +22,8 @@ export interface Professional extends User {
   satisfaction: number;
   bio: string;
   portfolio?: string[];
+  availableDays?: string[];
+  availableTimes?: string[];
 }
 
 export interface Service {

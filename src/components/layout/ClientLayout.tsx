@@ -39,14 +39,24 @@ const ClientLayout = () => {
   React.useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      setCurrentUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      setCurrentUser(parsedUser);
+      
+      // Block professionals from accessing client-only service creation routes
+      if (parsedUser.role === 'professional') {
+        if (location.pathname === '/cliente/novo-servico' || location.pathname.startsWith('/cliente/contratar')) {
+          navigate('/profissional/dashboard');
+        }
+      }
+    } else {
+      navigate('/login');
     }
-  }, []);
+  }, [location.pathname, navigate]);
   
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/cliente/dashboard' },
     { icon: Search, label: 'Explorar Serviços', path: '/cliente/servicos' },
-    { icon: PlusCircle, label: 'Solicitar Serviço', path: '/cliente/novo-servico' },
+    ...(currentUser?.role !== 'professional' ? [{ icon: PlusCircle, label: 'Solicitar Serviço', path: '/cliente/novo-servico' }] : []),
     { icon: ClipboardList, label: 'Meus Pedidos', path: '/cliente/meus-pedidos' },
     { icon: MessageSquare, label: 'Chat', path: '/cliente/chat/1' },
   ];

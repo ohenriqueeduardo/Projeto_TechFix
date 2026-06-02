@@ -53,6 +53,7 @@ import CheckoutCounterOfferPage from "@/pages/client/CheckoutCounterOfferPage";
 import ProfessionalDashboardPage from "@/pages/professional/ProfessionalDashboardPage";
 import ProfessionalServicesPage from "@/pages/professional/ProfessionalServicesPage";
 import ProfessionalFinancePage from "@/pages/professional/ProfessionalFinancePage";
+import ProfessionalSettingsPage from "@/pages/professional/ProfessionalSettingsPage";
 
 // Admin Pages
 import AdminDashboardPage from "@/pages/admin/AdminDashboardPage";
@@ -122,6 +123,7 @@ const App = () => (
                 <Route path="servicos" element={<ProfessionalServicesPage />} />
                 <Route path="financeiro" element={<ProfessionalFinancePage />} />
                 <Route path="chat/:id" element={<ChatPage />} />
+                <Route path="configuracoes" element={<ProfessionalSettingsPage />} />
               </Route>
 
               {/* Admin Routes */}

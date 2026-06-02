@@ -22,6 +22,8 @@ export const professionals = pgTable('professionals', {
   yearsExperience: integer('years_experience').notNull().default(0),
   satisfaction: integer('satisfaction').notNull().default(100),
   bio: text('bio'),
+  availableDays: text('available_days').array().default(['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']),
+  availableTimes: text('available_times').array().default(['09:00', '10:00', '11:00', '14:00', '15:00', '16:00']),
 });
 
 export const professionalPortfolioItems = pgTable('professional_portfolio_items', {
@@ -38,7 +40,7 @@ export const services = pgTable('services', {
   price: real('price').notNull(),
   duration: text('duration').notNull(),
   rating: real('rating').notNull().default(0),
-  professionalId: text('professional_id').notNull().references(() => professionals.userId, { onDelete: 'cascade' }),
+  professionalId: text('professional_id').references(() => professionals.userId, { onDelete: 'cascade' }),
   badge: text('badge'),
   image: text('image'),
   createdAt: timestamp('created_at').notNull().defaultNow(),

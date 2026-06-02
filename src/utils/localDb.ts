@@ -12,6 +12,8 @@ const KEYS = {
 };
 
 export const initializeDb = () => {
+  // Removing the localStorage.clear() bomb that was undoing logins
+
   if (!localStorage.getItem(KEYS.USERS)) {
     localStorage.setItem(KEYS.USERS, JSON.stringify(initialUsers));
   }
@@ -22,25 +24,16 @@ export const initializeDb = () => {
     localStorage.setItem(KEYS.SERVICES, JSON.stringify(initialServices));
   }
   if (!localStorage.getItem(KEYS.ORDERS)) {
-    localStorage.setItem(KEYS.ORDERS, JSON.stringify(initialOrders));
+    localStorage.setItem(KEYS.ORDERS, JSON.stringify([]));
   }
   if (!localStorage.getItem(KEYS.TRANSACTIONS)) {
-    localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(initialTransactions));
+    localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify([]));
   }
   if (!localStorage.getItem(KEYS.NOTIFICATIONS)) {
-    const defaultNotifications: Notification[] = [
-      { id: "n1", title: "Pedido Confirmado", desc: "Seu pedido #TF-2024 foi aceito.", time: "2 min atrás", unread: true, date: "2026-05-27" },
-      { id: "n2", title: "Nova Mensagem", desc: "Carlos Mendes enviou uma mensagem.", time: "1h atrás", unread: true, date: "2026-05-27" },
-      { id: "n3", title: "Serviço Concluído", desc: "Avalie o serviço de manutenção.", time: "5h atrás", unread: false, date: "2026-05-27" },
-    ];
-    localStorage.setItem(KEYS.NOTIFICATIONS, JSON.stringify(defaultNotifications));
+    localStorage.setItem(KEYS.NOTIFICATIONS, JSON.stringify([]));
   }
   
-  // Seed current user if not exists to facilitate presentation
-  if (!localStorage.getItem(KEYS.CURRENT_USER)) {
-    localStorage.setItem(KEYS.CURRENT_USER, JSON.stringify(initialUsers[0])); // Default is client Sofia Spencer
-    localStorage.setItem('token', 'mock_jwt_token_sofia');
-  }
+  // Auto-login removed to require manual login after logout
 };
 
 export const getLocalUsers = (): User[] => {

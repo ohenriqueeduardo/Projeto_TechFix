@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate, Routes, Route, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, Routes, Route, useLocation, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -82,12 +82,58 @@ const CheckoutFlow = () => {
   const activeServices = localServices.length > 0 ? localServices : services;
   const service = activeServices.find(s => s.id === id);
 
-  const localProfs = getLocalProfessionals();
-  const activeProfessionals = localProfs.length > 0 ? localProfs : professionals;
+  const [searchParams] = useSearchParams();
+  const requestedProfId = searchParams.get('prof');
 
-  // Unified Checkout State - pre-select the professional that offers this service!
-  const initialProf = activeProfessionals.find(p => p.id === service?.professionalId) || activeProfessionals[0];
-  const [selectedProf, setSelectedProf] = React.useState<Professional>(initialProf);
+  const [activeProfessionals, setActiveProfessionals] = React.useState<Professional[]>([]);
+  const [selectedProf, setSelectedProf] = React.useState<Professional | null>(null);
+  const [isLoadingProfs, setIsLoadingProfs] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchProfs = async () => {
+      try {
+        const res = await fetch('http://localhost:3000/api/professionals');
+        let profsToSet: Professional[] = [];
+        
+        if (res.ok) {
+          const dbData = await res.json();
+          const localProfs = getLocalProfessionals();
+          const merged = [...dbData];
+          localProfs.forEach((localProf: any) => {
+            if (!merged.find(p => (p.userId === localProf.id || p.userId === localProf.userId || p.id === localProf.id))) {
+              merged.push(localProf);
+            }
+          });
+          profsToSet = merged;
+        } else {
+          const localProfs = getLocalProfessionals();
+          profsToSet = localProfs.length > 0 ? localProfs : professionals;
+        }
+          const data = await res.json();
+          let profsToSet = data;
+          
+          if (requestedProfId) {
+            profsToSet = profsToSet.filter((p: Professional) => p.id === requestedProfId || p.userId === requestedProfId);
+          } else if (service?.professionalId) {
+            profsToSet = profsToSet.filter((p: Professional) => p.id === service.professionalId || p.userId === service.professionalId);
+          }
+          
+          if (profsToSet.length > 0) {
+            setActiveProfessionals(profsToSet);
+            setSelectedProf(profsToSet[0]);
+          } else {
+            setActiveProfessionals([]);
+            setSelectedProf(null);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch professionals');
+      } finally {
+        setIsLoadingProfs(false);
+      }
+    };
+    fetchProfs();
+  }, [requestedProfId, service?.professionalId]);
   const [selectedDate, setSelectedDate] = React.useState('');
   const [selectedTime, setSelectedTime] = React.useState('');
   
@@ -108,8 +154,13 @@ const CheckoutFlow = () => {
   const [installments, setInstallments] = React.useState(1);
 
   if (!service) return <div className="p-8 text-center text-red-500 font-bold glass-card border border-red-500/20 max-w-md mx-auto mt-20">Serviço não encontrado</div>;
+  if (isLoadingProfs || !selectedProf) return (
+    <div className="flex justify-center items-center min-h-[50vh]">
+      <span className="h-10 w-10 rounded-full border-4 border-t-primary border-white/5 animate-spin"></span>
+    </div>
+  );
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     // Generate order and save to LocalStorage
     const orderId = `o_${Date.now()}`;
     const orderCode = `TF-2026-${Math.floor(10000 + Math.random() * 90000)}`;
@@ -128,18 +179,21 @@ const CheckoutFlow = () => {
             )
         );
 
+    const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+    const professionalIdToUse = selectedProf ? ((selectedProf as any).userId || selectedProf.id) : '';
+
     const newOrder = {
       id: orderId,
       code: orderCode,
       serviceId: service.id,
       serviceTitle: service.title,
-      clientName: "Sofia Spencer", // Default logged user
-      clientId: "u1",
-      professionalId: selectedProf.id,
+      clientName: currentUser?.name || "Cliente",
+      clientId: currentUser?.id || "u1",
+      professionalId: professionalIdToUse,
       professionalName: selectedProf.name,
       date: selectedDate || "28/05",
       time: selectedTime || "14:00",
-      status: "scheduled" as const,
+      status: "pending" as const, // Start as pending instead of scheduled so professional can accept
       price: finalPrice,
       paymentMethod: paymentMethod as "pix" | "debit" | "credit",
       address: `${street}, ${number} - ${neighborhood}, ${city} - ${state}`
@@ -149,15 +203,45 @@ const CheckoutFlow = () => {
     currentOrders.push(newOrder);
     saveLocalOrders(currentOrders);
 
+    // Sync with backend
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:3000/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          serviceId: service.id,
+          serviceTitle: service.title,
+          clientId: currentUser?.id || "u1",
+          professionalId: professionalIdToUse,
+          date: selectedDate || "28/05",
+          time: selectedTime || "14:00",
+          price: finalPrice,
+          paymentMethod,
+          address: `${street}, ${number} - ${neighborhood}, ${city} - ${state}`
+        })
+      });
+      
+      if (!res.ok) {
+        console.warn('Backend sync returned error:', res.status, await res.text());
+        throw new Error('Backend sync failed with status ' + res.status);
+      }
+    } catch (err) {
+      console.warn('Backend sync failed, using localStorage:', err);
+    }
+
     // Trigger success notification
     addNotification(
       "Agendamento Confirmado",
-      `Seu chamado de ${service.title} com ${selectedProf.name} foi agendado para o dia ${selectedDate} às ${selectedTime}.`,
+      `Seu chamado de ${service.title} com ${selectedProf.name} foi solicitado para o dia ${selectedDate} às ${selectedTime}.`,
       "success"
     );
 
     toast.success('Pedido agendado com sucesso!');
-    navigate('../confirmado', { state: { orderCode, price: finalPrice } });
+    navigate(`/cliente/contratar/${service.id}/confirmado`, { state: { orderCode, price: finalPrice } });
   };
 
   return (
@@ -174,6 +258,7 @@ const CheckoutFlow = () => {
         <Route path="data-hora" element={
           <Step2 
             service={service} 
+            selectedProf={selectedProf}
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
             selectedTime={selectedTime}
@@ -182,6 +267,7 @@ const CheckoutFlow = () => {
         } />
         <Route path="endereco" element={
           <Step3 
+            service={service}
             cep={cep} setCep={setCep}
             street={street} setStreet={setStreet}
             number={number} setNumber={setNumber}
@@ -247,9 +333,9 @@ const Step1 = ({
                   isSelected ? 'bg-primary/5 border-primary shadow-[0_0_15px_rgba(6,182,212,0.15)]' : 'border-foreground/10 hover:border-foreground/20 hover:bg-card/25'
                 }`}
               >
-                <div className="flex gap-4">
-                  <img src={prof.avatar} className="w-12 h-12 rounded-xl object-cover border border-foreground/5 shrink-0" alt="" />
-                  <div>
+                <div className="flex gap-4 p-4 items-center">
+                  <img src={prof.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(prof.name)}`} className="w-16 h-16 rounded-2xl object-cover border border-white/10" alt={prof.name} />
+                  <div className="flex-1">
                     <h3 className="font-bold text-sm leading-tight flex items-center gap-2">
                       {prof.name}
                       {isSelected && <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" title="Selecionado"></span>}
@@ -282,7 +368,7 @@ const Step1 = ({
           </div>
         </div>
 
-        <Button onClick={() => navigate('data-hora')} className="w-full btn-primary h-12 text-sm font-black gap-2">
+        <Button onClick={() => navigate(`/cliente/contratar/${service.id}/data-hora`)} disabled={!selectedProf} className="w-full btn-primary h-12 text-sm font-black gap-2">
           Confirmar e Agendar Horário <ArrowRight className="w-4 h-4" />
         </Button>
       </div>
@@ -292,13 +378,38 @@ const Step1 = ({
 
 // STEP 2: CHOOSE DATE AND TIME
 const Step2 = ({ 
-  service, selectedDate, setSelectedDate, selectedTime, setSelectedTime 
+  service, selectedProf, selectedDate, setSelectedDate, selectedTime, setSelectedTime 
 }: { 
-  service: Service, selectedDate: string, setSelectedDate: (d: string) => void, selectedTime: string, setSelectedTime: (t: string) => void 
+  service: Service, selectedProf: Professional, selectedDate: string, setSelectedDate: (d: string) => void, selectedTime: string, setSelectedTime: (t: string) => void 
 }) => {
   const navigate = useNavigate();
-  const dates = ['28/05', '29/05', '30/05', '31/05', '01/06'];
-  const times = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
+  
+  const dates = React.useMemo(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    // Map JS getDay() 0-6 (Sun-Sat) to the Portuguese names used in our availableDays
+    const jsDayToPt = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+    const profDays = selectedProf?.availableDays || ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
+
+    const monthDates = [];
+    for (let i = 1; i <= daysInMonth; i++) {
+      const dateObj = new Date(year, month, i);
+      const dayName = jsDayToPt[dateObj.getDay()];
+      
+      // Somente incluir se for um dia da semana em que o profissional trabalha
+      if (profDays.includes(dayName)) {
+        const dayStr = i.toString().padStart(2, '0');
+        const monthStr = (month + 1).toString().padStart(2, '0');
+        monthDates.push(`${dayStr}/${monthStr}`);
+      }
+    }
+    return monthDates;
+  }, [selectedProf]);
+
+  const times = selectedProf?.availableTimes?.length ? selectedProf.availableTimes : ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
 
   return (
     <div className="animate-in fade-in slide-in-from-right-8 duration-500 space-y-8">
@@ -343,7 +454,7 @@ const Step2 = ({
         <div className="flex gap-4 pt-4">
           <Button variant="outline" onClick={() => navigate(-1)} className="h-12 px-6 rounded-xl text-xs font-bold border-foreground/10">Voltar</Button>
           <Button 
-            onClick={() => navigate('../endereco')} 
+            onClick={() => navigate(`/cliente/contratar/${service.id}/endereco`)} 
             disabled={!selectedDate || !selectedTime}
             className="flex-1 btn-primary h-12 text-sm font-black gap-2"
           >
@@ -356,6 +467,7 @@ const Step2 = ({
 };
 
 interface Step3Props {
+  service: Service;
   cep: string;
   setCep: (val: string) => void;
   street: string;
@@ -376,6 +488,7 @@ interface Step3Props {
 
 // STEP 3: ADDRESS CEP FETCH + MASK
 const Step3 = ({
+  service,
   cep, setCep,
   street, setStreet,
   number, setNumber,
@@ -544,7 +657,7 @@ const Step3 = ({
         <div className="flex gap-4 pt-4">
           <Button variant="outline" onClick={() => navigate(-1)} className="h-12 px-6 rounded-xl text-xs font-bold border-foreground/10">Voltar</Button>
           <Button 
-            onClick={() => navigate('../pagamento')} 
+            onClick={() => navigate(`/cliente/contratar/${service.id}/pagamento`)} 
             disabled={!isValid}
             className="flex-1 btn-primary h-12 text-sm font-black gap-2"
           >

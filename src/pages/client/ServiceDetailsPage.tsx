@@ -1,18 +1,53 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Star, Clock, Shield, MessageSquare, ArrowLeft, CheckCircle2 } from 'lucide-react';
-import { services, professionals } from '@/data/mockData';
+import { Star, Clock, Shield, ArrowLeft, CheckCircle2, UserCheck } from 'lucide-react';
+import { services } from '@/data/mockData';
 import { formatCurrency } from '@/utils/formatters';
+import { Professional } from '@/types';
 
 const ServiceDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const service = services.find(s => s.id === id);
-  const professional = professionals.find(p => p.id === service?.professionalId);
+  const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+  const isProfessional = currentUser?.role === 'professional';
 
-  if (!service || !professional) return <div>Serviço não encontrado</div>;
+  const [dbProfessionals, setDbProfessionals] = useState<Professional[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProfessionals = async () => {
+      try {
+        const res = await fetch('http://localhost:3000/api/professionals');
+        if (res.ok) {
+          const dbData = await res.json();
+          const { getLocalProfessionals } = await import('@/utils/localDb');
+          const localData = getLocalProfessionals();
+          const merged = [...dbData];
+          localData.forEach((localProf: any) => {
+            if (!merged.find(p => (p.userId === localProf.id || p.userId === localProf.userId || p.id === localProf.id))) {
+              merged.push(localProf);
+            }
+          });
+          setDbProfessionals(merged);
+        } else {
+          // Fallback to local
+          const { getLocalProfessionals } = await import('@/utils/localDb');
+          setDbProfessionals(getLocalProfessionals());
+        }
+      } catch (error) {
+        const { getLocalProfessionals } = await import('@/utils/localDb');
+        setDbProfessionals(getLocalProfessionals());
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProfessionals();
+  }, []);
+
+  if (!service) return <div>Serviço não encontrado</div>;
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -73,30 +108,44 @@ const ServiceDetailsPage = () => {
               <span className="text-3xl font-bold text-primary">{formatCurrency(service.price)}</span>
             </div>
 
-            <Link to={`/cliente/contratar/${service.id}`}>
-              <Button className="w-full btn-primary h-14 text-lg mb-4">Contratar Agora</Button>
-            </Link>
-            
-            <Link to={`/cliente/chat/${professional.id}`}>
-              <Button variant="outline" className="w-full h-12 rounded-xl gap-2">
-                <MessageSquare className="w-4 h-4" /> Conversar com Técnico
-              </Button>
-            </Link>
-
-            <div className="mt-8 pt-8 border-t border-white/5">
-              <div className="flex items-center gap-4 mb-4">
-                <img src={professional.avatar} className="w-12 h-12 rounded-full border border-white/10" alt={professional.name} />
-                <div>
-                  <h4 className="font-bold">{professional.name}</h4>
-                  <div className="flex items-center gap-1 text-yellow-500 text-xs font-bold">
-                    <Star className="w-3 h-3 fill-current" /> {professional.rating} ({professional.reviewCount} avaliações)
-                  </div>
+            {/* Técnicos Disponíveis */}
+            <div className="pt-2">
+              <h3 className="font-bold text-lg mb-1">Técnicos Disponíveis</h3>
+              <p className="text-xs text-muted-foreground mb-6">Escolha um profissional capacitado para realizar este serviço.</p>
+              
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <span className="h-8 w-8 rounded-full border-4 border-t-primary border-white/5 animate-spin"></span>
                 </div>
-              </div>
-              <p className="text-xs text-muted-foreground line-clamp-2 mb-4">{professional.bio}</p>
-              <Link to={`/cliente/profissional/${professional.id}`} className="text-xs text-primary font-bold hover:underline">
-                Ver perfil completo
-              </Link>
+              ) : (
+                <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                  {dbProfessionals.map(prof => (
+                    <div key={prof.id || prof.userId} className="p-4 rounded-2xl bg-card/40 border border-white/5 hover:border-primary/30 transition-all flex flex-col gap-4">
+                      <div className="flex items-center gap-4">
+                        <img src={prof.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(prof.name)}`} className="w-12 h-12 rounded-xl object-cover border border-white/10" alt={prof.name} />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-sm truncate">{prof.name}</h4>
+                          <div className="flex items-center gap-1 text-yellow-500 text-[10px] font-bold mt-0.5">
+                            <Star className="w-3 h-3 fill-current" /> {prof.rating} ({prof.reviewCount} avaliações)
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {!isProfessional && (
+                        <Link to={`/cliente/contratar/${service.id}?prof=${prof.id || prof.userId}`}>
+                          <Button className="w-full btn-primary h-10 text-xs font-black gap-2">
+                            <UserCheck className="w-4 h-4" /> Escolher e Contratar
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {dbProfessionals.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-4">Nenhum técnico disponível no momento.</p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

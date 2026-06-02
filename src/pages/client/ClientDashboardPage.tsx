@@ -145,7 +145,7 @@ const ClientDashboardPage = () => {
         </div>
       )
     },
-    { 
+    ...(user?.role !== 'professional' ? [{ 
       label: 'Solicitar Serviço', 
       value: 'Criar', 
       icon: Plus, 
@@ -180,7 +180,7 @@ const ClientDashboardPage = () => {
           </Button>
         </div>
       )
-    },
+    }] : []),
     { 
       label: 'Nível Atual', 
       value: user?.level || 'Silver', 

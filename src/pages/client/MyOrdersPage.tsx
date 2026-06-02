@@ -21,10 +21,47 @@ import {
 import { formatCurrency } from '@/utils/formatters';
 import { Link } from 'react-router-dom';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
+import { Order } from '@/types';
 
 const MyOrdersPage = () => {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [activeTab, setActiveTab] = React.useState<'all' | 'active' | 'past'>('all');
+  
+  const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+  const token = localStorage.getItem('token');
+  const isProfessional = currentUser?.role === 'professional';
+
+  const [orders, setOrders] = React.useState<Order[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    if (!currentUser) {
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchOrders = async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/api/orders?clientId=${currentUser.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setOrders(data);
+        } else {
+          setOrders(getLocalOrders().filter(o => o.clientId === currentUser.id));
+        }
+      } catch (error) {
+        setOrders(getLocalOrders().filter(o => o.clientId === currentUser.id));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -45,8 +82,7 @@ const MyOrdersPage = () => {
     return labels[status] || status;
   };
 
-  // Filter orders for "Sofia Spencer" (u1) dynamically
-  const clientOrders = getLocalOrders().filter(o => o.clientId === 'u1');
+  const clientOrders = orders;
 
   // Filter based on search term
   const searchedOrders = clientOrders.filter(order => 
@@ -71,6 +107,17 @@ const MyOrdersPage = () => {
   const activeCount = clientOrders.filter(o => o.status !== 'completed' && o.status !== 'cancelled').length;
   const completedCount = clientOrders.filter(o => o.status === 'completed').length;
 
+  if (isLoading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <span className="h-10 w-10 rounded-full border-4 border-t-primary border-white/5 animate-spin"></span>
+          <p className="text-muted-foreground text-sm font-bold">Carregando pedidos...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 animate-page-entrance">
       <PageHeader 
@@ -87,11 +134,13 @@ const MyOrdersPage = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Link to="/cliente/novo-servico" className="w-full sm:w-auto shrink-0">
-            <Button className="btn-primary h-11 px-5 rounded-xl gap-2 font-black w-full sm:w-auto text-xs">
-              <Sparkles className="w-4 h-4" /> Solicitar Serviço Customizado
-            </Button>
-          </Link>
+          {!isProfessional && (
+            <Link to="/cliente/novo-servico" className="w-full sm:w-auto shrink-0">
+              <Button className="btn-primary h-11 px-5 rounded-xl gap-2 font-black w-full sm:w-auto text-xs">
+                <Sparkles className="w-4 h-4" /> Solicitar Serviço Customizado
+              </Button>
+            </Link>
+          )}
         </div>
       </PageHeader>
 
@@ -173,11 +222,13 @@ const MyOrdersPage = () => {
                 <p className="text-sm text-muted-foreground mb-6">
                   {searchTerm ? 'Nenhum pedido atende aos seus critérios de busca.' : 'Você não possui pedidos nesta categoria.'}
                 </p>
-                <Link to="/cliente/novo-servico">
-                  <Button className="btn-primary px-6 h-12 rounded-xl text-sm gap-2 animate-pulse-glow">
-                    <Compass className="w-4 h-4" /> Solicitar Serviço
-                  </Button>
-                </Link>
+                {!isProfessional && (
+                  <Link to="/cliente/novo-servico">
+                    <Button className="btn-primary px-6 h-12 rounded-xl text-sm gap-2 animate-pulse-glow">
+                      <Compass className="w-4 h-4" /> Solicitar Serviço
+                    </Button>
+                  </Link>
+                )}
               </div>
             )}
           </div>
@@ -215,11 +266,13 @@ const MyOrdersPage = () => {
             <p className="text-xs text-muted-foreground mb-6 leading-relaxed">
               Conserte seu notebook, monte seu PC Gamer dos sonhos ou configure sua rede corporativa com nossos técnicos experientes.
             </p>
-            <Link to="/cliente/novo-servico">
-              <Button className="btn-primary w-full h-12 rounded-xl text-xs gap-2">
-                <Compass className="w-4 h-4" /> Solicitar Novo Serviço
-              </Button>
-            </Link>
+            {!isProfessional && (
+              <Link to="/cliente/novo-servico">
+                <Button className="btn-primary w-full h-12 rounded-xl text-xs gap-2">
+                  <Compass className="w-4 h-4" /> Solicitar Novo Serviço
+                </Button>
+              </Link>
+            )}
           </Card>
 
           {/* Platform Security advice */}

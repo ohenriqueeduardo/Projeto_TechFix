@@ -82,55 +82,9 @@ const RegisterPage = () => {
       } else {
         navigate('/cliente/dashboard');
       }
-    } catch (error: unknown) {
-      console.warn('Backend offline, registrando localmente no frontend:', error);
-      
-      // Fallback: Local registration using LocalStorage db
-      const mockUserId = `u_${Date.now()}`;
-      const fullName = `${firstName} ${lastName}`.trim();
-      const mockUser = {
-        id: mockUserId,
-        name: fullName,
-        email,
-        role,
-        avatar: `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(fullName)}`,
-        status: 'active' as const,
-        level: 'Bronze'
-      };
-
-      // 1. Save user in local users list
-      const localUsers = JSON.parse(localStorage.getItem('techfix_users') || '[]');
-      localUsers.push(mockUser);
-      localStorage.setItem('techfix_users', JSON.stringify(localUsers));
-
-      // 2. Seed professional profile locally if role is professional
-      if (role === 'professional') {
-        const localProfs = JSON.parse(localStorage.getItem('techfix_professionals') || '[]');
-        localProfs.push({
-          ...mockUser,
-          specialty: 'Técnico Especialista',
-          city: 'São Paulo, SP',
-          rating: 5.0,
-          reviewCount: 0,
-          jobs: 0,
-          yearsExperience: 1,
-          satisfaction: 100,
-          bio: 'Especialista em manutenção de hardware e suporte de TI homologado no TechFix.'
-        });
-        localStorage.setItem('techfix_professionals', JSON.stringify(localProfs));
-      }
-
-      // 3. Authenticate locally
-      localStorage.setItem('token', 'mock_jwt_token_' + mockUserId);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-
-      toast.success('Sua conta foi criada com sucesso (Modo Demonstração)! Bem-vindo ao TechFix.');
-
-      if (role === 'professional') {
-        navigate('/profissional/dashboard');
-      } else {
-        navigate('/cliente/dashboard');
-      }
+    } catch (error: any) {
+      console.error('Erro no cadastro:', error);
+      toast.error(error.message || 'Erro de conexão com o servidor. Tente novamente.');
     } finally {
       setIsLoading(false);
     }

@@ -30,7 +30,7 @@ export const register = async (req: Request, res: Response) => {
     // Check if user already exists
     const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
     if (existingUser.length > 0) {
-      return res.status(400).json({ error: 'Email already registered.' });
+      return res.status(400).json({ error: 'Este e-mail já está cadastrado no sistema.' });
     }
 
     const userId = `u_${crypto.randomBytes(4).toString('hex')}`;

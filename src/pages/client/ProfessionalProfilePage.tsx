@@ -27,6 +27,8 @@ const ProfessionalProfilePage = () => {
   const navigate = useNavigate();
   const [professional, setProfessional] = React.useState<Professional | null>(null);
   const [services, setServices] = React.useState<Service[]>([]);
+  const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+  const isProfessional = currentUser?.role === 'professional';
 
   React.useEffect(() => {
     const profs = getLocalProfessionals();
@@ -284,11 +286,13 @@ const ProfessionalProfilePage = () => {
                 </Button>
               </Link>
 
-              <Link to={`/cliente/novo-servico?prof=${professional.id}`}>
-                <Button variant="outline" className="w-full h-12 rounded-xl text-xs font-black uppercase border-white/10 hover:border-primary/50 hover:bg-primary/5 transition-all gap-1.5">
-                  <TrendingUp className="w-4 h-4 text-primary shrink-0" /> Solicitar Orçamento Customizado
-                </Button>
-              </Link>
+              {!isProfessional && (
+                <Link to={`/cliente/novo-servico?prof=${professional.id}`}>
+                  <Button variant="outline" className="w-full h-12 rounded-xl text-xs font-black uppercase border-white/10 hover:border-primary/50 hover:bg-primary/5 transition-all gap-1.5">
+                    <TrendingUp className="w-4 h-4 text-primary shrink-0" /> Solicitar Orçamento Customizado
+                  </Button>
+                </Link>
+              )}
             </div>
 
             <div className="pt-2 space-y-3">

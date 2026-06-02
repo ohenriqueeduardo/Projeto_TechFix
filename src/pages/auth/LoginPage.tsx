@@ -49,40 +49,9 @@ const LoginPage = () => {
       } else {
         navigate('/cliente/dashboard');
       }
-    } catch (error: unknown) {
-      console.warn('Conexão ao backend falhou, usando autenticação offline no frontend:', error);
-      
-      // Fallback: Check local seeded users in LocalStorage
-      const localUsers: User[] = JSON.parse(localStorage.getItem('techfix_users') || '[]');
-      // Seek matching user by email
-      const matchedUser = localUsers.find((u: User) => u.email.toLowerCase() === email.trim().toLowerCase());
-
-      if (matchedUser) {
-        // Authenticate offline
-        localStorage.setItem('token', 'mock_jwt_token_' + matchedUser.id);
-        localStorage.setItem('user', JSON.stringify(matchedUser));
-
-        toast.success(`Bem-vindo de volta (Modo Offline), ${matchedUser.name}!`);
-
-        if (matchedUser.role === 'admin') {
-          navigate('/admin/dashboard');
-        } else if (matchedUser.role === 'professional') {
-          navigate('/profissional/dashboard');
-        } else {
-          navigate('/cliente/dashboard');
-        }
-      } else {
-        // If not found in localStorage, let's allow Sofia to login for testing with any password if email is sofia@example.com
-        if (email.toLowerCase() === 'sofia@example.com') {
-          const sofiaUser = { id: 'u1', name: 'Sofia Spencer', email: 'sofia@example.com', role: 'client', avatar: 'https://i.pravatar.cc/150?u=sofia', level: 'Bronze', status: 'active' };
-          localStorage.setItem('token', 'mock_jwt_token_sofia');
-          localStorage.setItem('user', JSON.stringify(sofiaUser));
-          toast.success('Bem-vindo de volta (Modo Demo), Sofia Spencer!');
-          navigate('/cliente/dashboard');
-        } else {
-          toast.error('E-mail não cadastrado localmente. Por favor, crie uma conta.');
-        }
-      }
+    } catch (error: any) {
+      console.error('Erro no login:', error);
+      toast.error(error.message || 'Erro de conexão com o servidor. Tente novamente.');
     } finally {
       setIsLoading(false);
     }

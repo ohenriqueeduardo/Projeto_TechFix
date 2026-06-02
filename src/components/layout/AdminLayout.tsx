@@ -29,6 +29,13 @@ const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
+  React.useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (!storedUser) {
+      navigate('/login');
+    }
+  }, [navigate]);
+  
   const menuItems = [
     { icon: LayoutDashboard, label: 'Painel Geral', path: '/admin/dashboard' },
     { icon: Users, label: 'Usuários', path: '/admin/usuarios' },
