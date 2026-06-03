@@ -109,22 +109,19 @@ const CheckoutFlow = () => {
           const localProfs = getLocalProfessionals();
           profsToSet = localProfs.length > 0 ? localProfs : professionals;
         }
-          const data = await res.json();
-          let profsToSet = data;
-          
-          if (requestedProfId) {
-            profsToSet = profsToSet.filter((p: Professional) => p.id === requestedProfId || p.userId === requestedProfId);
-          } else if (service?.professionalId) {
-            profsToSet = profsToSet.filter((p: Professional) => p.id === service.professionalId || p.userId === service.professionalId);
-          }
-          
-          if (profsToSet.length > 0) {
-            setActiveProfessionals(profsToSet);
-            setSelectedProf(profsToSet[0]);
-          } else {
-            setActiveProfessionals([]);
-            setSelectedProf(null);
-          }
+        
+        if (requestedProfId) {
+          profsToSet = profsToSet.filter((p: Professional) => p.id === requestedProfId || p.userId === requestedProfId);
+        } else if (service?.professionalId) {
+          profsToSet = profsToSet.filter((p: Professional) => p.id === service.professionalId || p.userId === service.professionalId);
+        }
+        
+        if (profsToSet.length > 0) {
+          setActiveProfessionals(profsToSet);
+          setSelectedProf(profsToSet[0]);
+        } else {
+          setActiveProfessionals([]);
+          setSelectedProf(null);
         }
       } catch (e) {
         console.error('Failed to fetch professionals');
