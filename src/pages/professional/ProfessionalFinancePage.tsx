@@ -14,23 +14,91 @@ import {
   History,
   FileText
 } from 'lucide-react';
-import { transactions as initialTransactions } from '@/data/mockData';
 import { Transaction } from '@/types';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
+import { getLocalOrders, getLocalTransactions, saveLocalTransactions } from '@/utils/localDb';
 
 const ProfessionalFinancePage = () => {
-  const [transactions, setTransactions] = React.useState(initialTransactions);
-  const [balanceAvailable, setBalanceAvailable] = React.useState(1280.00);
-  const [balanceBlocked, setBalanceBlocked] = React.useState(600.00);
-  const [totalWithdrawn, setTotalWithdrawn] = React.useState(500.00);
+  const [user, setUser] = React.useState<any>(null);
+  const [orders, setOrders] = React.useState<any[]>([]);
+  const [transactions, setTransactions] = React.useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   // Form states
   const [pixKey, setPixKey] = React.useState('');
   const [pixType, setPixType] = React.useState('cpf');
   const [withdrawValue, setWithdrawValue] = React.useState('');
 
-  const handleRequestWithdraw = (e: React.FormEvent) => {
+  const fetchFinanceData = React.useCallback(async (userId: string, token: string) => {
+    try {
+      // 1. Fetch Orders
+      const ordersResponse = await fetch(`http://localhost:3000/api/orders?professionalId=${userId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (ordersResponse.ok) {
+        setOrders(await ordersResponse.json());
+      } else {
+        setOrders(getLocalOrders().filter((o: any) => o.professionalId === userId));
+      }
+
+      // 2. Fetch Transactions
+      const txResponse = await fetch(`http://localhost:3000/api/transactions/professional/${userId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (txResponse.ok) {
+        setTransactions(await txResponse.json());
+      } else {
+        setTransactions(getLocalTransactions().filter((t: any) => t.professionalId === userId));
+      }
+    } catch (error) {
+      console.warn('Backend connection failed, loading offline finance data:', error);
+      setOrders(getLocalOrders().filter((o: any) => o.professionalId === userId));
+      setTransactions(getLocalTransactions().filter((t: any) => t.professionalId === userId));
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    if (storedUser && token) {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      fetchFinanceData(parsedUser.id, token);
+    } else {
+      setIsLoading(false);
+    }
+  }, [fetchFinanceData]);
+
+  const { balanceAvailable, balanceBlocked, totalWithdrawn } = React.useMemo(() => {
+    const blocked = orders
+      .filter((o: any) => o.status !== 'completed' && o.status !== 'cancelled')
+      .reduce((sum: number, o: any) => sum + Number(o.price), 0);
+
+    const income = transactions
+      .filter((t: any) => t.type === 'income' && t.status === 'completed')
+      .reduce((sum: number, t: any) => sum + Number(t.value), 0);
+
+    const expense = transactions
+      .filter((t: any) => t.type === 'expense' && (t.status === 'completed' || t.status === 'pending'))
+      .reduce((sum: number, t: any) => sum + Number(t.value), 0);
+
+    const available = Math.max(0, income - expense);
+
+    const withdrawn = transactions
+      .filter((t: any) => t.type === 'expense' && t.status === 'completed')
+      .reduce((sum: number, t: any) => sum + Number(t.value), 0);
+
+    return {
+      balanceAvailable: available,
+      balanceBlocked: blocked,
+      totalWithdrawn: withdrawn
+    };
+  }, [orders, transactions]);
+
+  const handleRequestWithdraw = async (e: React.FormEvent) => {
     e.preventDefault();
     const val = parseFloat(withdrawValue);
     
@@ -49,23 +117,66 @@ const ProfessionalFinancePage = () => {
       return;
     }
 
-    // Process Withdrawal Simulation
-    setBalanceAvailable(prev => prev - val);
-    setTotalWithdrawn(prev => prev + val);
+    const token = localStorage.getItem('token');
     
-    const newTx: Transaction = {
+    // Save to local storage offline fallback
+    const localTxs = getLocalTransactions();
+    const localNewTx: Transaction = {
       id: `t_new_${Date.now()}`,
       type: 'expense',
       title: `Saque PIX (${pixKey}) - Pendente de Liberação`,
       value: val,
       date: new Date().toISOString().split('T')[0],
-      status: 'pending'
+      status: 'pending',
+      professionalId: user?.id
     };
+    localTxs.unshift(localNewTx);
+    saveLocalTransactions(localTxs);
 
-    setTransactions(prev => [newTx, ...prev]);
+    // POST to backend
+    try {
+      const res = await fetch('http://localhost:3000/api/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          professionalId: user.id,
+          type: 'expense',
+          title: `Saque PIX (${pixKey}) - Pendente de Liberação`,
+          value: val,
+          status: 'pending'
+        })
+      });
+
+      if (res.ok) {
+        toast.success('Solicitação de saque PIX registrada! Aguarde aprovação do administrador.');
+      } else {
+        console.warn('Backend failed to create withdrawal transaction, using local storage.');
+        toast.success('Solicitação de saque PIX registrada (offline)!');
+      }
+    } catch (err) {
+      console.warn('Offline request, using local storage:', err);
+      toast.success('Solicitação de saque PIX registrada (offline)!');
+    }
+
     setWithdrawValue('');
-    toast.success('Solicitação de saque PIX registrada! Aguarde aprovação do administrador.');
+    if (user && token) {
+      fetchFinanceData(user.id, token);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <span className="h-10 w-10 rounded-full border-4 border-t-primary border-white/5 animate-spin"></span>
+          <p className="text-muted-foreground text-sm font-bold">Carregando dados financeiros...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-10 animate-page-entrance max-w-7xl mx-auto">
