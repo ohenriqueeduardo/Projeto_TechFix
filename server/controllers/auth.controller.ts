@@ -25,7 +25,7 @@ const verifyPassword = (password: string, stored: string): boolean => {
 // POST /api/auth/register
 export const register = async (req: Request, res: Response) => {
   try {
-    const { name, email, password, role, avatar } = req.body;
+    const { name, email, password, role, avatar, phone, dateOfBirth, cep, street, number, complement, neighborhood, city, state } = req.body;
 
     // Check if user already exists
     const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
@@ -45,6 +45,15 @@ export const register = async (req: Request, res: Response) => {
       role: userRole,
       avatar: avatar || null,
       status: 'active',
+      phone: phone || null,
+      dateOfBirth: dateOfBirth || null,
+      cep: cep || null,
+      street: street || null,
+      number: number || null,
+      complement: complement || null,
+      neighborhood: neighborhood || null,
+      city: city || null,
+      state: state || null,
       createdAt: new Date(),
     }).returning();
 
@@ -128,6 +137,109 @@ export const getMe = async (req: Request, res: Response) => {
     res.json({ user: userWithoutPassword });
   } catch (error) {
     console.error('Verify Session Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// POST /api/auth/social
+export const socialLogin = async (req: Request, res: Response) => {
+  try {
+    const { email, name, provider, avatar, phone, dateOfBirth, cep, street, number, complement, neighborhood, city, state } = req.body;
+
+    // Check if user already exists
+    const userList = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    
+    let user;
+
+    if (userList.length > 0) {
+      user = userList[0];
+      
+      if (user.status !== 'active') {
+        return res.status(403).json({ error: 'Your account has been deactivated.' });
+      }
+    } else {
+      // User doesn't exist, create a new one
+      const userId = `u_${crypto.randomBytes(4).toString('hex')}`;
+      const randomPassword = crypto.randomBytes(16).toString('hex');
+      const hashedPassword = hashPassword(randomPassword);
+
+      const newUser = await db.insert(users).values({
+        id: userId,
+        name: name || `User from ${provider}`,
+        email,
+        password: hashedPassword,
+        role: 'client',
+        avatar: avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${email}`,
+        status: 'active',
+        phone: phone || null,
+        dateOfBirth: dateOfBirth || null,
+        cep: cep || null,
+        street: street || null,
+        number: number || null,
+        complement: complement || null,
+        neighborhood: neighborhood || null,
+        city: city || null,
+        state: state || null,
+        createdAt: new Date(),
+      }).returning();
+
+      user = newUser[0];
+    }
+
+    // Generate JWT Token (Limited session to 2 hours)
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '2h' }
+    );
+
+    const { password: _, ...userWithoutPassword } = user;
+
+    res.json({
+      message: 'Social Login successful',
+      user: userWithoutPassword,
+      token,
+      isNewUser: userList.length === 0
+    });
+  } catch (error) {
+    console.error('Social Login Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// PUT /api/auth/complete-profile
+export const completeProfile = async (req: Request, res: Response) => {
+  try {
+    const userPayload = (req as Request & { user?: { id: string } }).user;
+    if (!userPayload) {
+      return res.status(401).json({ error: 'Session expired or invalid.' });
+    }
+
+    const { phone, dateOfBirth, cep, street, number, complement, neighborhood, city, state } = req.body;
+
+    const updatedUser = await db.update(users)
+      .set({
+        phone: phone || null,
+        dateOfBirth: dateOfBirth || null,
+        cep: cep || null,
+        street: street || null,
+        number: number || null,
+        complement: complement || null,
+        neighborhood: neighborhood || null,
+        city: city || null,
+        state: state || null,
+      })
+      .where(eq(users.id, userPayload.id))
+      .returning();
+
+    if (updatedUser.length === 0) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    const { password: _, ...userWithoutPassword } = updatedUser[0];
+    res.json({ message: 'Profile completed successfully', user: userWithoutPassword });
+  } catch (error) {
+    console.error('Complete Profile Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };

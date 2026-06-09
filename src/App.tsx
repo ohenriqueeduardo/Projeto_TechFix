@@ -17,6 +17,7 @@ import AdminLayout from "@/components/layout/AdminLayout";
 import HomePage from "@/pages/public/HomePage";
 import LoginPage from "@/pages/auth/LoginPage";
 import RegisterPage from "@/pages/auth/RegisterPage";
+import CompleteProfilePage from "@/pages/auth/CompleteProfilePage";
 import RecoverPasswordPage from "@/pages/auth/RecoverPasswordPage";
 import NewPasswordPage from "@/pages/auth/NewPasswordPage";
 import PasswordResetSuccessPage from "@/pages/auth/PasswordResetSuccessPage";
@@ -78,6 +79,7 @@ const App = () => (
                 <Route path="/" element={<HomePage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/cadastro" element={<RegisterPage />} />
+                <Route path="/completar-cadastro" element={<CompleteProfilePage />} />
                 <Route path="/recuperar-senha" element={<RecoverPasswordPage />} />
                 <Route path="/nova-senha" element={<NewPasswordPage />} />
                 <Route path="/senha-resetada" element={<PasswordResetSuccessPage />} />

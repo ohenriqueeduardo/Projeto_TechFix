@@ -23,23 +23,13 @@ const ServiceDetailsPage = () => {
         const res = await fetch('http://localhost:3000/api/professionals');
         if (res.ok) {
           const dbData = await res.json();
-          const { getLocalProfessionals } = await import('@/utils/localDb');
-          const localData = getLocalProfessionals();
-          const merged = [...dbData];
-          localData.forEach((localProf: any) => {
-            if (!merged.find(p => (p.userId === localProf.id || p.userId === localProf.userId || p.id === localProf.id))) {
-              merged.push(localProf);
-            }
-          });
-          setDbProfessionals(merged);
+          setDbProfessionals(dbData);
         } else {
-          // Fallback to local
-          const { getLocalProfessionals } = await import('@/utils/localDb');
-          setDbProfessionals(getLocalProfessionals());
+          setDbProfessionals([]);
         }
       } catch (error) {
-        const { getLocalProfessionals } = await import('@/utils/localDb');
-        setDbProfessionals(getLocalProfessionals());
+        console.error("Failed to fetch professionals:", error);
+        setDbProfessionals([]);
       } finally {
         setIsLoading(false);
       }
@@ -119,7 +109,7 @@ const ServiceDetailsPage = () => {
                 </div>
               ) : (
                 <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                  {dbProfessionals.map(prof => (
+                  {dbProfessionals.map((prof: Professional & { userId?: string }) => (
                     <div key={prof.id || prof.userId} className="p-4 rounded-2xl bg-card/40 border border-white/5 hover:border-primary/30 transition-all flex flex-col gap-4">
                       <div className="flex items-center gap-4">
                         <img src={prof.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(prof.name)}`} className="w-12 h-12 rounded-xl object-cover border border-white/10" alt={prof.name} />

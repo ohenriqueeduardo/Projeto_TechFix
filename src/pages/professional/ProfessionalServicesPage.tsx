@@ -14,26 +14,68 @@ import {
   Filter,
   AlertCircle
 } from 'lucide-react';
-import { orders as initialOrders } from '@/data/mockData';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
 
 const ProfessionalServicesPage = () => {
-  const [orders, setOrders] = React.useState(initialOrders.filter(o => o.professionalId === 'p1'));
+  const [orders, setOrders] = React.useState<any[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [activeTab, setActiveTab] = React.useState<'all' | 'pending' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled'>('all');
   const [searchTerm, setSearchTerm] = React.useState('');
 
-  const handleStatusChange = (orderId: string, newStatus: 'pending' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled') => {
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-    
-    if (newStatus === 'scheduled') {
-      toast.success('Serviço agendado e aceito com sucesso!');
-    } else if (newStatus === 'in_progress') {
-      toast.info('Serviço iniciado! Mãos à obra.');
-    } else if (newStatus === 'completed') {
-      toast.success('Serviço marcado como concluído! Pagamento enviado para sua conta.');
-    } else if (newStatus === 'cancelled') {
-      toast.error('Serviço recusado ou cancelado.');
+  React.useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const storedUser = localStorage.getItem('user');
+        const token = localStorage.getItem('token');
+        if (!storedUser || !token) return;
+        
+        const user = JSON.parse(storedUser);
+        const response = await fetch(`http://localhost:3000/api/orders?professionalId=${user.id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setOrders(data);
+        }
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchOrders();
+  }, []);
+
+  const handleStatusChange = async (orderId: string, newStatus: 'pending' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled') => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3000/api/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (!response.ok) throw new Error('Failed to update status');
+
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      
+      if (newStatus === 'scheduled') {
+        toast.success('Serviço agendado e aceito com sucesso!');
+      } else if (newStatus === 'in_progress') {
+        toast.info('Serviço iniciado! Mãos à obra.');
+      } else if (newStatus === 'completed') {
+        toast.success('Serviço marcado como concluído! Pagamento enviado para sua conta.');
+      } else if (newStatus === 'cancelled') {
+        toast.error('Serviço recusado ou cancelado.');
+      }
+    } catch (error) {
+      toast.error('Erro ao atualizar status do serviço.');
+      console.error(error);
     }
   };
 
@@ -114,7 +156,11 @@ const ProfessionalServicesPage = () => {
       </div>
 
       {/* Services Fila */}
-      {filteredOrders.length > 0 ? (
+      {isLoading ? (
+        <div className="flex justify-center items-center py-20">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : filteredOrders.length > 0 ? (
         <div className="grid grid-cols-1 gap-6">
           {filteredOrders.map((order) => (
             <Card key={order.id} className="p-6 bg-card/30 border-white/5 rounded-3xl hover:border-primary/20 transition-all duration-300 relative overflow-hidden group">

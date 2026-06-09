@@ -3,7 +3,7 @@ import { useParams, useLocation } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Send, Paperclip, MoreVertical, Phone, Video, Search } from 'lucide-react';
-import { professionals } from '@/data/mockData';
+import { Professional } from '@/types';
 
 interface ChatContact {
   id: string;
@@ -26,14 +26,33 @@ const ChatPage = () => {
     { id: 'c3', name: 'Pedro Rocha', avatar: 'https://i.pravatar.cc/150?u=pedro', status: 'Online agora' },
   ];
 
+  const [dbContacts, setDbContacts] = React.useState<ChatContact[]>([]);
+
+  React.useEffect(() => {
+    if (!isProfessional) {
+      const fetchProfs = async () => {
+        try {
+          const res = await fetch('http://localhost:3000/api/professionals');
+          if (res.ok) {
+            const data = await res.json();
+            setDbContacts(data.map((p: Professional & { userId?: string, user?: { avatar?: string } }) => ({
+              id: p.id || p.userId || '',
+              name: p.name,
+              avatar: p.user?.avatar || p.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${p.name}`,
+              status: 'Online agora'
+            })));
+          }
+        } catch(e) {
+          console.error('Failed to fetch professionals:', e);
+        }
+      };
+      fetchProfs();
+    }
+  }, [isProfessional]);
+
   const contactsList: ChatContact[] = isProfessional
     ? clients
-    : professionals.map(p => ({
-        id: p.id,
-        name: p.name,
-        avatar: p.avatar || 'https://i.pravatar.cc/150',
-        status: 'Online agora'
-      }));
+    : dbContacts.length > 0 ? dbContacts : [{id: '1', name: 'Suporte Técnico', avatar: 'https://i.pravatar.cc/150', status: 'Online agora'}];
 
   // Pick correct active contact details based on role
   const activeContact: ChatContact = contactsList.find(c => c.id === id) || contactsList[0];

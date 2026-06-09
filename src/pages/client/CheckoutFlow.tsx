@@ -19,7 +19,7 @@ import {
   Laptop
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { services, professionals } from '@/data/mockData';
+import { services } from '@/data/mockData';
 import { formatCurrency } from '@/utils/formatters';
 import type { Professional, Service } from '@/types';
 import { toast } from 'sonner';
@@ -97,23 +97,15 @@ const CheckoutFlow = () => {
         
         if (res.ok) {
           const dbData = await res.json();
-          const localProfs = getLocalProfessionals();
-          const merged = [...dbData];
-          localProfs.forEach((localProf: any) => {
-            if (!merged.find(p => (p.userId === localProf.id || p.userId === localProf.userId || p.id === localProf.id))) {
-              merged.push(localProf);
-            }
-          });
-          profsToSet = merged;
+          profsToSet = dbData;
         } else {
-          const localProfs = getLocalProfessionals();
-          profsToSet = localProfs.length > 0 ? localProfs : professionals;
+          profsToSet = [];
         }
         
         if (requestedProfId) {
-          profsToSet = profsToSet.filter((p: Professional) => p.id === requestedProfId || p.userId === requestedProfId);
+          profsToSet = profsToSet.filter((p: Professional & { userId?: string }) => p.id === requestedProfId || p.userId === requestedProfId);
         } else if (service?.professionalId) {
-          profsToSet = profsToSet.filter((p: Professional) => p.id === service.professionalId || p.userId === service.professionalId);
+          profsToSet = profsToSet.filter((p: Professional & { userId?: string }) => p.id === service.professionalId || p.userId === service.professionalId);
         }
         
         if (profsToSet.length > 0) {
@@ -180,7 +172,7 @@ const CheckoutFlow = () => {
         );
 
     const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
-    const professionalIdToUse = selectedProf ? ((selectedProf as any).userId || selectedProf.id) : '';
+    const professionalIdToUse = selectedProf ? ((selectedProf as Professional & { userId?: string }).userId || selectedProf.id) : '';
 
     const newOrder = {
       id: orderId,

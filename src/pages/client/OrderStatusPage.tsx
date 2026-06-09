@@ -17,7 +17,6 @@ import {
   Star
 } from 'lucide-react';
 import { getLocalOrders, saveLocalOrders, getLocalProfessionals } from '@/utils/localDb';
-import { professionals } from '@/data/mockData';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
 import { Order } from '@/types';
@@ -25,18 +24,38 @@ import { Order } from '@/types';
 const OrderStatusPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [order, setOrder] = React.useState<Order | null>(() => {
-    const all = getLocalOrders();
-    return all.find(o => o.id === id || o.code === id) || null;
-  });
+  const [order, setOrder] = React.useState<any>(null);
+  const [prof, setProf] = React.useState<any>({ name: 'Carregando...', avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=tech', bio: '', specialty: 'Especialista', rating: 5 });
   const [showDeclineDialog, setShowDeclineDialog] = React.useState(false);
 
   React.useEffect(() => {
-    const allOrders = getLocalOrders();
-    const found = allOrders.find(o => o.id === id || o.code === id);
-    if (found) {
-      setOrder(found);
-    }
+    const fetchOrder = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`http://localhost:3000/api/orders/${id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setOrder(data);
+
+          const prefRes = await fetch(`http://localhost:3000/api/professionals/${data.professionalId}`);
+          if (prefRes.ok) {
+            const pData = await prefRes.json();
+            setProf({
+              ...pData,
+              name: data.professionalName,
+              avatar: pData.user?.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${data.professionalId}`
+            });
+          } else {
+             setProf((prev: any) => ({...prev, name: data.professionalName}));
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchOrder();
   }, [id]);
 
   if (!order) {
@@ -53,57 +72,26 @@ const OrderStatusPage = () => {
   }
 
   const handleRedirectToOtherProfessional = () => {
-    const profs = getLocalProfessionals();
-    // Find a professional that is NOT the current one to redirect to
-    const otherProf = profs.find(p => p.id !== order.professionalId) || profs.find(p => p.name !== order.professionalName);
-    
-    if (otherProf) {
-      const allOrders = getLocalOrders();
-      const updated = allOrders.map(o => {
-        if (o.id === order.id) {
-          return { 
-            ...o, 
-            professionalId: otherProf.id, 
-            professionalName: otherProf.name, 
-            status: 'pending' as const 
-          };
-        }
-        return o;
+    toast.error('Nenhum outro especialista disponível no momento.');
+  };
+
+  const handleCancelOrderEntirely = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`http://localhost:3000/api/orders/${order.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ status: 'cancelled' })
       });
-      saveLocalOrders(updated);
-      toast.success(`Chamado redirecionado com sucesso para o especialista ${otherProf.name}!`);
-      
-      // Update state
-      setOrder({ 
-        ...order, 
-        professionalId: otherProf.id, 
-        professionalName: otherProf.name, 
-        status: 'pending' as const 
-      });
+      toast.error('Chamado cancelado com sucesso.');
+      setOrder({ ...order, status: 'cancelled' as const });
       setShowDeclineDialog(false);
-    } else {
-      toast.error('Nenhum outro especialista disponível no momento.');
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  const handleCancelOrderEntirely = () => {
-    const allOrders = getLocalOrders();
-    const updated = allOrders.map(o => {
-      if (o.id === order.id) {
-        return { ...o, status: 'cancelled' as const };
-      }
-      return o;
-    });
-    saveLocalOrders(updated);
-    toast.error('Chamado cancelado com sucesso.');
-
-    // Update state
-    setOrder({ ...order, status: 'cancelled' as const });
-    setShowDeclineDialog(false);
-  };
-
-  // Find professional profile
-  const prof = professionals.find(p => p.id === order.professionalId || p.name === order.professionalName) || professionals[0];
+  // Professional fetched from state
 
   const getStatusStep = (status: string) => {
     switch (status) {

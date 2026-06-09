@@ -42,6 +42,12 @@ const LoginPage = () => {
       toast.success(`Bem-vindo de volta, ${data.user.name}! Acesso concedido.`);
 
       const userRole = data.user.role;
+      if (!data.user.phone || !data.user.cep) {
+        toast.info('Por favor, complete as informações do seu perfil para continuar.');
+        navigate('/completar-cadastro');
+        return;
+      }
+
       if (userRole === 'admin') {
         navigate('/admin/dashboard');
       } else if (userRole === 'professional') {
@@ -49,38 +55,66 @@ const LoginPage = () => {
       } else {
         navigate('/cliente/dashboard');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro no login:', error);
-      toast.error(error.message || 'Erro de conexão com o servidor. Tente novamente.');
+      toast.error((error as Error).message || 'Erro de conexão com o servidor. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSocialLogin = (provider: 'Google' | 'Apple') => {
+  const handleSocialLogin = async (provider: 'Google' | 'Apple') => {
+    // Simulador: Pede o e-mail para fingir que a rede social retornou os dados
+    const simulatedEmail = window.prompt(`[Ambiente Local] Simulação de integração OAuth.\nDigite o e-mail retornado pela conta ${provider}:`, `user_${provider.toLowerCase()}@techfix.com`);
+    
+    if (!simulatedEmail) {
+      toast.error('Autenticação cancelada pelo usuário.');
+      return;
+    }
+
     setSocialProvider(provider);
     setIsSocialLoading(true);
 
-    setTimeout(() => {
+    try {
+      const response = await fetch('http://localhost:3000/api/auth/social', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: simulatedEmail,
+          name: `Usuário ${provider}`,
+          provider,
+          avatar: `https://api.dicebear.com/7.x/adventurer/svg?seed=${simulatedEmail}`
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `Erro ao autenticar com ${provider}.`);
+      }
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      if (data.isNewUser || !data.user.phone || !data.user.cep) {
+        if (data.isNewUser) {
+          toast.success(`Conta criada automaticamente via ${provider}! Precisamos de mais alguns dados.`);
+        } else {
+          toast.info('Por favor, complete as informações do seu perfil para continuar.');
+        }
+        navigate('/completar-cadastro');
+        return;
+      } else {
+        toast.success(`Acesso concedido via ${provider}! Bem-vindo de volta.`);
+        navigate('/cliente/dashboard');
+      }
+    } catch (error: unknown) {
+      console.error('Erro no login social:', error);
+      toast.error((error as Error).message || 'Erro de conexão com o servidor. Tente novamente.');
+    } finally {
       setIsSocialLoading(false);
-      
-      // Seed a beautiful mock social user
-      const mockSocialUser = {
-        id: `u_social_${Date.now()}`,
-        name: `Conectado via ${provider}`,
-        email: `social_${provider.toLowerCase()}@techfix.com`,
-        role: 'client' as const,
-        avatar: `https://api.dicebear.com/7.x/adventurer/svg?seed=${provider}`,
-        status: 'active' as const,
-        level: 'Silver'
-      };
-
-      localStorage.setItem('token', `mock_social_token_${provider}`);
-      localStorage.setItem('user', JSON.stringify(mockSocialUser));
-
-      toast.success(`Conexão com ${provider} autorizada com sucesso!`);
-      navigate('/cliente/dashboard');
-    }, 1500);
+      setSocialProvider(null);
+    }
   };
 
   return (

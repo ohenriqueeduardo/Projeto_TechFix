@@ -9,6 +9,15 @@ export const users = pgTable('users', {
   avatar: text('avatar'),
   level: text('level'),
   status: text('status').notNull().default('active'),
+  phone: text('phone'),
+  dateOfBirth: text('date_of_birth'),
+  cep: text('cep'),
+  street: text('street'),
+  number: text('number'),
+  complement: text('complement'),
+  neighborhood: text('neighborhood'),
+  city: text('city'),
+  state: text('state'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 

@@ -35,18 +35,7 @@ async function seed() {
     console.log('Inserting Users...');
     await db.insert(users).values(allUsersToInsert).onConflictDoNothing();
 
-    console.log('Inserting Professionals...');
-    await db.insert(professionals).values(mockData.professionals.map(p => ({
-      userId: p.id,
-      specialty: p.specialty,
-      city: p.city,
-      rating: p.rating,
-      reviewCount: p.reviewCount,
-      jobs: p.jobs,
-      yearsExperience: p.yearsExperience,
-      satisfaction: p.satisfaction,
-      bio: p.bio,
-    }))).onConflictDoNothing();
+    console.log('Inserting Professionals... (Skipped, user wants it empty)');
 
     console.log('Inserting Services...');
     await db.insert(services).values(mockData.services.map(s => ({
@@ -68,32 +57,8 @@ async function seed() {
     );
     await db.insert(serviceTags).values(tagsToInsert).onConflictDoNothing();
 
-    console.log('Inserting Orders...');
-    await db.insert(orders).values(mockData.orders.map(o => ({
-      id: o.id,
-      code: o.code,
-      serviceId: o.serviceId,
-      serviceTitle: o.serviceTitle,
-      clientId: o.clientId,
-      professionalId: o.professionalId,
-      date: o.date,
-      time: o.time,
-      status: o.status,
-      price: o.price,
-      paymentMethod: o.paymentMethod,
-      address: o.address,
-    }))).onConflictDoNothing();
-
-    console.log('Inserting Transactions...');
-    await db.insert(transactions).values(mockData.transactions.map(t => ({
-      id: t.id,
-      professionalId: 'p1', // Inferred from the mock scenario
-      type: t.type,
-      title: t.title,
-      value: t.value,
-      date: t.date,
-      status: t.status,
-    }))).onConflictDoNothing();
+    console.log('Inserting Orders... (Skipped, no mock data)');
+    console.log('Inserting Transactions... (Skipped, no mock data)');
 
     console.log('Inserting Messages...');
     const chatMessages = [

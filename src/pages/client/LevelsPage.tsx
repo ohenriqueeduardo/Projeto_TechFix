@@ -10,15 +10,34 @@ import { calculateUserLevelInfo } from '@/utils/levels';
 const LevelsPage = () => {
   const navigate = useNavigate();
   const [user, setUser] = React.useState<User | null>(null);
+  const [orders, setOrders] = React.useState<any[]>([]);
 
   React.useEffect(() => {
     const storedUser = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      
+      const fetchOrders = async () => {
+        try {
+          const res = await fetch(`http://localhost:3000/api/orders?clientId=${parsedUser.id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            setOrders(await res.json());
+          }
+        } catch (err) {
+          console.warn('Failed to fetch orders:', err);
+        }
+      };
+      
+      fetchOrders();
     }
   }, []);
 
-  const levelInfo = user ? calculateUserLevelInfo(user.id) : { level: 'Silver', completedCount: 0, nextLevel: 'Gold', progressPercent: 0, remainingToNext: 5 };
+  const levelInfo = user ? calculateUserLevelInfo(user.id, orders) : { level: 'Bronze', completedCount: 0, nextLevel: 'Silver', progressPercent: 0, remainingToNext: 2 } as ReturnType<typeof calculateUserLevelInfo>;
   const currentLevel = levelInfo.level;
 
   const levels = [

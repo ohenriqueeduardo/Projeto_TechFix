@@ -12,11 +12,60 @@ const RegisterPage = () => {
   const [role, setRole] = React.useState<'client' | 'professional' | 'admin'>('client');
   const [isLoading, setIsLoading] = React.useState(false);
 
-  // Form Fields
   const [firstName, setFirstName] = React.useState('');
   const [lastName, setLastName] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [phone, setPhone] = React.useState('');
+  const [dateOfBirth, setDateOfBirth] = React.useState('');
+  
+  // Address Fields
+  const [cep, setCep] = React.useState('');
+  const [street, setStreet] = React.useState('');
+  const [number, setNumber] = React.useState('');
+  const [complement, setComplement] = React.useState('');
+  const [neighborhood, setNeighborhood] = React.useState('');
+  const [city, setCity] = React.useState('');
+  const [state, setState] = React.useState('');
+  const [isSearchingCep, setIsSearchingCep] = React.useState(false);
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 11) value = value.slice(0, 11);
+    let formatted = value;
+    if (value.length > 2) formatted = `(${value.slice(0, 2)}) ${value.slice(2)}`;
+    if (value.length > 7) formatted = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
+    setPhone(formatted);
+  };
+
+  const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 8) value = value.slice(0, 8);
+    let formatted = value;
+    if (value.length > 5) formatted = `${value.slice(0, 5)}-${value.slice(5)}`;
+    setCep(formatted);
+
+    if (value.length === 8) {
+      setIsSearchingCep(true);
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${value}/json/`);
+        const data = await response.json();
+        if (data.erro) {
+          toast.error('CEP não encontrado.');
+        } else {
+          setStreet(data.logradouro || '');
+          setNeighborhood(data.bairro || '');
+          setCity(data.localidade || '');
+          setState(data.uf || '');
+          toast.success('Endereço auto-preenchido!');
+        }
+      } catch (err) {
+        toast.error('Erro na busca do CEP.');
+      } finally {
+        setIsSearchingCep(false);
+      }
+    }
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +85,15 @@ const RegisterPage = () => {
           email,
           password,
           role,
+          phone,
+          dateOfBirth,
+          cep,
+          street,
+          number,
+          complement,
+          neighborhood,
+          city,
+          state
         }),
       });
 
@@ -82,9 +140,9 @@ const RegisterPage = () => {
       } else {
         navigate('/cliente/dashboard');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro no cadastro:', error);
-      toast.error(error.message || 'Erro de conexão com o servidor. Tente novamente.');
+      toast.error((error as Error).message || 'Erro de conexão com o servidor. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -183,7 +241,7 @@ const RegisterPage = () => {
                 Já tem uma conta? <Link to="/login" className="text-primary font-black hover:underline">Entrar agora</Link>
               </p>
             </div>
-          ) : (
+          ) : step === 2 ? (
             <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
               <Button variant="ghost" onClick={() => setStep(1)} className="mb-4 -ml-2 text-xs text-muted-foreground font-bold hover:text-primary h-9 px-3">
                 <ArrowLeft className="w-4 h-4 mr-1.5" /> Voltar
@@ -246,12 +304,134 @@ const RegisterPage = () => {
                   />
                 </div>
 
-                <Button type="submit" className="w-full btn-primary h-12 text-sm font-black mt-6" disabled={isLoading}>
-                  {isLoading ? 'Registrando...' : 'Criar Minha Conta'}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="phone" className="font-bold text-xs">Telefone</Label>
+                    <Input 
+                      id="phone" 
+                      placeholder="(11) 99999-9999" 
+                      value={phone} 
+                      onChange={handlePhoneChange} 
+                      required 
+                      className="h-12 bg-card/50 border-foreground/10 rounded-xl text-sm" 
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="dateOfBirth" className="font-bold text-xs">Data de Nascimento</Label>
+                    <Input 
+                      id="dateOfBirth" 
+                      type="date"
+                      value={dateOfBirth} 
+                      onChange={(e) => setDateOfBirth(e.target.value)} 
+                      required 
+                      className="h-12 bg-card/50 border-foreground/10 rounded-xl text-sm" 
+                    />
+                  </div>
+                </div>
+
+                <Button type="button" onClick={(e) => { e.preventDefault(); setStep(3); }} className="w-full btn-primary h-12 text-sm font-black mt-6">
+                  Continuar
                 </Button>
               </form>
             </div>
-          )}
+          ) : step === 3 ? (
+            <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
+              <Button variant="ghost" onClick={() => setStep(2)} className="mb-4 -ml-2 text-xs text-muted-foreground font-bold hover:text-primary h-9 px-3">
+                <ArrowLeft className="w-4 h-4 mr-1.5" /> Voltar
+              </Button>
+              
+              <div className="space-y-1">
+                <h1 className="text-2xl font-black tracking-tight">Endereço Principal</h1>
+                <p className="text-xs text-muted-foreground">Onde os serviços serão realizados ou sua base de atendimento</p>
+              </div>
+
+              <form onSubmit={handleRegister} className="space-y-4 pt-2">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-1 space-y-1.5 relative">
+                    <Label htmlFor="cep" className="font-bold text-xs">CEP</Label>
+                    <Input 
+                      id="cep" 
+                      placeholder="00000-000" 
+                      value={cep} 
+                      onChange={handleCepChange} 
+                      required
+                      className="h-12 bg-card/50 border-foreground/10 rounded-xl text-sm" 
+                    />
+                    {isSearchingCep && <span className="absolute bottom-3 right-3 h-5 w-5 rounded-full border-2 border-t-primary border-white/5 animate-spin"></span>}
+                  </div>
+                  <div className="md:col-span-2 space-y-1.5">
+                    <Label htmlFor="street" className="font-bold text-xs">Endereço</Label>
+                    <Input 
+                      id="street" 
+                      value={street}
+                      onChange={(e) => setStreet(e.target.value)}
+                      required
+                      className="h-12 bg-card/50 border-foreground/10 rounded-xl text-sm" 
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="number" className="font-bold text-xs">Número</Label>
+                    <Input 
+                      id="number" 
+                      value={number}
+                      onChange={(e) => setNumber(e.target.value)}
+                      required
+                      className="h-12 bg-card/50 border-foreground/10 rounded-xl text-sm" 
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="complement" className="font-bold text-xs">Complemento (Opcional)</Label>
+                    <Input 
+                      id="complement" 
+                      value={complement}
+                      onChange={(e) => setComplement(e.target.value)}
+                      className="h-12 bg-card/50 border-foreground/10 rounded-xl text-sm" 
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="neighborhood" className="font-bold text-xs">Bairro</Label>
+                    <Input 
+                      id="neighborhood" 
+                      value={neighborhood}
+                      onChange={(e) => setNeighborhood(e.target.value)}
+                      required
+                      className="h-12 bg-card/50 border-foreground/10 rounded-xl text-sm" 
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="city" className="font-bold text-xs">Cidade</Label>
+                    <Input 
+                      id="city" 
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      required
+                      className="h-12 bg-card/50 border-foreground/10 rounded-xl text-sm" 
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="state" className="font-bold text-xs">Estado</Label>
+                    <Input 
+                      id="state" 
+                      value={state}
+                      onChange={(e) => setState(e.target.value)}
+                      required
+                      className="h-12 bg-card/50 border-foreground/10 rounded-xl text-sm" 
+                    />
+                  </div>
+                </div>
+
+                <Button type="submit" className="w-full btn-primary h-12 text-sm font-black mt-6" disabled={isLoading}>
+                  {isLoading ? 'Registrando...' : 'Finalizar e Criar Conta'}
+                </Button>
+              </form>
+            </div>
+          ) : null}
         </div>
       </div>
       

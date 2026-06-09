@@ -19,7 +19,7 @@ const ClientDashboardPage = () => {
   const [services, setServices] = React.useState<Service[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
-  const levelInfo = user ? calculateUserLevelInfo(user.id) : { level: 'Silver' };
+  const levelInfo = user ? calculateUserLevelInfo(user.id, orders) : { level: 'Bronze', progressPercent: 0, nextLevel: 'Silver', remainingToNext: 2, completedCount: 0 } as ReturnType<typeof calculateUserLevelInfo>;
 
   React.useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -201,19 +201,27 @@ const ClientDashboardPage = () => {
             <Shield className="w-4 h-4 text-primary shrink-0 animate-pulse" />
           </h4>
           <div className="space-y-3">
-            <div className="flex justify-between text-[11px] font-bold">
-              <span className="text-muted-foreground">Progresso para Gold</span>
-              <span className="text-primary">60%</span>
-            </div>
-            <div className="h-2 w-full bg-foreground/5 rounded-full overflow-hidden border border-foreground/5 relative">
-              <div 
-                className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 shadow-[0_0_10px_rgba(6,182,212,0.5)] rounded-full transition-all duration-1000"
-                style={{ width: '60%' }}
-              />
-            </div>
-            <p className="text-[10px] text-muted-foreground leading-relaxed font-medium">
-              Faltam apenas **2 chamados** para o nível **Gold** e liberar mais benefícios!
-            </p>
+            {levelInfo.nextLevel ? (
+              <>
+                <div className="flex justify-between text-[11px] font-bold">
+                  <span className="text-muted-foreground">Progresso para {levelInfo.nextLevel}</span>
+                  <span className="text-primary">{Math.round(levelInfo.progressPercent)}%</span>
+                </div>
+                <div className="h-2 w-full bg-foreground/5 rounded-full overflow-hidden border border-foreground/5 relative">
+                  <div 
+                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 shadow-[0_0_10px_rgba(6,182,212,0.5)] rounded-full transition-all duration-1000"
+                    style={{ width: `${levelInfo.progressPercent}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground leading-relaxed font-medium">
+                  Faltam apenas **{levelInfo.remainingToNext} chamados** para o nível **{levelInfo.nextLevel}** e liberar mais benefícios!
+                </p>
+              </>
+            ) : (
+              <div className="text-[11px] font-bold text-primary mt-2 text-center p-3 bg-primary/5 rounded-xl border border-primary/20">
+                Parabéns! Você alcançou o nível máximo e possui todos os benefícios exclusivos desbloqueados.
+              </div>
+            )}
           </div>
           <Button 
             onClick={() => navigate('/cliente/niveis')}

@@ -1,4 +1,4 @@
-import { users as initialUsers, professionals as initialProfessionals, services as initialServices, orders as initialOrders, transactions as initialTransactions } from '@/data/mockData';
+import { services as initialServices } from '@/data/mockData';
 import { User, Professional, Service, Order, Transaction, Notification } from '@/types';
 
 const KEYS = {
@@ -15,10 +15,10 @@ export const initializeDb = () => {
   // Removing the localStorage.clear() bomb that was undoing logins
 
   if (!localStorage.getItem(KEYS.USERS)) {
-    localStorage.setItem(KEYS.USERS, JSON.stringify(initialUsers));
+    localStorage.setItem(KEYS.USERS, JSON.stringify([]));
   }
   if (!localStorage.getItem(KEYS.PROFESSIONALS)) {
-    localStorage.setItem(KEYS.PROFESSIONALS, JSON.stringify(initialProfessionals));
+    localStorage.setItem(KEYS.PROFESSIONALS, JSON.stringify([]));
   }
   if (!localStorage.getItem(KEYS.SERVICES)) {
     localStorage.setItem(KEYS.SERVICES, JSON.stringify(initialServices));
