@@ -23,7 +23,7 @@ import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 
-import { getLocalProfessionals, getLocalOrders, getLocalTransactions } from '@/utils/localDb';
+import { getLocalProfessionals, getLocalOrders, saveLocalOrders, getLocalTransactions } from '@/utils/localDb';
 import { User, Order, Transaction, Review, Professional } from '@/types';
 
 const ProfessionalDashboardPage = () => {
@@ -236,7 +236,7 @@ const ProfessionalDashboardPage = () => {
     const allOrders = getLocalOrders();
     const updated = allOrders.map(o => {
       if (o.id === orderId) {
-        return { ...o, price: priceNum, status: 'counter_offer' as any };
+        return { ...o, price: priceNum, status: 'counter_offer' as const };
       }
       return o;
     });
