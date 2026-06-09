@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shield, ArrowLeft, Trophy, Zap, Sparkles, CheckCircle2, Lock, Star } from 'lucide-react';
 import { User } from '@/types';
+import { calculateUserLevelInfo } from '@/utils/levels';
 
 const LevelsPage = () => {
   const navigate = useNavigate();
@@ -17,7 +18,8 @@ const LevelsPage = () => {
     }
   }, []);
 
-  const currentLevel = user?.level || 'Silver';
+  const levelInfo = user ? calculateUserLevelInfo(user.id) : { level: 'Silver', completedCount: 0, nextLevel: 'Gold', progressPercent: 0, remainingToNext: 5 };
+  const currentLevel = levelInfo.level;
 
   const levels = [
     { 
@@ -117,19 +119,27 @@ const LevelsPage = () => {
 
           {/* Progress bar info */}
           <div className="space-y-2 max-w-xl">
-            <div className="flex justify-between text-xs font-bold">
-              <span className="text-muted-foreground">Progresso para o Nível Gold</span>
-              <span className="text-primary">60%</span>
-            </div>
-            <div className="h-3 w-full bg-foreground/5 rounded-full overflow-hidden border border-foreground/5 relative">
-              <div 
-                className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 shadow-[0_0_12px_rgba(6,182,212,0.4)] rounded-full transition-all duration-1000"
-                style={{ width: '60%' }}
-              />
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Você já concluiu 3 chamados recentemente! Faltam apenas <strong className="text-foreground">2 chamados concluídos</strong> para você atingir o nível <strong className="text-yellow-500 font-black">Gold</strong> e economizar 10% nas taxas.
-            </p>
+            {levelInfo.nextLevel ? (
+              <>
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-muted-foreground">Progresso para o Nível {levelInfo.nextLevel}</span>
+                  <span className="text-primary">{Math.round(levelInfo.progressPercent)}%</span>
+                </div>
+                <div className="h-3 w-full bg-foreground/5 rounded-full overflow-hidden border border-foreground/5 relative">
+                  <div 
+                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 shadow-[0_0_12px_rgba(6,182,212,0.4)] rounded-full transition-all duration-1000"
+                    style={{ width: `${levelInfo.progressPercent}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Você já concluiu {levelInfo.completedCount} chamados! Faltam apenas <strong className="text-foreground">{levelInfo.remainingToNext} chamados concluídos</strong> para você atingir o nível <strong className="text-yellow-500 font-black">{levelInfo.nextLevel}</strong> e desbloquear mais benefícios.
+                </p>
+              </>
+            ) : (
+              <p className="text-xs text-primary font-bold leading-relaxed">
+                Parabéns! Você alcançou o nível máximo e conta com todos os privilégios VIP da TechFix!
+              </p>
+            )}
           </div>
         </div>
       </Card>

@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Camera, Shield, Star, MapPin, Award, CheckCircle, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { calculateUserLevelInfo } from '@/utils/levels';
 import { PageHeader } from '@/components/ui/PageHeader';
 
 import { User } from '@/types';
@@ -15,6 +16,8 @@ const ProfilePage = () => {
   const [email, setEmail] = React.useState('');
   const [phone, setPhone] = React.useState('(11) 99999-9999');
   const [city, setCity] = React.useState('');
+  const [avatar, setAvatar] = React.useState('');
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -24,36 +27,66 @@ const ProfilePage = () => {
       setName(parsed.name || '');
       setEmail(parsed.email || '');
       setCity(parsed.city || 'São Paulo, SP');
+      setAvatar(parsed.avatar || '');
     }
   }, []);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatar(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
 
-    const updatedUser = {
-      ...currentUser,
-      name,
-      email,
-      city
-    };
+    try {
+      const res = await fetch(`http://localhost:3000/api/users/${currentUser.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ name, email, avatar }),
+      });
 
-    // 1. Update current session
-    localStorage.setItem('user', JSON.stringify(updatedUser));
-    setCurrentUser(updatedUser);
+      if (!res.ok) throw new Error('Erro ao salvar no servidor');
 
-    // 2. Update users list in LocalStorage database
-    const localUsers = JSON.parse(localStorage.getItem('techfix_users') || '[]') as User[];
-    const updatedUsers = localUsers.map(u => u.id === currentUser.id ? updatedUser : u);
-    localStorage.setItem('techfix_users', JSON.stringify(updatedUsers));
+      const updatedUser = {
+        ...currentUser,
+        name,
+        email,
+        city,
+        avatar
+      };
 
-    toast.success('Perfil atualizado com sucesso!');
+      // 1. Update current session
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setCurrentUser(updatedUser);
+
+      // 2. Update users list in LocalStorage database
+      const localUsers = JSON.parse(localStorage.getItem('techfix_users') || '[]') as User[];
+      const updatedUsers = localUsers.map(u => u.id === currentUser.id ? updatedUser : u);
+      localStorage.setItem('techfix_users', JSON.stringify(updatedUsers));
+
+      toast.success('Perfil atualizado com sucesso!');
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao atualizar perfil.');
+    }
   };
 
   const displayName = name || currentUser?.name || 'Sofia Spencer';
   const displayEmail = email || currentUser?.email || 'sofia@example.com';
   const displayCity = city || currentUser?.city || 'São Paulo, SP';
-  const userLevel = currentUser?.level || 'Prata';
+  const userLevelInfo = currentUser ? calculateUserLevelInfo(currentUser.id) : { level: 'Silver' };
+  const userLevel = userLevelInfo.level;
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-page-entrance">
@@ -89,11 +122,20 @@ const ProfilePage = () => {
         <div className="flex flex-col md:flex-row items-end gap-6 mb-8">
           <div className="relative group shrink-0">
             <img 
-              src={currentUser?.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(displayName)}`} 
+              src={avatar || currentUser?.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(displayName)}`} 
               className="w-36 h-36 md:w-40 md:h-40 rounded-3xl border-8 border-background shadow-2xl object-cover" 
               alt="Avatar" 
             />
-            <button className="absolute bottom-2 right-2 p-3 bg-primary text-primary-foreground rounded-2xl shadow-lg hover:scale-110 transition-transform">
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept="image/*" 
+              onChange={handleFileChange} 
+            />
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute bottom-2 right-2 p-3 bg-primary text-primary-foreground rounded-2xl shadow-lg hover:scale-110 transition-transform">
               <Camera className="w-4 h-4" />
             </button>
           </div>

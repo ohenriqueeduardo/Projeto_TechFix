@@ -143,6 +143,9 @@ const CheckoutFlow = () => {
   const [state, setState] = React.useState('');
   const [phone, setPhone] = React.useState('');
 
+  const [showSuccessPopup, setShowSuccessPopup] = React.useState(false);
+  const [finishedOrder, setFinishedOrder] = React.useState<{ code: string; price: number } | null>(null);
+
   const [paymentMethod, setPaymentMethod] = React.useState('pix'); // pix, credit, debit
   const [cardNumber, setCardNumber] = React.useState('');
   const [cardName, setCardName] = React.useState('');
@@ -238,7 +241,8 @@ const CheckoutFlow = () => {
     );
 
     toast.success('Pedido agendado com sucesso!');
-    navigate(`/cliente/contratar/${service.id}/confirmado`, { state: { orderCode, price: finalPrice } });
+    setFinishedOrder({ code: orderCode, price: finalPrice });
+    setShowSuccessPopup(true);
   };
 
   return (
@@ -297,6 +301,57 @@ const CheckoutFlow = () => {
           />
         } />
       </Routes>
+
+      {showSuccessPopup && finishedOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in zoom-in duration-300">
+          <div className="bg-card border border-foreground/10 shadow-2xl rounded-3xl p-8 max-w-md w-full mx-4 text-center space-y-6">
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="text-primary w-10 h-10" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black mb-2">Pedido Realizado!</h2>
+              <p className="text-muted-foreground text-sm">
+                Seu chamado para <strong>{service.title}</strong> foi agendado com sucesso.
+              </p>
+            </div>
+            
+            <div className="bg-foreground/5 rounded-2xl p-4 text-left space-y-3">
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Código</span>
+                <span className="font-mono font-bold text-primary">{finishedOrder.code}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Técnico</span>
+                <span className="font-bold text-primary">{selectedProf.name}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Data/Hora</span>
+                <span className="font-bold">{selectedDate} às {selectedTime}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Total Pago</span>
+                <span className="font-bold">{formatCurrency(finishedOrder.price)}</span>
+              </div>
+            </div>
+
+            <div className="space-y-3 mt-6">
+              <Button 
+                onClick={() => navigate('/cliente/meus-pedidos')} 
+                className="w-full btn-primary h-12 text-sm font-black"
+              >
+                Ver Minhas Solicitações
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => navigate('/cliente/dashboard')} 
+                className="w-full h-12 rounded-xl text-sm font-bold border-foreground/10"
+              >
+                Voltar para o Início
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

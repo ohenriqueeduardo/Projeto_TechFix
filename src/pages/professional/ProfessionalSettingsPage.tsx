@@ -15,6 +15,13 @@ const ProfessionalSettingsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [availableDays, setAvailableDays] = useState<string[]>([]);
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
+  
+  const [activeTab, setActiveTab] = useState('Agenda & Horários');
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [avatar, setAvatar] = useState('');
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -22,6 +29,11 @@ const ProfessionalSettingsPage = () => {
         const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
         if (!storedUser) return;
         
+        setCurrentUser(storedUser);
+        setName(storedUser.name || '');
+        setEmail(storedUser.email || '');
+        setAvatar(storedUser.avatar || '');
+
         const res = await fetch(`http://localhost:3000/api/professionals/${storedUser.id}`);
         if (res.ok) {
           const data = await res.json();
@@ -50,8 +62,19 @@ const ProfessionalSettingsPage = () => {
     );
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatar(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSave = async () => {
-    if (!profile) return;
+    if (!profile || !currentUser) return;
     try {
       const res = await fetch(`http://localhost:3000/api/professionals/${profile.userId}`, {
         method: 'PUT',
@@ -65,8 +88,20 @@ const ProfessionalSettingsPage = () => {
         })
       });
 
-      if (res.ok) {
+      const resUser = await fetch(`http://localhost:3000/api/users/${currentUser.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ name, email, avatar })
+      });
+
+      if (res.ok && resUser.ok) {
         toast.success("Configurações salvas com sucesso!");
+        const updatedUser = { ...currentUser, name, email, avatar };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        setCurrentUser(updatedUser);
       } else {
         toast.error("Erro ao salvar configurações.");
       }
@@ -93,14 +128,15 @@ const ProfessionalSettingsPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <nav className="space-y-2">
           {[
-            { icon: Calendar, label: "Agenda & Horários", active: true },
+            { icon: Calendar, label: "Agenda & Horários" },
             { icon: User, label: "Perfil" },
             { icon: SettingsIcon, label: "Geral" },
           ].map((item, i) => (
             <button
               key={i}
+              onClick={() => setActiveTab(item.label)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                item.active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-white/5'
+                activeTab === item.label ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-white/5'
               }`}
             >
               <item.icon className="w-4 h-4" />
@@ -111,8 +147,10 @@ const ProfessionalSettingsPage = () => {
 
         <div className="lg:col-span-3 space-y-8">
           
-          {/* DIAS DISPONÍVEIS */}
-          <div className="glass-card p-8 rounded-3xl space-y-6">
+          {activeTab === 'Agenda & Horários' && (
+            <>
+              {/* DIAS DISPONÍVEIS */}
+              <div className="glass-card p-8 rounded-3xl space-y-6">
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
                 <Calendar className="w-5 h-5" />
@@ -174,10 +212,55 @@ const ProfessionalSettingsPage = () => {
               })}
             </div>
           </div>
+            </>
+          )}
+
+          {activeTab === 'Perfil' && (
+            <div className="glass-card p-8 rounded-3xl space-y-6 animate-in fade-in">
+              <h3 className="text-xl font-bold mb-4">Informações do Perfil</h3>
+              
+              <div className="flex items-center gap-6 mb-6">
+                <div className="relative group shrink-0">
+                  <img 
+                    src={avatar || currentUser?.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(name)}`} 
+                    className="w-24 h-24 rounded-3xl border-4 border-background shadow-lg object-cover" 
+                    alt="Avatar" 
+                  />
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*" 
+                    onChange={handleFileChange} 
+                  />
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute -bottom-2 -right-2 p-2 bg-primary text-primary-foreground rounded-xl shadow-lg hover:scale-110 transition-transform">
+                    <User className="w-4 h-4" />
+                  </button>
+                </div>
+                <div>
+                  <h4 className="font-bold">{name || 'Seu Nome'}</h4>
+                  <p className="text-sm text-muted-foreground">Atualize sua foto de perfil</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Nome Completo</Label>
+                  <Input value={name} onChange={(e) => setName(e.target.value)} className="bg-background/50 border-white/10" />
+                </div>
+                <div className="space-y-2">
+                  <Label>E-mail</Label>
+                  <Input value={email} onChange={(e) => setEmail(e.target.value)} className="bg-background/50 border-white/10" />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end gap-4">
             <Button variant="outline" className="rounded-xl px-8 border-white/10">Cancelar</Button>
-            <Button onClick={handleSave} className="btn-primary rounded-xl px-8">Salvar Agenda</Button>
+            <Button onClick={handleSave} className="btn-primary rounded-xl px-8">Salvar Configurações</Button>
           </div>
         </div>
       </div>

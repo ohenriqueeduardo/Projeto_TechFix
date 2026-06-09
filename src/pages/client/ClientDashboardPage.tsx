@@ -9,6 +9,7 @@ import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 import { toast } from 'sonner';
 
 import { getLocalOrders, getLocalServices } from '@/utils/localDb';
+import { calculateUserLevelInfo } from '@/utils/levels';
 import { User, Order, Service } from '@/types';
 
 const ClientDashboardPage = () => {
@@ -17,6 +18,8 @@ const ClientDashboardPage = () => {
   const [orders, setOrders] = React.useState<Order[]>([]);
   const [services, setServices] = React.useState<Service[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+
+  const levelInfo = user ? calculateUserLevelInfo(user.id) : { level: 'Silver' };
 
   React.useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -182,8 +185,8 @@ const ClientDashboardPage = () => {
       )
     }] : []),
     { 
-      label: 'Nível Atual', 
-      value: user?.level || 'Silver', 
+      label: 'Nível de Cliente', 
+      value: levelInfo.level, 
       icon: Shield, 
       color: 'text-primary', 
       bg: 'bg-primary/10', 
@@ -192,7 +195,9 @@ const ClientDashboardPage = () => {
         <div className="mt-6 pt-6 border-t border-white/5 space-y-4 text-left">
           <span className="text-[10px] font-black text-primary uppercase tracking-[0.25em]">Progresso de Conta</span>
           <h4 className="text-lg font-black tracking-tight flex items-center gap-2">
-            Nível {user?.level || 'Silver'}
+            <Badge variant="outline" className="border-primary/20 text-primary hover:bg-primary hover:text-white cursor-pointer transition-colors shadow-sm" onClick={() => navigate('/cliente/niveis')}>
+              Nível {levelInfo.level}
+            </Badge>
             <Shield className="w-4 h-4 text-primary shrink-0 animate-pulse" />
           </h4>
           <div className="space-y-3">
@@ -245,7 +250,7 @@ const ClientDashboardPage = () => {
             </div>
           </div>
           <div className="flex items-center justify-between text-[9px] text-muted-foreground bg-white/5 p-2.5 rounded-xl border border-white/5">
-            <span>Nível: <strong className="text-foreground uppercase">{user?.level || 'Silver'}</strong></span>
+            <span>Nível: <strong className="text-foreground uppercase">{levelInfo.level}</strong></span>
             <span>Status: <strong className="text-green-500 uppercase">Ativa</strong></span>
           </div>
           <Button 
