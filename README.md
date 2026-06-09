@@ -147,11 +147,11 @@ Caso queira testar a plataforma imediatamente com dados fictícios de ordens de 
 npx tsx src/db/seed.ts
 ```
 > [!IMPORTANT]  
-> A senha padrão gerada criptograficamente para todas as contas de teste incluídas no seed é: **`12345678`**.  
+> A senha padrão gerada criptograficamente para todas as contas de teste incluídas no seed é: **`admin`**.  
 > As contas pré-criadas são:
 > *   **Cliente**: `sofia@example.com`
-> *   **Prestador (Técnico)**: `carlos@example.com` ou `diego@example.com`
 > *   **Super Admin**: `admin@techfix.com`
+> *(Nota: Técnicos pré-criados foram removidos do seed para garantir uma base limpa. Novos técnicos devem ser cadastrados via plataforma).*
 
 ---
 
@@ -172,13 +172,14 @@ npm run dev:all
 
 ---
 
-## 🔒 Fluxo de Autenticação e Perfis Limpos (Fresh Accounts)
+## 🔒 Fluxo de Autenticação e Sistema 100% Integrado ao PostgreSQL
 
-A plataforma conta com tratamento exclusivo para **novos usuários cadastrados**:
-*   Ao se registrar como **Cliente** ou **Técnico** na página `/register`, a conta é salva de forma criptografada no PostgreSQL.
-*   Ao realizar o login, a plataforma redireciona o usuário para o dashboard correto de acordo com a sua categoria (`role`).
-*   **Perfis Fresh**: Diferente de versões anteriores que exibiam dados simulados ou mockados da Sofia Mendes, o sistema identifica se o usuário acabou de se cadastrar e renderiza **lindo layouts de "Estado Vazio" (Blank States)** personalizados.
-*   **Autonomia do Usuário**: A partir daí, o cliente pode preencher seu perfil, contratar serviços e abrir ordens. O profissional por sua vez, inicia sem avaliações ou finanças e popula seu painel conforme executa trabalhos reais na plataforma.
+A plataforma agora não depende mais de "Mock Data" em Cache/LocalStorage, sendo um sistema inteiramente dinâmico e integrado ao PostgreSQL em tempo real:
+
+*   **Cadastro Padrão em Duas Etapas**: Ao se registrar como **Cliente** ou **Técnico** na página `/cadastro`, o usuário passa por um fluxo que coleta informações essenciais (Nome, E-mail, Senha) e, em seguida, **Telefone (WhatsApp), Data de Nascimento** e um sistema de **Endereço Inteligente integrado com a API ViaCEP** (preenchimento automático ao digitar o CEP).
+*   **Fluxo de "Completar Perfil" (Social Login)**: Caso o usuário opte pelo atalho de login via **Google ou Apple** e sua conta seja nova, a plataforma identifica a ausência do CEP/Telefone e redireciona o usuário compulsoriamente para uma tela de "Completar Cadastro" antes de liberar o acesso ao painel.
+*   **Perfis Limpos (Blank States)**: Todo o lixo de dados simulados do desenvolvimento foi removido. Novos profissionais começam com murais de ordens vazios e sem dinheiro em caixa, populando suas plataformas apenas conforme recebem solicitações reais de clientes através do fluxo do banco de dados relacional.
+*   **Listagens Reais**: As páginas de "Detalhes do Serviço" e o fluxo de "Checkout" consultam apenas profissionais ativamente cadastrados e reais no sistema via PostgreSQL, extirpando "fantasmas" mockados.
 
 ---
 
