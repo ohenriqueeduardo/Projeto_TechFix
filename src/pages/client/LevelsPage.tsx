@@ -4,13 +4,13 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shield, ArrowLeft, Trophy, Zap, Sparkles, CheckCircle2, Lock, Star } from 'lucide-react';
-import { User } from '@/types';
+import { User, Order } from '@/types';
 import { calculateUserLevelInfo } from '@/utils/levels';
 
 const LevelsPage = () => {
   const navigate = useNavigate();
   const [user, setUser] = React.useState<User | null>(null);
-  const [orders, setOrders] = React.useState<any[]>([]);
+  const [orders, setOrders] = React.useState<Order[]>([]);
 
   React.useEffect(() => {
     const storedUser = localStorage.getItem('user');

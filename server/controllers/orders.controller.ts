@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { db } from '../../src/db/index.js';
-import { orders } from '../../src/db/schema.js';
+import { orders, transactions } from '../../src/db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import crypto from 'crypto';
 
@@ -78,6 +78,20 @@ export const createOrder = async (req: Request, res: Response) => {
       createdAt: new Date()
     }).returning();
 
+    // Create pending transaction (Escrow)
+    const transactionId = `tx_${crypto.randomBytes(6).toString('hex')}`;
+    await db.insert(transactions).values({
+      id: transactionId,
+      professionalId,
+      orderId,
+      type: 'income',
+      title: `Pagamento Retido: ${serviceTitle}`,
+      value: Number(price),
+      date: date,
+      status: 'pending',
+      createdAt: new Date()
+    });
+
     res.status(201).json(newOrder[0]);
   } catch (error) {
     console.error('Error creating order:', error);
@@ -136,6 +150,13 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       .set({ status })
       .where(eq(orders.id, id))
       .returning();
+
+    // If order is completed, release the funds to the professional
+    if (status === 'completed') {
+      await db.update(transactions)
+        .set({ status: 'completed' })
+        .where(and(eq(transactions.orderId, id), eq(transactions.status, 'pending')));
+    }
 
     res.json(updatedOrder[0]);
   } catch (error) {

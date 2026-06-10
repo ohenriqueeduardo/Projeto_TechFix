@@ -91,6 +91,26 @@ const OrderStatusPage = () => {
     }
   };
 
+  const handleCompleteOrder = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:3000/api/orders/${order.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ status: 'completed' })
+      });
+      if (response.ok) {
+        toast.success('Serviço concluído! O pagamento foi liberado para o profissional.');
+        setOrder({ ...order, status: 'completed' as const });
+      } else {
+        toast.error('Erro ao liberar o pagamento.');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao comunicar com o servidor.');
+    }
+  };
+
   // Professional fetched from state
 
   const getStatusStep = (status: string) => {
@@ -294,6 +314,17 @@ const OrderStatusPage = () => {
               <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest block mb-1">Faturamento em Custódia</span>
               <span className="text-2xl font-black text-primary">{formatCurrency(order.price + 15)}</span>
             </div>
+
+            {order.status !== 'completed' && order.status !== 'cancelled' && (
+              <div className="pt-4">
+                <Button 
+                  onClick={handleCompleteOrder} 
+                  className="w-full bg-green-500 hover:bg-green-600 text-white text-xs font-black h-11 uppercase"
+                >
+                  Serviço Concluído (Liberar Pagamento)
+                </Button>
+              </div>
+            )}
           </Card>
         </div>
 

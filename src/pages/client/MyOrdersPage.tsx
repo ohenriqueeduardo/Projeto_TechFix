@@ -27,8 +27,8 @@ const MyOrdersPage = () => {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [activeTab, setActiveTab] = React.useState<'all' | 'active' | 'past'>('all');
   
-  const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
-  const token = localStorage.getItem('token');
+  const currentUser = React.useMemo(() => JSON.parse(localStorage.getItem('user') || 'null'), []);
+  const token = React.useMemo(() => localStorage.getItem('token'), []);
   const isProfessional = currentUser?.role === 'professional';
 
   const [orders, setOrders] = React.useState<Order[]>([]);
@@ -61,7 +61,7 @@ const MyOrdersPage = () => {
     };
 
     fetchOrders();
-  }, []);
+  }, [currentUser, token]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {

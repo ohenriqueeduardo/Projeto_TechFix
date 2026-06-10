@@ -14,14 +14,14 @@ import {
   History,
   FileText
 } from 'lucide-react';
-import { Transaction } from '@/types';
+import { Transaction, User, Order } from '@/types';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
 import { getLocalOrders, getLocalTransactions, saveLocalTransactions } from '@/utils/localDb';
 
 const ProfessionalFinancePage = () => {
-  const [user, setUser] = React.useState<any>(null);
-  const [orders, setOrders] = React.useState<any[]>([]);
+  const [user, setUser] = React.useState<User | null>(null);
+  const [orders, setOrders] = React.useState<Order[]>([]);
   const [transactions, setTransactions] = React.useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
@@ -39,7 +39,7 @@ const ProfessionalFinancePage = () => {
       if (ordersResponse.ok) {
         setOrders(await ordersResponse.json());
       } else {
-        setOrders(getLocalOrders().filter((o: any) => o.professionalId === userId));
+        setOrders(getLocalOrders().filter((o: Order) => o.professionalId === userId));
       }
 
       // 2. Fetch Transactions
@@ -49,12 +49,12 @@ const ProfessionalFinancePage = () => {
       if (txResponse.ok) {
         setTransactions(await txResponse.json());
       } else {
-        setTransactions(getLocalTransactions().filter((t: any) => t.professionalId === userId));
+        setTransactions(getLocalTransactions().filter((t: Transaction) => t.professionalId === userId));
       }
     } catch (error) {
       console.warn('Backend connection failed, loading offline finance data:', error);
-      setOrders(getLocalOrders().filter((o: any) => o.professionalId === userId));
-      setTransactions(getLocalTransactions().filter((t: any) => t.professionalId === userId));
+      setOrders(getLocalOrders().filter((o: Order) => o.professionalId === userId));
+      setTransactions(getLocalTransactions().filter((t: Transaction) => t.professionalId === userId));
     } finally {
       setIsLoading(false);
     }
@@ -74,22 +74,22 @@ const ProfessionalFinancePage = () => {
 
   const { balanceAvailable, balanceBlocked, totalWithdrawn } = React.useMemo(() => {
     const blocked = orders
-      .filter((o: any) => o.status !== 'completed' && o.status !== 'cancelled')
-      .reduce((sum: number, o: any) => sum + Number(o.price), 0);
+      .filter((o: Order) => o.status !== 'completed' && o.status !== 'cancelled')
+      .reduce((sum: number, o: Order) => sum + Number(o.price), 0);
 
     const income = transactions
-      .filter((t: any) => t.type === 'income' && t.status === 'completed')
-      .reduce((sum: number, t: any) => sum + Number(t.value), 0);
+      .filter((t: Transaction) => t.type === 'income' && t.status === 'completed')
+      .reduce((sum: number, t: Transaction) => sum + Number(t.value), 0);
 
     const expense = transactions
-      .filter((t: any) => t.type === 'expense' && (t.status === 'completed' || t.status === 'pending'))
-      .reduce((sum: number, t: any) => sum + Number(t.value), 0);
+      .filter((t: Transaction) => t.type === 'expense' && (t.status === 'completed' || t.status === 'pending'))
+      .reduce((sum: number, t: Transaction) => sum + Number(t.value), 0);
 
     const available = Math.max(0, income - expense);
 
     const withdrawn = transactions
-      .filter((t: any) => t.type === 'expense' && t.status === 'completed')
-      .reduce((sum: number, t: any) => sum + Number(t.value), 0);
+      .filter((t: Transaction) => t.type === 'expense' && t.status === 'completed')
+      .reduce((sum: number, t: Transaction) => sum + Number(t.value), 0);
 
     return {
       balanceAvailable: available,

@@ -25,6 +25,42 @@ import type { Professional, Service } from '@/types';
 import { toast } from 'sonner';
 import { saveLocalOrders, getLocalOrders, getLocalServices, getLocalProfessionals } from '@/utils/localDb';
 import { useNotifications } from '@/context/NotificationsContext';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || '');
+
+const StripeCreditCardForm = ({ onPaymentSuccess, onPaymentError, isProcessing, setIsProcessing }: any) => {
+  const stripe = useStripe();
+  const elements = useElements();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+
+    setIsProcessing(true);
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      redirect: "if_required",
+    });
+
+    if (error) {
+      setIsProcessing(false);
+      onPaymentError(error.message);
+    } else if (paymentIntent && paymentIntent.status === "succeeded") {
+      onPaymentSuccess();
+    } else {
+      setIsProcessing(false);
+      onPaymentError("Ocorreu um erro inesperado.");
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} id="stripe-payment-form" className="space-y-4">
+      <PaymentElement options={{ layout: "tabs" }} />
+    </form>
+  );
+};
 
 const Stepper = ({ currentStep }: { currentStep: number }) => {
   const steps = [
@@ -744,6 +780,25 @@ const Step4 = ({
   const navigate = useNavigate();
   const [pixCopied, setPixCopied] = React.useState(false);
   const [timeLeft, setTimeLeft] = React.useState(600); // 10 minutes
+  const [clientSecret, setClientSecret] = React.useState('');
+  const [isProcessing, setIsProcessing] = React.useState(false);
+
+  React.useEffect(() => {
+    const fetchSecret = async () => {
+      try {
+        const res = await fetch('http://localhost:3000/api/payments/create-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ price: service.price + 15, serviceId: service.id })
+        });
+        const data = await res.json();
+        if (data.clientSecret) setClientSecret(data.clientSecret);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchSecret();
+  }, [service.price, service.id]);
 
   React.useEffect(() => {
     if (paymentMethod === 'pix' && timeLeft > 0) {
@@ -808,9 +863,7 @@ const Step4 = ({
     return 'Cartão';
   };
 
-  const isFormValid = isPix || isDebit 
-    ? true 
-    : (cardNumber.length === 19 && cardName && cardExpiry.length === 5 && cardCvv.length === 3);
+  const isFormValid = isPix || (isCredit && clientSecret) || (isDebit && clientSecret);
 
   return (
     <div className="animate-in fade-in slide-in-from-right-8 duration-500 space-y-8">
@@ -912,192 +965,24 @@ const Step4 = ({
           </div>
         )}
 
-        {/* CREDIT CARD DETAILED INTERACTIVE SECTION */}
-        {isCredit && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6 rounded-2xl bg-foreground/5 border border-foreground/5 animate-in fade-in duration-300">
-            {/* Credit Card Form */}
-            <div className="space-y-3.5">
-              <h3 className="font-bold text-base">Dados do Cartão</h3>
-              
-              <div className="space-y-1.5">
-                <Label htmlFor="cardNum" className="font-bold text-[10px] uppercase text-muted-foreground">Número do Cartão</Label>
-                <Input 
-                  id="cardNum" 
-                  placeholder="0000 0000 0000 0000" 
-                  value={cardNumber} 
-                  onChange={handleCardNumberChange}
-                  className="bg-card/50 border-foreground/10 h-10 rounded-xl text-xs" 
+        {/* STRIPE PAYMENT SECTION */}
+        {(isCredit || isDebit) && (
+          <div className="p-6 rounded-2xl bg-foreground/5 border border-foreground/5 animate-in fade-in duration-300">
+            {clientSecret ? (
+              <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'night' } }}>
+                <StripeCreditCardForm 
+                  onPaymentSuccess={handleFinish} 
+                  onPaymentError={(msg: string) => toast.error(msg)} 
+                  isProcessing={isProcessing}
+                  setIsProcessing={setIsProcessing}
                 />
+              </Elements>
+            ) : (
+              <div className="flex justify-center items-center py-10">
+                <span className="h-8 w-8 rounded-full border-4 border-t-primary border-white/5 animate-spin"></span>
+                <span className="ml-3 text-sm font-bold text-muted-foreground">Conectando ao Stripe...</span>
               </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="cardHolder" className="font-bold text-[10px] uppercase text-muted-foreground">Nome Impresso no Cartão</Label>
-                <Input 
-                  id="cardHolder" 
-                  placeholder="NOME COMPLETO" 
-                  value={cardName} 
-                  onChange={(e) => setCardName(e.target.value.toUpperCase())}
-                  className="bg-card/50 border-foreground/10 h-10 rounded-xl text-xs" 
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="cardExp" className="font-bold text-[10px] uppercase text-muted-foreground">Validade</Label>
-                  <Input 
-                    id="cardExp" 
-                    placeholder="MM/AA" 
-                    value={cardExpiry} 
-                    onChange={handleCardExpiryChange}
-                    className="bg-card/50 border-foreground/10 h-10 rounded-xl text-xs text-center" 
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="cardCvv" className="font-bold text-[10px] uppercase text-muted-foreground">CVV</Label>
-                  <Input 
-                    id="cardCvv" 
-                    placeholder="123" 
-                    type="password"
-                    value={cardCvv} 
-                    onChange={handleCardCvvChange}
-                    className="bg-card/50 border-foreground/10 h-10 rounded-xl text-xs text-center" 
-                  />
-                </div>
-              </div>
-
-              {/* Installment selection */}
-              <div className="space-y-1.5">
-                <Label htmlFor="instSelect" className="font-bold text-[10px] uppercase text-muted-foreground">Opções de Parcelamento</Label>
-                <select 
-                  id="instSelect"
-                  value={installments} 
-                  onChange={(e) => setInstallments(Number(e.target.value))}
-                  className="w-full bg-card border border-foreground/10 rounded-xl h-10 px-3 text-xs text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
-                >
-                  {installmentOptions.map(opt => (
-                    <option key={opt.number} value={opt.number}>{opt.text}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* CARD 3D PREVIEW */}
-            <div className="flex items-center justify-center shrink-0">
-              <div className="w-72 h-44 rounded-2xl bg-gradient-to-br from-cyan-600 to-blue-800 text-white p-5 flex flex-col justify-between shadow-2xl relative overflow-hidden">
-                <div className="absolute -right-10 -bottom-10 w-28 h-28 bg-primary/10 rounded-full blur-2xl"></div>
-                
-                <div className="flex justify-between items-start">
-                  <span className="font-black text-sm tracking-wider uppercase">TechFix</span>
-                  <span className="font-black text-xs text-primary bg-background/20 px-2 py-0.5 rounded uppercase">
-                    {getCardIcon(cardNumber)}
-                  </span>
-                </div>
-
-                <div className="w-10 h-7 rounded-md bg-yellow-500/80 mb-2"></div>
-
-                <div className="font-mono text-base tracking-widest text-center truncate">
-                  {cardNumber || '•••• •••• •••• ••••'}
-                </div>
-
-                <div className="flex justify-between text-[10px] font-mono">
-                  <div className="truncate pr-4 uppercase">
-                    <span className="text-[7px] text-slate-300 block">Titular</span>
-                    {cardName || 'NOME IMPRESSO'}
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <span className="text-[7px] text-slate-300 block">Validade</span>
-                    {cardExpiry || 'MM/AA'}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* DEBIT CARD DETAILED INTERACTIVE SECTION */}
-        {isDebit && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6 rounded-2xl bg-foreground/5 border border-foreground/5 animate-in fade-in duration-300">
-            {/* Debit Card Form */}
-            <div className="space-y-3.5">
-              <h3 className="font-bold text-base">Dados do Cartão de Débito</h3>
-              
-              <div className="space-y-1.5">
-                <Label htmlFor="cardNum" className="font-bold text-[10px] uppercase text-muted-foreground">Número do Cartão</Label>
-                <Input 
-                  id="cardNum" 
-                  placeholder="0000 0000 0000 0000" 
-                  value={cardNumber} 
-                  onChange={handleCardNumberChange}
-                  className="bg-card/50 border-foreground/10 h-10 rounded-xl text-xs" 
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="cardHolder" className="font-bold text-[10px] uppercase text-muted-foreground">Nome Impresso no Cartão</Label>
-                <Input 
-                  id="cardHolder" 
-                  placeholder="NOME COMPLETO" 
-                  value={cardName} 
-                  onChange={(e) => setCardName(e.target.value.toUpperCase())}
-                  className="bg-card/50 border-foreground/10 h-10 rounded-xl text-xs" 
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="cardExp" className="font-bold text-[10px] uppercase text-muted-foreground">Validade</Label>
-                  <Input 
-                    id="cardExp" 
-                    placeholder="MM/AA" 
-                    value={cardExpiry} 
-                    onChange={handleCardExpiryChange}
-                    className="bg-card/50 border-foreground/10 h-10 rounded-xl text-xs text-center" 
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="cardCvv" className="font-bold text-[10px] uppercase text-muted-foreground">CVV</Label>
-                  <Input 
-                    id="cardCvv" 
-                    placeholder="123" 
-                    type="password"
-                    value={cardCvv} 
-                    onChange={handleCardCvvChange}
-                    className="bg-card/50 border-foreground/10 h-10 rounded-xl text-xs text-center" 
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* CARD PREVIEW */}
-            <div className="flex items-center justify-center shrink-0">
-              <div className="w-72 h-44 rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-800 text-white p-5 flex flex-col justify-between shadow-2xl relative overflow-hidden">
-                <div className="absolute -right-10 -bottom-10 w-28 h-28 bg-primary/10 rounded-full blur-2xl"></div>
-                
-                <div className="flex justify-between items-start">
-                  <span className="font-black text-sm tracking-wider uppercase">TechFix DEBIT</span>
-                  <span className="font-black text-xs text-primary bg-background/20 px-2 py-0.5 rounded uppercase">
-                    {getCardIcon(cardNumber)}
-                  </span>
-                </div>
-
-                <div className="w-10 h-7 rounded-md bg-yellow-500/80 mb-2"></div>
-
-                <div className="font-mono text-base tracking-widest text-center truncate">
-                  {cardNumber || '•••• •••• •••• ••••'}
-                </div>
-
-                <div className="flex justify-between text-[10px] font-mono">
-                  <div className="truncate pr-4 uppercase">
-                    <span className="text-[7px] text-slate-300 block">Titular</span>
-                    {cardName || 'NOME IMPRESSO'}
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <span className="text-[7px] text-slate-300 block">Validade</span>
-                    {cardExpiry || 'MM/AA'}
-                  </div>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -1143,13 +1028,24 @@ const Step4 = ({
 
         <div className="flex gap-4 pt-4">
           <Button variant="outline" onClick={() => navigate(-1)} className="h-12 px-6 rounded-xl text-xs font-bold border-foreground/10">Voltar</Button>
-          <Button 
-            onClick={handleFinish} 
-            disabled={!isFormValid}
-            className="flex-1 btn-primary h-12 text-sm font-black"
-          >
-            Finalizar Pagamento Seguro
-          </Button>
+          {isPix ? (
+            <Button 
+              onClick={handleFinish} 
+              disabled={!isFormValid}
+              className="flex-1 btn-primary h-12 text-sm font-black"
+            >
+              Finalizar Pagamento Seguro
+            </Button>
+          ) : (
+            <Button 
+              type="submit"
+              form="stripe-payment-form"
+              disabled={!isFormValid || isProcessing}
+              className="flex-1 btn-primary h-12 text-sm font-black gap-2"
+            >
+              {isProcessing ? 'Processando...' : 'Finalizar Pagamento Seguro'}
+            </Button>
+          )}
         </div>
       </div>
     </div>

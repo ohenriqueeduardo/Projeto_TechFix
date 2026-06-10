@@ -66,6 +66,7 @@ export interface Transaction {
   value: number;
   date: string;
   status: "completed" | "pending" | "failed";
+  professionalId?: string;
 }
 
 export interface Review {

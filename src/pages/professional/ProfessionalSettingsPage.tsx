@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Calendar, Clock, User, Settings as SettingsIcon } from "lucide-react";
 import { toast } from "sonner";
-import { Professional } from '@/types';
+import { Professional, User as UserType } from '@/types';
 
 const daysOfWeek = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
 const standardTimes = ['08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
@@ -17,7 +17,7 @@ const ProfessionalSettingsPage = () => {
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   
   const [activeTab, setActiveTab] = useState('Agenda & Horários');
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [avatar, setAvatar] = useState('');
@@ -76,7 +76,7 @@ const ProfessionalSettingsPage = () => {
   const handleSave = async () => {
     if (!profile || !currentUser) return;
     try {
-      const res = await fetch(`http://localhost:3000/api/professionals/${profile.userId}`, {
+      const res = await fetch(`http://localhost:3000/api/professionals/${profile.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

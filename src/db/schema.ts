@@ -83,6 +83,7 @@ export const orders = pgTable('orders', {
 export const transactions = pgTable('transactions', {
   id: text('id').primaryKey(),
   professionalId: text('professional_id').references(() => professionals.userId, { onDelete: 'set null' }),
+  orderId: text('order_id').references(() => orders.id, { onDelete: 'set null' }),
   type: text('type').notNull(), // 'income', 'expense'
   title: text('title').notNull(),
   value: real('value').notNull(),
