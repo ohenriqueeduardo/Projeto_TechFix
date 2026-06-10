@@ -4,6 +4,7 @@ import { users } from '../../src/db/schema.js';
 import { eq } from 'drizzle-orm';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { sendWelcomeEmail } from '../utils/email.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'techfix-ultra-secure-and-private-jwt-token-signing-key-2026';
 
@@ -65,6 +66,9 @@ export const register = async (req: Request, res: Response) => {
     );
 
     const { password: _, ...userWithoutPassword } = newUser[0];
+
+    // Send welcome email asynchronously
+    sendWelcomeEmail(email, name).catch(console.error);
 
     res.status(201).json({
       message: 'User registered successfully',
@@ -195,11 +199,18 @@ export const socialLogin = async (req: Request, res: Response) => {
 
     const { password: _, ...userWithoutPassword } = user;
 
+    const isNewUser = userList.length === 0;
+
+    // Send welcome email if it's a new user
+    if (isNewUser) {
+      sendWelcomeEmail(email, name || `User from ${provider}`).catch(console.error);
+    }
+
     res.json({
       message: 'Social Login successful',
       user: userWithoutPassword,
       token,
-      isNewUser: userList.length === 0
+      isNewUser
     });
   } catch (error) {
     console.error('Social Login Error:', error);
