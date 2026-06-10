@@ -2,7 +2,7 @@
 
 O **TechFix** é uma solução SaaS (Software as a Service) de altíssimo nível desenvolvida para conectar clientes que necessitam de reparos de hardware, redes e suporte de TI de alta performance com técnicos e especialistas credenciados. 
 
-A plataforma possui uma arquitetura moderna, robusta, altamente performática e segura, integrando um banco de dados relacional dinâmico, segurança criptográfica nativa, validação rigorosa de dados e uma interface visual premium com suporte a Dark Mode, Glassmorphism e transições fluidas.
+A plataforma possui uma arquitetura moderna, robusta, altamente performática e segura, integrando um banco de dados relacional dinâmico, segurança criptográfica nativa, validação rigorosa de dados, envio de e-mails em tempo real, pagamentos com custódia via Stripe e uma interface visual premium com suporte a Dark Mode, Glassmorphism e transições fluidas.
 
 ---
 
@@ -15,19 +15,22 @@ O ecossistema é dividido em uma estrutura desacoplada com total sincronismo ent
 *   **Estilização**: Tailwind CSS com animações fluidas e micro-interações integradas.
 *   **Gerenciador de Estado**: React Query (TanStack Query) para cache e sincronização otimizada com a API.
 *   **Navegação**: React Router DOM com fluxos protegidos por papel de usuário (Clientes vs. Profissionais).
+*   **Integrações**: `@stripe/react-stripe-js` para fluxo seguro de checkout transparente.
 *   **UI Components**: Componentes customizados baseados em Radix UI, Lucide Icons e notificações elegantes via Sonner.
 
 ### ⚙️ Backend (API Server)
 *   **Core**: Servidor Express modular com módulos ESM nativos em NodeJS e carregamento instantâneo com `tsx watch`.
-*   **Autenticação & Controle de Acesso (IAM)**: JSON Web Tokens (JWT) com criptografia nativa do Node (`crypto.pbkdf2Sync` + salt aleatório) para segurança inabalável. Sessões configuradas para expirar após **2 horas** de inatividade.
-*   **Validação**: Validação estrita de contratos de payload no corpo/parâmetros/query das requisições via middlewares baseados em **Zod**.
-*   **Tratamento de Erros**: Handler global de exceções que intercepta erros `500` e retorna respostas padronizadas em JSON (evitando o envio de páginas HTML de erro brutas para o frontend).
+*   **Autenticação & Controle de Acesso (IAM)**: JSON Web Tokens (JWT) com criptografia nativa do Node para segurança inabalável. 
+*   **Serviço de E-mail**: Disparo automático de e-mails transacionais (boas-vindas, etc.) integrando SMTP real via `nodemailer`.
+*   **Pagamentos & Custódia (Escrow)**: Integração profunda com a API do **Stripe**. Retenção de pagamentos até a conclusão do serviço e liberação em 1-clique (Wallet Management interno).
+*   **Validação**: Validação estrita de contratos de payload via middlewares baseados em **Zod**.
+*   **Tratamento de Erros**: Handler global de exceções JSON.
 
 ### 🗄️ Banco de Dados (Database Layer)
 *   **Engine**: **PostgreSQL** para persistência relacional ácida e robusta.
-*   **ORM**: **Drizzle ORM** (Type-safe, leve, focado em performance absoluta e autocompletação em tempo de desenvolvimento).
-*   **Migrations**: Controle de alterações de esquema geradas de forma declarativa e controlada pelo Drizzle Kit.
-*   **Studio**: Drizzle Studio para gerenciamento visual simplificado de tabelas e relacionamentos.
+*   **ORM**: **Drizzle ORM** (Type-safe, leve e focado em performance).
+*   **Migrations**: Controle declarativo via Drizzle Kit.
+*   **Studio**: Drizzle Studio para gerenciamento visual simplificado de tabelas.
 
 ---
 
@@ -36,166 +39,114 @@ O ecossistema é dividido em uma estrutura desacoplada com total sincronismo ent
 ```text
 Projeto_TechFix/
 ├── server/                     # Servidor Backend (Express)
-│   ├── controllers/            # Controladores da regra de negócio (Auth, Orders, Reviews...)
-│   ├── middleware/             # Interceptores de autenticação JWT e validação Zod
-│   ├── routes/                 # Definição e roteamento das rotas REST (/api/...)
-│   └── index.ts                # Inicialização e configuração do servidor Express
-├── src/                        # Aplicação Frontend (React) e Camada de Acesso a Dados
-│   ├── components/             # Componentes de interface e layouts (Client/Professional Layouts)
-│   ├── data/                   # Arquivos de dados estáticos legados (para referência histórica)
-│   ├── db/                     # Inicialização da conexão, Schema declarativo e Script de Seeds
-│   ├── pages/                  # Páginas divididas por perfis (Auth, Cliente, Técnico, Admin)
-│   ├── utils/                  # Utilitários de formatação de valores, datas e strings
-│   ├── App.tsx                 # Roteador principal do React com redirecionamentos inteligentes
-│   └── main.tsx                # Ponto de entrada da aplicação frontend
-├── drizzle/                    # Histórico de arquivos SQL gerados pelo Drizzle Migrations
-├── database/                   # Arquivos SQL brutos de schema e sementes de dados
-├── drizzle.config.ts           # Arquivo de configuração central do Drizzle ORM
-├── package.json                # Gerenciador de scripts de desenvolvimento e dependências do Node
-├── TechFix_Postman_Collection.json # Coleção oficial de testes de API (Postman)
-└── .env                        # Variáveis de ambiente protegidas e locais
+│   ├── controllers/            # Controladores (Auth, Orders, Payments...)
+│   ├── middleware/             # Interceptores (JWT, Zod)
+│   ├── routes/                 # Roteamento REST (/api/...)
+│   ├── utils/                  # Utilitários (Ex: disparador de email SMTP)
+│   └── index.ts                # Inicialização do Express
+├── src/                        # Aplicação Frontend (React)
+│   ├── components/             # Componentes de interface compartilhados
+│   ├── db/                     # Esquema declarativo (Drizzle) e seeds
+│   ├── pages/                  # Páginas divididas por perfis
+│   ├── utils/                  # Utilitários de frontend
+│   ├── App.tsx                 # Roteador principal
+│   └── main.tsx                # Entry-point do React
+├── drizzle/                    # Histórico de Migrations SQL
+├── database/                   # Arquivos SQL brutos e seeds
+├── package.json                # Dependências e scripts
+└── vite.config.ts              # Configuração do Vite (porta 5173)
 ```
 
 ---
 
 ## ⚙️ Configuração das Variáveis de Ambiente (`.env`)
 
-Crie ou edite o arquivo **`.env`** localizado na raiz do projeto. Ele é necessário tanto para a conexão com o PostgreSQL quanto para a assinatura e validação dos tokens de segurança:
+Crie ou edite o arquivo **`.env`** localizado na raiz do projeto preenchendo as seguintes chaves essenciais:
 
 ```env
+# Banco de Dados
 DATABASE_URL=postgresql://postgres:admin@localhost:5432/techfix
+
+# Segurança / Autenticação
 JWT_SECRET=sua-chave-secreta-de-producao-longa-e-segura
 PORT=3000
-```
 
-> [!NOTE]  
-> Certifique-se de preencher a URL de conexão com o seu usuário, senha e porta locais ou na nuvem correspondentes ao seu PostgreSQL ativo.
+# Integração de Pagamentos (Stripe)
+STRIPE_SECRET_KEY=sk_test_... # Sua chave privada do Stripe
+VITE_STRIPE_PUBLIC_KEY=pk_test_... # Sua chave pública do Stripe (exposta para o Vite)
 
----
-
-## 🐳 Como Executar com Docker e Docker Compose (Recomendado) 🚀
-
-Agora o projeto está 100% conteinerizado. Você não precisa se preocupar em instalar o Node.js, PostgreSQL ou gerenciar múltiplos terminais em sua máquina.
-
-### Pré-requisitos
-- **Docker** e **Docker Compose** instalados e em execução.
-
-### Passo 1: Configurar Variáveis de Ambiente
-O Docker Compose utiliza as variáveis padrão para conteinerização de forma automática. Se desejar documentar suas chaves locais, utilize o arquivo `.env.example` como base.
-
-### Passo 2: Iniciar o Ambiente Integrado
-Para construir as imagens e iniciar os serviços (PostgreSQL, Backend, Frontend e Drizzle Studio) integrados de uma só vez, execute na raiz do projeto:
-
-```bash
-docker compose up --build
-```
-
-O contêiner do backend coordenará automaticamente os seguintes passos:
-1. Aguardará o PostgreSQL estar online (`wait.ts`).
-2. Sincronizará a estrutura de dados automaticamente (`drizzle-kit push`).
-3. Semeia o banco com dados de testes apenas na primeira execução (`seed.ts` de forma idempotente).
-4. Inicia a API REST na porta `3000`.
-
-O contêiner do frontend iniciará a UI do React na porta `8080` com suporte a **Hot-Reloading** (qualquer alteração salva no host reflete na hora dentro do contêiner).
-
-### Passo 3: Acessar os Serviços
-
-| Serviço | URL | Descrição |
-| :--- | :--- | :--- |
-| **Frontend Web** | [http://localhost:8080](http://localhost:8080) | Interface premium com suporte a Dark Mode e rotas de Cliente/Profissional. |
-| **API Server** | [http://localhost:3000](http://localhost:3000) | Endpoints e rota de Health Check da API. |
-| **Drizzle Studio** | [https://local.drizzle.studio?host=127.0.0.1](https://local.drizzle.studio?host=127.0.0.1) | Interface administrativa visual do banco de dados PostgreSQL. |
-
-> [!IMPORTANT]
-> **Acesso ao Drizzle Studio:** Devido a restrições de segurança do Windows sobre conexões a endereços do tipo `0.0.0.0`, acesse sempre utilizando **`host=127.0.0.1`** ou **`host=localhost`** na URL para garantir a conexão WebSocket segura.
-
-### Passo 4: Redefinir o Banco de Dados (Opcional)
-Se desejar reiniciar o banco de dados completamente limpo e recriar os dados de teste, execute:
-```bash
-docker compose down -v
-docker compose up --build
+# Configuração de E-mail SMTP (Nodemailer)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=seu-email@gmail.com
+SMTP_PASS=sua-senha-de-app
 ```
 
 ---
 
-## 🏃‍♂️ Como Executar o Projeto Localmente (Sem Docker)
+## 🏃‍♂️ Como Executar o Projeto Passo a Passo (Ambiente Local)
 
-O projeto possui comandos unificados que sincronizam o banco e disparam todos os processos necessários em paralelo. Siga os passos abaixo:
+Siga estas instruções para levantar a plataforma em sua máquina de forma simples e direta:
 
 ### 1. Instalar as Dependências
-Devido a versões legadas de dependências de componentes visuais, execute a instalação ignorando conflitos de pacotes menores:
+Devido a atualizações recentes e ao uso de bibliotecas completas (como Radix UI e Next Themes), instale as dependências usando a flag `--legacy-peer-deps` para evitar conflitos de versão do React 19:
 ```bash
 npm install --legacy-peer-deps
 ```
 
-### 2. Configurar o Banco de Dados PostgreSQL
-Certifique-se de que o seu servidor PostgreSQL local (ou remoto) está rodando e crie o banco de dados `techfix`.
+### 2. Preparar o Banco de Dados
+Certifique-se de ter um serviço do **PostgreSQL** rodando (local ou nuvem). Crie um banco chamado `techfix`.
 No terminal do seu SGBD ou ferramenta visual, rode:
 ```sql
 CREATE DATABASE techfix;
 ```
+Preencha a URL de conexão na variável `DATABASE_URL` do seu `.env`.
 
-### 3. Sincronizar o Esquema com o Banco de Dados
-Para subir as tabelas estruturadas declaradas em `src/db/schema.ts` diretamente para o seu banco PostgreSQL sem precisar rodar migrations manuais, use:
+### 3. Sincronizar as Tabelas (Drizzle Push)
+Para que o banco de dados receba toda a estrutura de tabelas criada pela aplicação (Usuários, Pedidos, Transações financeiras, etc), rode:
 ```bash
 npx drizzle-kit push
 ```
 
-### 4. Popular o Banco com Dados Iniciais (Opcional - Semente)
-Caso queira testar a plataforma imediatamente com dados fictícios de ordens de serviço, mensagens, revisões e transações financeiras prontas, rode o script de seed:
-```bash
-npx tsx src/db/seed.ts
-```
-> [!IMPORTANT]  
-> A senha padrão gerada criptograficamente para todas as contas de teste incluídas no seed é: **`admin`**.  
-> As contas pré-criadas são:
-> *   **Cliente**: `sofia@example.com`
-> *   **Super Admin**: `admin@techfix.com`
-> *(Nota: Técnicos pré-criados foram removidos do seed para garantir uma base limpa. Novos técnicos devem ser cadastrados via plataforma).*
-
----
-
-## ⚡ Rodar o Projeto com o Comando Unificado (Fast Track) 🚀
-
-Para agilizar o desenvolvimento, criamos um comando paralelo centralizador. **Você não precisa gerenciar múltiplas abas de terminal!**
-
-Execute na raiz do projeto:
+### 4. Rodar o Ambiente (Comando Unificado) 🚀
+Com o banco preparado e as variáveis configuradas, você pode levantar todos os serviços de uma única vez. Na raiz do projeto execute:
 ```bash
 npm run dev:all
 ```
 
-**O que este comando executa em paralelo:**
-1.  **Sincronização**: Realiza um push automático de possíveis novas tabelas ou colunas (`drizzle-kit push`).
-2.  **API Server**: Inicia a API REST Express em `http://localhost:3000`.
-3.  **Frontend**: Inicia a interface gráfica web em `http://localhost:8080`.
-4.  **Drizzle Studio**: Abre o gerenciador visual e administrativo do banco de dados na porta `4983` (`https://local.drizzle.studio`).
+**O que este comando inicia:**
+1. **Frontend Web (Vite)**: Ficará disponível em [http://localhost:5173](http://localhost:5173).
+2. **API Backend (Express)**: Inicia as rotas na porta `3000` (`http://localhost:3000`).
+3. **Drizzle Studio**: Abre uma interface local para ver seu banco de dados em `https://local.drizzle.studio`.
+
+> Para parar todos os processos, basta dar um `Ctrl + C` no terminal em que o comando está rodando.
 
 ---
 
-## 🔒 Fluxo de Autenticação e Sistema 100% Integrado ao PostgreSQL
+## 💎 Principais Funcionalidades Implementadas
 
-A plataforma agora não depende mais de "Mock Data" em Cache/LocalStorage, sendo um sistema inteiramente dinâmico e integrado ao PostgreSQL em tempo real:
+### 🔒 Sistema de Custódia de Pagamentos (Escrow)
+A TechFix possui um sistema real de segurança para o cliente e profissional.
+- O cliente paga pelo serviço utilizando o cartão de crédito através do checkout transparente do **Stripe**.
+- O dinheiro fica retido na TechFix. O profissional visualiza o ganho no painel financeiro como **"Saldo Bloqueado/Em Custódia"**.
+- Ao término do conserto e aprovação, o cliente clica em "Serviço Concluído" e o valor é instantaneamente liberado como **"Saldo Disponível"** na carteira virtual do técnico.
 
-*   **Cadastro Padrão em Duas Etapas**: Ao se registrar como **Cliente** ou **Técnico** na página `/cadastro`, o usuário passa por um fluxo que coleta informações essenciais (Nome, E-mail, Senha) e, em seguida, **Telefone (WhatsApp), Data de Nascimento** e um sistema de **Endereço Inteligente integrado com a API ViaCEP** (preenchimento automático ao digitar o CEP).
-*   **Fluxo de "Completar Perfil" (Social Login)**: Caso o usuário opte pelo atalho de login via **Google ou Apple** e sua conta seja nova, a plataforma identifica a ausência do CEP/Telefone e redireciona o usuário compulsoriamente para uma tela de "Completar Cadastro" antes de liberar o acesso ao painel.
-*   **Perfis Limpos (Blank States)**: Todo o lixo de dados simulados do desenvolvimento foi removido. Novos profissionais começam com murais de ordens vazios e sem dinheiro em caixa, populando suas plataformas apenas conforme recebem solicitações reais de clientes através do fluxo do banco de dados relacional.
-*   **Listagens Reais**: As páginas de "Detalhes do Serviço" e o fluxo de "Checkout" consultam apenas profissionais ativamente cadastrados e reais no sistema via PostgreSQL, extirpando "fantasmas" mockados.
+### 📧 Comunicação por E-mail (SMTP)
+Com a biblioteca `nodemailer`, a plataforma envia um e-mail em HTML padronizado para o endereço do cliente assim que ele finalizar o cadastro (ou entrar pela primeira vez através de login social). Todo disparo de email é configurável através de credenciais SMTP reais (.env).
 
----
-
-## 📬 Testando a API com Postman
-
-Na pasta raiz do projeto está localizado o arquivo `TechFix_Postman_Collection.json`.
-1. Abra o **Postman**.
-2. Clique em **Import** e selecione o arquivo.
-3. Use a coleção para testar de forma isolada os endpoints de autenticação, usuários, serviços, ordens e transações do backend Express.
+### 👥 Perfis Integrados ao PostgreSQL
+Chega de dados fakes em LocalStorage. A plataforma alimenta os "Dashboards", painéis de controle, fluxos de checkout e relatórios financeiros 100% diretamente com os registros ACID do banco de dados relacional.
 
 ---
 
-## 🛑 Como Finalizar os Servidores de Forma Limpa
-
-Para desligar o ambiente concorrente sem deixar portas presas ou processos Node.js zumbis em segundo plano, basta ir no terminal onde o comando `npm run dev:all` está ativo e pressionar:
-```text
-Ctrl + C
+## 🐳 Alternativa: Executar com Docker
+Se preferir, o ecossistema completo conta com um `docker-compose.yml`. Após preencher as variáveis (.env), rode:
+```bash
+docker compose up --build
 ```
-Pressione **`S`** (ou `Y` dependendo do idioma do terminal) seguido de **Enter** para finalizar o trabalho em lote. Todos os processos serão derrubados de forma organizada e limpa.
+Isso provisionará o Node.js, Banco de Dados, Vite e a API isolados em contêineres e na rede interna do Docker automaticamente.
+
+---
+
+*Projeto desenvolvido para revolucionar o suporte em TI através da tecnologia e confiança mútua!* 🚀
