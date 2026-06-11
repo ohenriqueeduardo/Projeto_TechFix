@@ -20,6 +20,78 @@ const RegisterPage = () => {
   const [dateOfBirth, setDateOfBirth] = React.useState('');
   const [verificationCode, setVerificationCode] = React.useState('');
 
+  // OTP Verification States
+  const [codeDigits, setCodeDigits] = React.useState<string[]>(Array(6).fill(''));
+  const [timer, setTimer] = React.useState(60);
+  const [canResend, setCanResend] = React.useState(false);
+  const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (step === 4 && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (timer === 0) {
+      setCanResend(true);
+    }
+    return () => clearInterval(interval);
+  }, [step, timer]);
+
+  const updateVerificationCode = (digits: string[]) => {
+    const code = digits.join('');
+    setVerificationCode(code);
+  };
+
+  const handleDigitChange = (value: string, index: number) => {
+    const num = value.replace(/\D/g, '');
+    if (!num) {
+      const newDigits = [...codeDigits];
+      newDigits[index] = '';
+      setCodeDigits(newDigits);
+      updateVerificationCode(newDigits);
+      return;
+    }
+    
+    const newDigits = [...codeDigits];
+    newDigits[index] = num.slice(-1); // Only take the last character
+    setCodeDigits(newDigits);
+    updateVerificationCode(newDigits);
+
+    // Focus next input
+    if (index < 5 && inputRefs.current[index + 1]) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleDigitKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (e.key === 'Backspace') {
+      if (!codeDigits[index] && index > 0) {
+        const newDigits = [...codeDigits];
+        newDigits[index - 1] = '';
+        setCodeDigits(newDigits);
+        updateVerificationCode(newDigits);
+        inputRefs.current[index - 1]?.focus();
+      }
+    }
+  };
+
+  const handleDigitPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (pastedData.length === 6) {
+      const newDigits = pastedData.split('');
+      setCodeDigits(newDigits);
+      updateVerificationCode(newDigits);
+      inputRefs.current[5]?.focus();
+    }
+  };
+
+  const handleResendClick = async () => {
+    if (!canResend) return;
+    await sendVerificationCode();
+  };
+
   const sendVerificationCode = async () => {
     setIsLoading(true);
     try {
@@ -38,6 +110,10 @@ const RegisterPage = () => {
       }
 
       toast.success('Código de verificação enviado para o seu e-mail!');
+      setTimer(60);
+      setCanResend(false);
+      setCodeDigits(Array(6).fill(''));
+      setVerificationCode('');
       setStep(4);
     } catch (error: unknown) {
       console.error('Erro ao enviar código de verificação:', error);
@@ -281,7 +357,7 @@ const RegisterPage = () => {
                 <p className="text-xs text-muted-foreground">Preencha os dados básicos para habilitar seu painel de controle</p>
               </div>
 
-              <form onSubmit={handleRegister} className="space-y-4 pt-2">
+              <form onSubmit={(e) => { e.preventDefault(); setStep(3); }} className="space-y-4 pt-2">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="firstName" className="font-bold text-xs">Nome</Label>
@@ -358,7 +434,7 @@ const RegisterPage = () => {
                   </div>
                 </div>
 
-                <Button type="button" onClick={(e) => { e.preventDefault(); setStep(3); }} className="w-full btn-primary h-12 text-sm font-black mt-6">
+                <Button type="submit" className="w-full btn-primary h-12 text-sm font-black mt-6">
                   Continuar
                 </Button>
               </form>
@@ -466,35 +542,52 @@ const RegisterPage = () => {
                 <ArrowLeft className="w-4 h-4 mr-1.5" /> Voltar
               </Button>
               
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <h1 className="text-2xl font-black tracking-tight">Verifique seu E-mail</h1>
-                <p className="text-xs text-muted-foreground">Enviamos um código de verificação de 6 dígitos para <strong>{email}</strong></p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Enviamos um código de verificação de 6 dígitos para o endereço <strong className="text-foreground">{email}</strong>.
+                </p>
               </div>
 
-              <form onSubmit={handleRegister} className="space-y-4 pt-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="verificationCode" className="font-bold text-xs">Código de Verificação</Label>
-                  <Input 
-                    id="verificationCode" 
-                    placeholder="123456" 
-                    maxLength={6}
-                    value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
-                    required
-                    className="h-12 bg-card/50 border-foreground/10 rounded-xl text-center text-lg font-black tracking-widest animate-pulse" 
-                  />
+              <form onSubmit={handleRegister} className="space-y-6 pt-2">
+                <div className="space-y-3">
+                  <Label className="font-bold text-xs text-center block">Digite o código de 6 dígitos</Label>
+                  <div className="flex gap-2 sm:gap-3 justify-center">
+                    {Array(6).fill(0).map((_, index) => (
+                      <input
+                        key={index}
+                        ref={(el) => { inputRefs.current[index] = el; }}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={1}
+                        value={codeDigits[index]}
+                        onChange={(e) => handleDigitChange(e.target.value, index)}
+                        onKeyDown={(e) => handleDigitKeyDown(e, index)}
+                        onPaste={handleDigitPaste}
+                        disabled={isLoading}
+                        className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl font-black rounded-xl border border-foreground/10 bg-card/50 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none disabled:opacity-50"
+                      />
+                    ))}
+                  </div>
                 </div>
 
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-muted-foreground">Não recebeu o código?</span>
-                  <button 
-                    type="button" 
-                    onClick={sendVerificationCode} 
-                    disabled={isLoading}
-                    className="text-primary font-bold hover:underline"
-                  >
-                    Reenviar Código
-                  </button>
+                  {canResend ? (
+                    <button 
+                      type="button" 
+                      onClick={handleResendClick} 
+                      disabled={isLoading}
+                      className="text-primary font-black hover:underline"
+                    >
+                      Reenviar Código
+                    </button>
+                  ) : (
+                    <span className="text-muted-foreground/60 font-medium">
+                      Reenviar em <strong className="font-bold">{timer}s</strong>
+                    </span>
+                  )}
                 </div>
 
                 <Button type="submit" className="w-full btn-primary h-12 text-sm font-black mt-6" disabled={isLoading || verificationCode.length !== 6}>
