@@ -18,6 +18,34 @@ const RegisterPage = () => {
   const [password, setPassword] = React.useState('');
   const [phone, setPhone] = React.useState('');
   const [dateOfBirth, setDateOfBirth] = React.useState('');
+  const [verificationCode, setVerificationCode] = React.useState('');
+
+  const sendVerificationCode = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/auth/send-verification-code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao enviar código de verificação.');
+      }
+
+      toast.success('Código de verificação enviado para o seu e-mail!');
+      setStep(4);
+    } catch (error: unknown) {
+      console.error('Erro ao enviar código de verificação:', error);
+      toast.error((error as Error).message || 'Erro de conexão com o servidor. Tente novamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   // Address Fields
   const [cep, setCep] = React.useState('');
@@ -84,6 +112,7 @@ const RegisterPage = () => {
           name: fullName,
           email,
           password,
+          code: verificationCode,
           role,
           phone,
           dateOfBirth,
@@ -345,7 +374,7 @@ const RegisterPage = () => {
                 <p className="text-xs text-muted-foreground">Onde os serviços serão realizados ou sua base de atendimento</p>
               </div>
 
-              <form onSubmit={handleRegister} className="space-y-4 pt-2">
+              <form onSubmit={(e) => { e.preventDefault(); sendVerificationCode(); }} className="space-y-4 pt-2">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-1 space-y-1.5 relative">
                     <Label htmlFor="cep" className="font-bold text-xs">CEP</Label>
@@ -427,7 +456,49 @@ const RegisterPage = () => {
                 </div>
 
                 <Button type="submit" className="w-full btn-primary h-12 text-sm font-black mt-6" disabled={isLoading}>
-                  {isLoading ? 'Registrando...' : 'Finalizar e Criar Conta'}
+                  {isLoading ? 'Enviando Código...' : 'Finalizar e Criar Conta'}
+                </Button>
+              </form>
+            </div>
+          ) : step === 4 ? (
+            <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
+              <Button variant="ghost" onClick={() => setStep(3)} className="mb-4 -ml-2 text-xs text-muted-foreground font-bold hover:text-primary h-9 px-3" disabled={isLoading}>
+                <ArrowLeft className="w-4 h-4 mr-1.5" /> Voltar
+              </Button>
+              
+              <div className="space-y-1">
+                <h1 className="text-2xl font-black tracking-tight">Verifique seu E-mail</h1>
+                <p className="text-xs text-muted-foreground">Enviamos um código de verificação de 6 dígitos para <strong>{email}</strong></p>
+              </div>
+
+              <form onSubmit={handleRegister} className="space-y-4 pt-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="verificationCode" className="font-bold text-xs">Código de Verificação</Label>
+                  <Input 
+                    id="verificationCode" 
+                    placeholder="123456" 
+                    maxLength={6}
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                    required
+                    className="h-12 bg-card/50 border-foreground/10 rounded-xl text-center text-lg font-black tracking-widest animate-pulse" 
+                  />
+                </div>
+
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-muted-foreground">Não recebeu o código?</span>
+                  <button 
+                    type="button" 
+                    onClick={sendVerificationCode} 
+                    disabled={isLoading}
+                    className="text-primary font-bold hover:underline"
+                  >
+                    Reenviar Código
+                  </button>
+                </div>
+
+                <Button type="submit" className="w-full btn-primary h-12 text-sm font-black mt-6" disabled={isLoading || verificationCode.length !== 6}>
+                  {isLoading ? 'Verificando...' : 'Confirmar e Criar Conta'}
                 </Button>
               </form>
             </div>

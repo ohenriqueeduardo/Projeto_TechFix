@@ -6,6 +6,17 @@ import { Label } from '@/components/ui/label';
 import { Cpu, Chrome, Apple, ShieldCheck, Sparkles, Star, ArrowRight, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { User } from '@/types';
+interface GoogleGIS {
+  accounts: {
+    oauth2: {
+      initTokenClient: (config: {
+        client_id: string;
+        scope: string;
+        callback: (res: { error?: string; access_token?: string }) => void;
+      }) => { requestAccessToken: () => void };
+    };
+  };
+}
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -14,6 +25,89 @@ const LoginPage = () => {
   const [socialProvider, setSocialProvider] = React.useState<'Google' | 'Apple' | null>(null);
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [googleClient, setGoogleClient] = React.useState<{ requestAccessToken: () => void } | null>(null);
+
+  const handleRealGoogleLogin = React.useCallback(async (accessToken: string) => {
+    setSocialProvider('Google');
+    setIsSocialLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: accessToken }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao autenticar com o Google.');
+      }
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      if (data.isNewUser || !data.user.phone || !data.user.cep) {
+        if (data.isNewUser) {
+          toast.success('Conta criada com sucesso via Google! Complete seus dados.');
+        } else {
+          toast.info('Por favor, complete as informações do seu perfil para continuar.');
+        }
+        navigate('/completar-cadastro');
+      } else {
+        toast.success('Acesso concedido via Google! Bem-vindo de volta.');
+        navigate('/cliente/dashboard');
+      }
+    } catch (error: unknown) {
+      console.error('Erro no login social do Google:', error);
+      toast.error((error as Error).message || 'Erro ao conectar com o servidor. Tente novamente.');
+    } finally {
+      setIsSocialLoading(false);
+      setSocialProvider(null);
+    }
+  }, [navigate]);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const win = window as Window & { google?: GoogleGIS };
+      const initGoogle = () => {
+        if (win.google) {
+          const client = win.google.accounts.oauth2.initTokenClient({
+            client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
+            scope: 'openid email profile',
+            callback: async (response) => {
+              if (response.error) {
+                console.error('Google Auth Error:', response.error);
+                toast.error('Erro na autenticação com o Google.');
+                return;
+              }
+              if (response.access_token) {
+                await handleRealGoogleLogin(response.access_token);
+              }
+            },
+          });
+          setGoogleClient(client);
+        }
+      };
+
+      if (win.google) {
+        initGoogle();
+      } else {
+        const script = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+        if (script) {
+          script.addEventListener('load', initGoogle);
+        }
+      }
+    }
+  }, [handleRealGoogleLogin]);
+
+  const handleGoogleClick = () => {
+    if (googleClient) {
+      googleClient.requestAccessToken();
+    } else {
+      toast.error('O serviço de login do Google está carregando. Aguarde um momento...');
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +159,7 @@ const LoginPage = () => {
 
   const handleSocialLogin = async (provider: 'Google' | 'Apple') => {
     // Simulador: Pede o e-mail para fingir que a rede social retornou os dados
-    const simulatedEmail = window.prompt(`[Ambiente Local] Simulação de integração OAuth.\nDigite o e-mail retornado pela conta ${provider}:`, `user_${provider.toLowerCase()}@techfix.com`);
+    const simulatedEmail = window.prompt(`[Ambiente de Demonstração] O login da Apple requer conta paga de desenvolvedor Apple.\nDigite o e-mail de teste para prosseguir com a simulação:`, `user_${provider.toLowerCase()}@techfix.com`);
     
     if (!simulatedEmail) {
       toast.error('Autenticação cancelada pelo usuário.');
@@ -222,7 +316,7 @@ const LoginPage = () => {
 
           <div className="grid grid-cols-2 gap-3.5">
             <Button 
-              onClick={() => handleSocialLogin('Google')}
+              onClick={handleGoogleClick}
               variant="outline" 
               className="h-12 rounded-xl border-foreground/10 hover:bg-foreground/5 font-bold text-xs gap-2"
             >

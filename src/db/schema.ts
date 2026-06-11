@@ -121,3 +121,11 @@ export const messages = pgTable('messages', {
   date: text('date').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
+
+export const verificationCodes = pgTable('verification_codes', {
+  id: serial('id').primaryKey(),
+  email: text('email').notNull(),
+  code: text('code').notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
