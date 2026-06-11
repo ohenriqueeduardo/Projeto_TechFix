@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { apiRoutes } from './routes/index.js';
 
@@ -30,7 +30,7 @@ app.get('/health', (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 // Global error handler - converts HTML error pages to clean JSON responses
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error('Unhandled internal error:', err);
   res.status(500).json({
     error: 'Internal Server Error',
