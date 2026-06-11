@@ -34,7 +34,7 @@ const ProfessionalSettingsPage = () => {
         setEmail(storedUser.email || '');
         setAvatar(storedUser.avatar || '');
 
-        const res = await fetch(`http://localhost:3000/api/professionals/${storedUser.id}`);
+        const res = await fetch(`/api/professionals/${storedUser.id}`);
         if (res.ok) {
           const data = await res.json();
           setProfile(data);
@@ -76,7 +76,7 @@ const ProfessionalSettingsPage = () => {
   const handleSave = async () => {
     if (!profile || !currentUser) return;
     try {
-      const res = await fetch(`http://localhost:3000/api/professionals/${profile.id}`, {
+      const res = await fetch(`/api/professionals/${profile.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -88,7 +88,7 @@ const ProfessionalSettingsPage = () => {
         })
       });
 
-      const resUser = await fetch(`http://localhost:3000/api/users/${currentUser.id}`, {
+      const resUser = await fetch(`/api/users/${currentUser.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

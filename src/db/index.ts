@@ -11,6 +11,7 @@ if (!process.env.DATABASE_URL) {
 
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
+  max: process.env.VERCEL ? 1 : undefined,
 });
 
 export const db = drizzle(pool);

@@ -39,7 +39,7 @@ const ProfessionalDashboardPage = () => {
   const fetchDashboardData = React.useCallback(async (userId: string, token: string, currentUser: User | null) => {
     try {
       // 1. Fetch Professional Profile
-      const profResponse = await fetch(`http://localhost:3000/api/professionals/${userId}`);
+      const profResponse = await fetch(`/api/professionals/${userId}`);
       if (profResponse.ok) {
         const profData = await profResponse.json();
         setProfessionalProfile(profData);
@@ -50,7 +50,7 @@ const ProfessionalDashboardPage = () => {
       }
 
       // 2. Fetch Orders for this professional
-      const ordersResponse = await fetch(`http://localhost:3000/api/orders?professionalId=${userId}`, {
+      const ordersResponse = await fetch(`/api/orders?professionalId=${userId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (ordersResponse.ok) {
@@ -64,7 +64,7 @@ const ProfessionalDashboardPage = () => {
       }
 
       // 3. Fetch Transactions for this professional
-      const txResponse = await fetch(`http://localhost:3000/api/transactions/professional/${userId}`, {
+      const txResponse = await fetch(`/api/transactions/professional/${userId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (txResponse.ok) {
@@ -75,7 +75,7 @@ const ProfessionalDashboardPage = () => {
       }
 
       // 4. Fetch Reviews for this professional
-      const reviewsResponse = await fetch(`http://localhost:3000/api/reviews/professional/${userId}`);
+      const reviewsResponse = await fetch(`/api/reviews/professional/${userId}`);
       if (reviewsResponse.ok) {
         const reviewsData = await reviewsResponse.json();
         setReviews(reviewsData);
@@ -130,7 +130,7 @@ const ProfessionalDashboardPage = () => {
     saveLocalOrders(updated);
 
     try {
-      await fetch(`http://localhost:3000/api/orders/${orderId}/status`, {
+      await fetch(`/api/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -159,7 +159,7 @@ const ProfessionalDashboardPage = () => {
 
     try {
       // 1. Mark Order as Completed on backend
-      const orderResponse = await fetch(`http://localhost:3000/api/orders/${orderId}/status`, {
+      const orderResponse = await fetch(`/api/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -172,7 +172,7 @@ const ProfessionalDashboardPage = () => {
 
       // 2. Automatically generate a financial transaction (income) in PostgreSQL for this professional
       if (user) {
-        await fetch(`http://localhost:3000/api/transactions`, {
+        await fetch(`/api/transactions`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -207,7 +207,7 @@ const ProfessionalDashboardPage = () => {
     saveLocalOrders(updated);
 
     try {
-      await fetch(`http://localhost:3000/api/orders/${orderId}/status`, {
+      await fetch(`/api/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -244,7 +244,7 @@ const ProfessionalDashboardPage = () => {
 
     // Patch backend
     try {
-      await fetch(`http://localhost:3000/api/orders/${orderId}/status`, {
+      await fetch(`/api/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

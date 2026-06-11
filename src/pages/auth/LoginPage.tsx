@@ -21,7 +21,7 @@ const LoginPage = () => {
 
     try {
       // Connects directly to our backend Express API running on port 3000
-      const response = await fetch('http://localhost:3000/api/auth/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -76,7 +76,7 @@ const LoginPage = () => {
     setIsSocialLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/social', {
+      const response = await fetch('/api/auth/social', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

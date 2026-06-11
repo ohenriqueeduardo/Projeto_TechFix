@@ -42,7 +42,7 @@ const MyOrdersPage = () => {
 
     const fetchOrders = async () => {
       try {
-        const res = await fetch(`http://localhost:3000/api/orders?clientId=${currentUser.id}`, {
+        const res = await fetch(`/api/orders?clientId=${currentUser.id}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },

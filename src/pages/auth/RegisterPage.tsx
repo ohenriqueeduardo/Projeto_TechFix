@@ -75,7 +75,7 @@ const RegisterPage = () => {
       const fullName = `${firstName} ${lastName}`.trim();
 
       // Register the main user in PostgreSQL through Express API
-      const registerResponse = await fetch('http://localhost:3000/api/auth/register', {
+      const registerResponse = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -109,7 +109,7 @@ const RegisterPage = () => {
 
       // If registering as a professional, we also need to create their extended profile!
       if (role === 'professional') {
-        const professionalResponse = await fetch('http://localhost:3000/api/professionals', {
+        const professionalResponse = await fetch('/api/professionals', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -20,7 +20,7 @@ const ServiceDetailsPage = () => {
   useEffect(() => {
     const fetchProfessionals = async () => {
       try {
-        const res = await fetch('http://localhost:3000/api/professionals');
+        const res = await fetch('/api/professionals');
         if (res.ok) {
           const dbData = await res.json();
           setDbProfessionals(dbData);

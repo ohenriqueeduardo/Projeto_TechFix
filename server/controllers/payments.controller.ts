@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-11-20.acacia',
+  apiVersion: '2024-11-20.acacia' as NonNullable<ConstructorParameters<typeof Stripe>[1]>['apiVersion'],
 });
 
 export const createPaymentIntent = async (req: Request, res: Response) => {
@@ -34,8 +34,9 @@ export const createPaymentIntent = async (req: Request, res: Response) => {
     res.json({
       clientSecret: paymentIntent.client_secret,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating payment intent:', error);
-    res.status(500).json({ error: error.message || 'Falha ao processar intenção de pagamento' });
+    const message = error instanceof Error ? error.message : 'Falha ao processar intenção de pagamento';
+    res.status(500).json({ error: message });
   }
 };

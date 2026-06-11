@@ -85,7 +85,7 @@ const CompleteProfilePage = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/auth/complete-profile', {
+      const response = await fetch('/api/auth/complete-profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -32,14 +32,14 @@ const OrderStatusPage = () => {
     const fetchOrder = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`http://localhost:3000/api/orders/${id}`, {
+        const res = await fetch(`/api/orders/${id}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
           const data = await res.json();
           setOrder(data);
 
-          const prefRes = await fetch(`http://localhost:3000/api/professionals/${data.professionalId}`);
+          const prefRes = await fetch(`/api/professionals/${data.professionalId}`);
           if (prefRes.ok) {
             const pData = await prefRes.json();
             setProf({
@@ -78,7 +78,7 @@ const OrderStatusPage = () => {
   const handleCancelOrderEntirely = async () => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`http://localhost:3000/api/orders/${order.id}/status`, {
+      await fetch(`/api/orders/${order.id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ status: 'cancelled' })
@@ -94,7 +94,7 @@ const OrderStatusPage = () => {
   const handleCompleteOrder = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/api/orders/${order.id}/status`, {
+      const response = await fetch(`/api/orders/${order.id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ status: 'completed' })

@@ -32,7 +32,7 @@ const ChatPage = () => {
     if (!isProfessional) {
       const fetchProfs = async () => {
         try {
-          const res = await fetch('http://localhost:3000/api/professionals');
+          const res = await fetch('/api/professionals');
           if (res.ok) {
             const data = await res.json();
             setDbContacts(data.map((p: Professional & { userId?: string, user?: { avatar?: string } }) => ({

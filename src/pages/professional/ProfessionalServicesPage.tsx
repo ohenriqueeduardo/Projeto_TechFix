@@ -31,7 +31,7 @@ const ProfessionalServicesPage = () => {
         if (!storedUser || !token) return;
         
         const user = JSON.parse(storedUser);
-        const response = await fetch(`http://localhost:3000/api/orders?professionalId=${user.id}`, {
+        const response = await fetch(`/api/orders?professionalId=${user.id}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -51,7 +51,7 @@ const ProfessionalServicesPage = () => {
   const handleStatusChange = async (orderId: string, newStatus: 'pending' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled') => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/api/orders/${orderId}/status`, {
+      const response = await fetch(`/api/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: { 
           'Content-Type': 'application/json',

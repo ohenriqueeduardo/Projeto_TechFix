@@ -33,7 +33,7 @@ const ProfessionalFinancePage = () => {
   const fetchFinanceData = React.useCallback(async (userId: string, token: string) => {
     try {
       // 1. Fetch Orders
-      const ordersResponse = await fetch(`http://localhost:3000/api/orders?professionalId=${userId}`, {
+      const ordersResponse = await fetch(`/api/orders?professionalId=${userId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (ordersResponse.ok) {
@@ -43,7 +43,7 @@ const ProfessionalFinancePage = () => {
       }
 
       // 2. Fetch Transactions
-      const txResponse = await fetch(`http://localhost:3000/api/transactions/professional/${userId}`, {
+      const txResponse = await fetch(`/api/transactions/professional/${userId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (txResponse.ok) {
@@ -135,7 +135,7 @@ const ProfessionalFinancePage = () => {
 
     // POST to backend
     try {
-      const res = await fetch('http://localhost:3000/api/transactions', {
+      const res = await fetch('/api/transactions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

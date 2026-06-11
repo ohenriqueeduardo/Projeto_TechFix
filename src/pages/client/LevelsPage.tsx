@@ -22,7 +22,7 @@ const LevelsPage = () => {
       
       const fetchOrders = async () => {
         try {
-          const res = await fetch(`http://localhost:3000/api/orders?clientId=${parsedUser.id}`, {
+          const res = await fetch(`/api/orders?clientId=${parsedUser.id}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (res.ok) {

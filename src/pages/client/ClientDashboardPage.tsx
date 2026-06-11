@@ -33,7 +33,7 @@ const ClientDashboardPage = () => {
       const fetchData = async () => {
         try {
           // 1. Fetch Client Orders
-          const ordersResponse = await fetch(`http://localhost:3000/api/orders?clientId=${parsedUser.id}`, {
+          const ordersResponse = await fetch(`/api/orders?clientId=${parsedUser.id}`, {
             headers: {
               'Authorization': `Bearer ${token}`,
             },
@@ -47,7 +47,7 @@ const ClientDashboardPage = () => {
           }
 
           // 2. Fetch Public Services for Recommendations
-          const servicesResponse = await fetch('http://localhost:3000/api/services');
+          const servicesResponse = await fetch('/api/services');
           if (servicesResponse.ok) {
             const servicesData = await servicesResponse.json();
             setServices(servicesData.slice(0, 2)); // Show top 2 recommended services

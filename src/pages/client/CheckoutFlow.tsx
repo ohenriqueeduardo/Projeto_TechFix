@@ -128,7 +128,7 @@ const CheckoutFlow = () => {
   React.useEffect(() => {
     const fetchProfs = async () => {
       try {
-        const res = await fetch('http://localhost:3000/api/professionals');
+        const res = await fetch('/api/professionals');
         let profsToSet: Professional[] = [];
         
         if (res.ok) {
@@ -234,7 +234,7 @@ const CheckoutFlow = () => {
     // Sync with backend
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:3000/api/orders', {
+      const res = await fetch('/api/orders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -786,7 +786,7 @@ const Step4 = ({
   React.useEffect(() => {
     const fetchSecret = async () => {
       try {
-        const res = await fetch('http://localhost:3000/api/payments/create-intent', {
+        const res = await fetch('/api/payments/create-intent', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ price: service.price + 15, serviceId: service.id })
