@@ -25,42 +25,9 @@ import type { Professional, Service } from '@/types';
 import { toast } from 'sonner';
 import { saveLocalOrders, getLocalOrders, getLocalServices, getLocalProfessionals } from '@/utils/localDb';
 import { useNotifications } from '@/context/NotificationsContext';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+// Stripe package integration removed for Mercado Pago
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || '');
-
-const StripeCreditCardForm = ({ onPaymentSuccess, onPaymentError, isProcessing, setIsProcessing }: any) => {
-  const stripe = useStripe();
-  const elements = useElements();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!stripe || !elements) return;
-
-    setIsProcessing(true);
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      redirect: "if_required",
-    });
-
-    if (error) {
-      setIsProcessing(false);
-      onPaymentError(error.message);
-    } else if (paymentIntent && paymentIntent.status === "succeeded") {
-      onPaymentSuccess();
-    } else {
-      setIsProcessing(false);
-      onPaymentError("Ocorreu um erro inesperado.");
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} id="stripe-payment-form" className="space-y-4">
-      <PaymentElement options={{ layout: "tabs" }} />
-    </form>
-  );
-};
+// StripeCreditCardForm removed
 
 const Stepper = ({ currentStep }: { currentStep: number }) => {
   const steps = [
@@ -180,6 +147,8 @@ const CheckoutFlow = () => {
   const [cardExpiry, setCardExpiry] = React.useState('');
   const [cardCvv, setCardCvv] = React.useState('');
   const [installments, setInstallments] = React.useState(1);
+  const [isProcessing, setIsProcessing] = React.useState(false);
+
 
   if (!service) return <div className="p-8 text-center text-red-500 font-bold glass-card border border-red-500/20 max-w-md mx-auto mt-20">Serviço não encontrado</div>;
   if (isLoadingProfs || !selectedProf) return (
@@ -189,9 +158,7 @@ const CheckoutFlow = () => {
   );
 
   const handleFinish = async () => {
-    // Generate order and save to LocalStorage
-    const orderId = `o_${Date.now()}`;
-    const orderCode = `TF-2026-${Math.floor(10000 + Math.random() * 90000)}`;
+    setIsProcessing(true);
     
     // Calculate final transaction price with fees/discounts
     const basePrice = service.price + 15;
@@ -210,30 +177,10 @@ const CheckoutFlow = () => {
     const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
     const professionalIdToUse = selectedProf ? ((selectedProf as Professional & { userId?: string }).userId || selectedProf.id) : '';
 
-    const newOrder = {
-      id: orderId,
-      code: orderCode,
-      serviceId: service.id,
-      serviceTitle: service.title,
-      clientName: currentUser?.name || "Cliente",
-      clientId: currentUser?.id || "u1",
-      professionalId: professionalIdToUse,
-      professionalName: selectedProf.name,
-      date: selectedDate || "28/05",
-      time: selectedTime || "14:00",
-      status: "pending" as const, // Start as pending instead of scheduled so professional can accept
-      price: finalPrice,
-      paymentMethod: paymentMethod as "pix" | "debit" | "credit",
-      address: `${street}, ${number} - ${neighborhood}, ${city} - ${state}`
-    };
-
-    const currentOrders = getLocalOrders();
-    currentOrders.push(newOrder);
-    saveLocalOrders(currentOrders);
-
-    // Sync with backend
+    const token = localStorage.getItem('token');
+    
     try {
-      const token = localStorage.getItem('token');
+      // 1. Create order on backend
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: {
@@ -254,23 +201,74 @@ const CheckoutFlow = () => {
       });
       
       if (!res.ok) {
-        console.warn('Backend sync returned error:', res.status, await res.text());
-        throw new Error('Backend sync failed with status ' + res.status);
+        const errorText = await res.text();
+        console.error('Backend sync returned error:', res.status, errorText);
+        throw new Error('Falha ao criar o pedido no servidor: ' + errorText);
       }
+
+      const createdOrder = await res.json();
+
+      // 2. Save order to LocalStorage for local backup
+      const newOrder = {
+        id: createdOrder.id || `o_${Date.now()}`,
+        code: createdOrder.code || `TF-2026-${Math.floor(10000 + Math.random() * 90000)}`,
+        serviceId: service.id,
+        serviceTitle: service.title,
+        clientName: currentUser?.name || "Cliente",
+        clientId: currentUser?.id || "u1",
+        professionalId: professionalIdToUse,
+        professionalName: selectedProf.name,
+        date: selectedDate || "28/05",
+        time: selectedTime || "14:00",
+        status: "pending" as const,
+        price: finalPrice,
+        paymentMethod: paymentMethod as "pix" | "debit" | "credit",
+        address: `${street}, ${number} - ${neighborhood}, ${city} - ${state}`
+      };
+
+      const currentOrders = getLocalOrders();
+      currentOrders.push(newOrder);
+      saveLocalOrders(currentOrders);
+
+      // 3. Create Mercado Pago checkout preference
+      const paymentRes = await fetch('/api/payments/create-intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          price: finalPrice,
+          serviceTitle: service.title,
+          orderId: createdOrder.id,
+          serviceId: service.id
+        })
+      });
+
+      if (!paymentRes.ok) {
+        const errText = await paymentRes.text();
+        throw new Error('Falha ao gerar o link de pagamento: ' + errText);
+      }
+
+      const { initPoint } = await paymentRes.json();
+      
+      // 4. Trigger success notification for creation
+      addNotification(
+        "Aguardando Pagamento",
+        `Seu chamado de ${service.title} foi criado. Redirecionando para o Mercado Pago para concluir o pagamento.`,
+        "info"
+      );
+
+      toast.success('Pedido criado! Redirecionando para o pagamento...');
+      
+      // 5. Redirect to Mercado Pago Checkout Pro
+      window.location.href = initPoint;
+      
     } catch (err) {
-      console.warn('Backend sync failed, using localStorage:', err);
+      console.error('Checkout error:', err);
+      toast.error(err instanceof Error ? err.message : 'Falha ao processar checkout. Tente novamente.');
+      setIsProcessing(false);
     }
-
-    // Trigger success notification
-    addNotification(
-      "Agendamento Confirmado",
-      `Seu chamado de ${service.title} com ${selectedProf.name} foi solicitado para o dia ${selectedDate} às ${selectedTime}.`,
-      "success"
-    );
-
-    toast.success('Pedido agendado com sucesso!');
-    setFinishedOrder({ code: orderCode, price: finalPrice });
-    setShowSuccessPopup(true);
   };
 
   return (
@@ -318,6 +316,7 @@ const CheckoutFlow = () => {
             cardCvv={cardCvv} setCardCvv={setCardCvv}
             installments={installments} setInstallments={setInstallments}
             handleFinish={handleFinish}
+            isProcessing={isProcessing}
           />
         } />
         <Route path="confirmado" element={
@@ -764,106 +763,22 @@ interface Step4Props {
   installments: number;
   setInstallments: (val: number) => void;
   handleFinish: () => void;
+  isProcessing: boolean;
 }
 
 // STEP 4: REALISTIC PAYMENT METHOD selector & installments
 const Step4 = ({
   service,
   paymentMethod, setPaymentMethod,
-  cardNumber, setCardNumber,
-  cardName, setCardName,
-  cardExpiry, setCardExpiry,
-  cardCvv, setCardCvv,
-  installments, setInstallments,
-  handleFinish
+  handleFinish,
+  isProcessing
 }: Step4Props) => {
   const navigate = useNavigate();
-  const [pixCopied, setPixCopied] = React.useState(false);
-  const [timeLeft, setTimeLeft] = React.useState(600); // 10 minutes
-  const [clientSecret, setClientSecret] = React.useState('');
-  const [isProcessing, setIsProcessing] = React.useState(false);
-
-  React.useEffect(() => {
-    const fetchSecret = async () => {
-      try {
-        const res = await fetch('/api/payments/create-intent', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ price: service.price + 15, serviceId: service.id })
-        });
-        const data = await res.json();
-        if (data.clientSecret) setClientSecret(data.clientSecret);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchSecret();
-  }, [service.price, service.id]);
-
-  React.useEffect(() => {
-    if (paymentMethod === 'pix' && timeLeft > 0) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [paymentMethod, timeLeft]);
-
-  const formatTime = (secs: number) => {
-    const mins = Math.floor(secs / 60);
-    const remainingSecs = secs % 60;
-    return `${mins}:${remainingSecs < 10 ? '0' : ''}${remainingSecs}`;
-  };
-
-  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 16) value = value.slice(0, 16);
-    const formatted = value.match(/.{1,4}/g)?.join(' ') || value;
-    setCardNumber(formatted);
-  };
-
-  const handleCardExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 4) value = value.slice(0, 4);
-    let formatted = value;
-    if (value.length > 2) {
-      formatted = `${value.slice(0, 2)}/${value.slice(2)}`;
-    }
-    setCardExpiry(formatted);
-  };
-
-  const handleCardCvvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length > 3) value = value.slice(0, 3);
-    setCardCvv(value);
-  };
-
-  const copyPixCode = () => {
-    navigator.clipboard.writeText("00020101021226870014br.gov.bcb.pix2565pix.techfix.com.br/custody/qrcodepix892389");
-    setPixCopied(true);
-    toast.success('Código PIX copiado para a área de transferência!');
-    setTimeout(() => setPixCopied(false), 2000);
-  };
 
   const totalPrice = service.price + 15;
   const isPix = paymentMethod === 'pix';
   const isDebit = paymentMethod === 'debit';
   const isCredit = paymentMethod === 'credit';
-
-  const installmentOptions = [
-    { number: 1, text: `1x de ${formatCurrency(totalPrice)} (Sem Juros)` },
-    { number: 2, text: `2x de ${formatCurrency(totalPrice / 2)} (Sem Juros)` },
-    { number: 3, text: `3x de ${formatCurrency(totalPrice / 3)} (Sem Juros)` },
-    { number: 6, text: `6x de ${formatCurrency((totalPrice * 1.05) / 6)} (Com Juros 5%)` },
-    { number: 12, text: `12x de ${formatCurrency((totalPrice * 1.1) / 12)} (Com Juros 10%)` },
-  ];
-
-  const getCardIcon = (num: string) => {
-    const cleanNum = num.replace(/\s/g, '');
-    if (cleanNum.startsWith('4')) return 'Visa';
-    if (cleanNum.startsWith('5')) return 'Mastercard';
-    return 'Cartão';
-  };
-
-  const isFormValid = isPix || (isCredit && clientSecret) || (isDebit && clientSecret);
 
   return (
     <div className="animate-in fade-in slide-in-from-right-8 duration-500 space-y-8">
@@ -924,65 +839,26 @@ const Step4 = ({
           </Label>
         </RadioGroup>
 
-        {/* PIX DETAILED INTERACTIVE SECTION */}
+        {/* MERCADO PAGO INTEGRATION REDIRECT ADVICE */}
         {isPix && (
-          <div className="p-6 rounded-2xl bg-foreground/5 border border-foreground/5 space-y-6 animate-in fade-in duration-300">
-            <h3 className="font-bold text-base text-center">Efetue o Pagamento via Pix</h3>
-            
-            <div className="flex flex-col md:flex-row items-center gap-6 justify-center">
-              {/* QR Code */}
-              <div className="p-4 rounded-2xl bg-white border border-slate-200 shrink-0">
-                <img 
-                  src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=techfix_pix_payload_demo_value" 
-                  alt="QR Code Pix"
-                  className="w-36 h-36"
-                />
-              </div>
-
-              {/* Explanatory text + copy and paste */}
-              <div className="space-y-4 flex-1">
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Escaneie o QR Code ou copie o código Pix abaixo para realizar o pagamento no aplicativo do seu banco.</p>
-                  <p className="text-xs text-primary font-bold">Expira em: <strong className="text-sm font-black">{formatTime(timeLeft)}</strong></p>
-                </div>
-
-                <div className="relative group flex items-center">
-                  <Input 
-                    readOnly
-                    value="00020101021226870014br.gov.bcb.pix2565pix.techfix.com.br/custody/qrcodepix892389" 
-                    className="h-10 pr-24 bg-card/50 border-foreground/10 text-xs font-mono select-all rounded-xl"
-                  />
-                  <Button 
-                    onClick={copyPixCode}
-                    className="absolute right-1.5 h-7 rounded-lg px-3 btn-primary text-[10px] font-bold gap-1"
-                  >
-                    {pixCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                    {pixCopied ? 'Copiado' : 'Copiar'}
-                  </Button>
-                </div>
-              </div>
-            </div>
+          <div className="p-6 rounded-2xl bg-foreground/5 border border-foreground/5 space-y-3 animate-in fade-in duration-300">
+            <h3 className="font-bold text-sm text-primary flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-primary shrink-0" /> Pagamento com Pix via Mercado Pago
+            </h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Ao clicar em finalizar, criaremos sua intenção de agendamento e você será redirecionado com total segurança para o **Mercado Pago** para concluir o seu pagamento via Pix com o desconto de 5% aplicado.
+            </p>
           </div>
         )}
 
-        {/* STRIPE PAYMENT SECTION */}
         {(isCredit || isDebit) && (
-          <div className="p-6 rounded-2xl bg-foreground/5 border border-foreground/5 animate-in fade-in duration-300">
-            {clientSecret ? (
-              <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'night' } }}>
-                <StripeCreditCardForm 
-                  onPaymentSuccess={handleFinish} 
-                  onPaymentError={(msg: string) => toast.error(msg)} 
-                  isProcessing={isProcessing}
-                  setIsProcessing={setIsProcessing}
-                />
-              </Elements>
-            ) : (
-              <div className="flex justify-center items-center py-10">
-                <span className="h-8 w-8 rounded-full border-4 border-t-primary border-white/5 animate-spin"></span>
-                <span className="ml-3 text-sm font-bold text-muted-foreground">Conectando ao Stripe...</span>
-              </div>
-            )}
+          <div className="p-6 rounded-2xl bg-foreground/5 border border-foreground/5 space-y-3 animate-in fade-in duration-300">
+            <h3 className="font-bold text-sm text-primary flex items-center gap-2">
+              <CardIcon className="w-5 h-5 text-primary shrink-0" /> Pagamento com Cartão via Mercado Pago
+            </h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Ao clicar em finalizar, criaremos sua intenção de agendamento e você será redirecionado para a página oficial do **Mercado Pago**, onde poderá inserir os dados do seu cartão com máxima segurança e parcelar em até 12x.
+            </p>
           </div>
         )}
 
@@ -1002,50 +878,23 @@ const Step4 = ({
               <span>-{formatCurrency(totalPrice * 0.05)}</span>
             </div>
           )}
-          {isCredit && Number(installments) > 3 && (
-            <div className="flex justify-between text-xs text-red-500 font-bold">
-              <span>Juros de Parcelamento</span>
-              <span>{formatCurrency(Number(installments) === 6 ? totalPrice * 0.05 : totalPrice * 0.1)}</span>
-            </div>
-          )}
           <div className="flex justify-between text-base font-black pt-3 border-t border-foreground/5">
             <span>Total da Transação</span>
             <span className="text-primary">
-              {formatCurrency(
-                isPix 
-                  ? totalPrice * 0.95 
-                  : (isCredit && Number(installments) === 6 
-                      ? totalPrice * 1.05 
-                      : (isCredit && Number(installments) === 12 
-                          ? totalPrice * 1.1 
-                          : totalPrice
-                        )
-                    )
-              )}
+              {formatCurrency(isPix ? totalPrice * 0.95 : totalPrice)}
             </span>
           </div>
         </div>
 
         <div className="flex gap-4 pt-4">
-          <Button variant="outline" onClick={() => navigate(-1)} className="h-12 px-6 rounded-xl text-xs font-bold border-foreground/10">Voltar</Button>
-          {isPix ? (
-            <Button 
-              onClick={handleFinish} 
-              disabled={!isFormValid}
-              className="flex-1 btn-primary h-12 text-sm font-black"
-            >
-              Finalizar Pagamento Seguro
-            </Button>
-          ) : (
-            <Button 
-              type="submit"
-              form="stripe-payment-form"
-              disabled={!isFormValid || isProcessing}
-              className="flex-1 btn-primary h-12 text-sm font-black gap-2"
-            >
-              {isProcessing ? 'Processando...' : 'Finalizar Pagamento Seguro'}
-            </Button>
-          )}
+          <Button variant="outline" onClick={() => navigate(-1)} className="h-12 px-6 rounded-xl text-xs font-bold border-foreground/10" disabled={isProcessing}>Voltar</Button>
+          <Button 
+            onClick={handleFinish} 
+            disabled={isProcessing}
+            className="flex-1 btn-primary h-12 text-sm font-black gap-2"
+          >
+            {isProcessing ? 'Redirecionando...' : 'Finalizar Pagamento Seguro'}
+          </Button>
         </div>
       </div>
     </div>
@@ -1063,7 +912,78 @@ interface OrderConfirmedProps {
 const OrderConfirmed = ({ service, selectedProf, selectedDate, selectedTime }: OrderConfirmedProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { orderCode, price } = (location.state as { orderCode?: string, price?: number }) || {};
+  const [searchParams] = useSearchParams();
+  const orderIdParam = searchParams.get('orderId');
+  const paymentIntentParam = searchParams.get('payment_intent');
+
+  const [isLoading, setIsLoading] = React.useState(!!orderIdParam);
+  const [confirmedCode, setConfirmedCode] = React.useState('');
+  const [confirmedPrice, setConfirmedPrice] = React.useState(0);
+  const [confirmedDateVal, setConfirmedDateVal] = React.useState(selectedDate);
+  const [confirmedTimeVal, setConfirmedTimeVal] = React.useState(selectedTime);
+  const [confirmedProfName, setConfirmedProfName] = React.useState(selectedProf?.name || '');
+
+  React.useEffect(() => {
+    const confirmOrderPayment = async () => {
+      if (!orderIdParam) return;
+      try {
+        const token = localStorage.getItem('token');
+        
+        // 1. Confirm the payment on the backend
+        const confirmRes = await fetch(`/api/orders/${orderIdParam}/confirm-payment`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          }
+        });
+
+        if (!confirmRes.ok) {
+          throw new Error('Falha ao confirmar pagamento do pedido.');
+        }
+
+        const orderData = await confirmRes.json();
+        setConfirmedCode(orderData.code);
+        setConfirmedPrice(orderData.price);
+        setConfirmedDateVal(orderData.date);
+        setConfirmedTimeVal(orderData.time);
+        
+        // Fetch technician name
+        if (orderData.professionalId) {
+          const profRes = await fetch(`/api/professionals/${orderData.professionalId}`);
+          if (profRes.ok) {
+            const profData = await profRes.json();
+            setConfirmedProfName(profData.name || 'Técnico');
+          }
+        }
+      } catch (err) {
+        console.error('Error confirming order payment:', err);
+        toast.error('Ocorreu um erro ao verificar o pagamento. Por favor, verifique "Meus Pedidos".');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (orderIdParam && paymentIntentParam === 'success') {
+      confirmOrderPayment();
+    } else {
+      const stateObj = (location.state as { orderCode?: string, price?: number }) || {};
+      setConfirmedCode(stateObj.orderCode || '');
+      setConfirmedPrice(stateObj.price || (service.price + 15));
+      setConfirmedDateVal(selectedDate);
+      setConfirmedTimeVal(selectedTime);
+      setConfirmedProfName(selectedProf?.name || '');
+    }
+  }, [orderIdParam, paymentIntentParam, location.state, service.price, selectedProf, selectedDate, selectedTime]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col justify-center items-center min-h-[50vh] space-y-4">
+        <span className="h-10 w-10 rounded-full border-4 border-t-primary border-white/5 animate-spin"></span>
+        <p className="text-sm font-bold text-muted-foreground animate-pulse">Verificando pagamento seguro no Mercado Pago...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="text-center space-y-8 animate-in zoom-in-95 duration-500">
@@ -1078,10 +998,10 @@ const OrderConfirmed = ({ service, selectedProf, selectedDate, selectedTime }: O
       </div>
 
       <div className="glass-card p-6 rounded-2xl max-w-sm mx-auto text-left space-y-3.5 border border-foreground/5">
-        {orderCode && (
+        {confirmedCode && (
           <div className="flex justify-between text-xs pb-3 border-b border-foreground/5">
             <span className="text-muted-foreground">Código do Chamado</span>
-            <span className="font-mono font-bold text-primary">{orderCode}</span>
+            <span className="font-mono font-bold text-primary">{confirmedCode}</span>
           </div>
         )}
         <div className="flex justify-between text-xs">
@@ -1090,15 +1010,15 @@ const OrderConfirmed = ({ service, selectedProf, selectedDate, selectedTime }: O
         </div>
         <div className="flex justify-between text-xs">
           <span className="text-muted-foreground">Técnico Escolhido</span>
-          <span className="font-bold text-primary">{selectedProf.name}</span>
+          <span className="font-bold text-primary">{confirmedProfName}</span>
         </div>
         <div className="flex justify-between text-xs">
           <span className="text-muted-foreground">Horário Marcado</span>
-          <span className="font-bold">{selectedDate || '28/05'} às {selectedTime || '14:00'}</span>
+          <span className="font-bold">{confirmedDateVal || '28/05'} às {confirmedTimeVal || '14:00'}</span>
         </div>
         <div className="pt-3 border-t border-foreground/5 flex justify-between text-base font-black">
           <span>Total Pago</span>
-          <span className="text-primary">{formatCurrency(price || (service.price + 15))}</span>
+          <span className="text-primary">{formatCurrency(confirmedPrice)}</span>
         </div>
       </div>
 

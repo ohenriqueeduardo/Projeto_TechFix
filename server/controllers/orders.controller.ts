@@ -164,3 +164,31 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+// POST /api/orders/:id/confirm-payment
+export const confirmPayment = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+
+    const existingOrder = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+    if (existingOrder.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    // Update order status to 'scheduled' since payment is confirmed
+    const updatedOrder = await db.update(orders)
+      .set({ status: 'scheduled' })
+      .where(eq(orders.id, id))
+      .returning();
+
+    // Make sure the transaction status is 'pending' (meaning escrowed/retained)
+    await db.update(transactions)
+      .set({ status: 'pending' })
+      .where(eq(transactions.orderId, id));
+
+    res.json(updatedOrder[0]);
+  } catch (error) {
+    console.error('Error confirming payment:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};

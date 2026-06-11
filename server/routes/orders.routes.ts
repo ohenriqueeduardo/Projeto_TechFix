@@ -4,7 +4,8 @@ import {
   getOrderById,
   createOrder,
   updateOrder,
-  updateOrderStatus
+  updateOrderStatus,
+  confirmPayment
 } from '../controllers/orders.controller.js';
 import { authenticateJWT } from '../middleware/auth.middleware.js';
 
@@ -18,5 +19,6 @@ router.get('/:id', getOrderById);
 router.post('/', createOrder);
 router.put('/:id', updateOrder);
 router.patch('/:id/status', updateOrderStatus);
+router.post('/:id/confirm-payment', confirmPayment);
 
 export default router;

@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { createPaymentIntent } from '../controllers/payments.controller.js';
+import { createPreference } from '../controllers/payments.controller.js';
 
 const router = Router();
 
-router.post('/create-intent', createPaymentIntent);
+router.post('/create-intent', createPreference);
 
 export const paymentsRoutes = router;
