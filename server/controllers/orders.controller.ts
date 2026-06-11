@@ -49,14 +49,22 @@ export const getOrderById = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
 // POST /api/orders
 export const createOrder = async (req: Request, res: Response) => {
   try {
     const { serviceId, serviceTitle, clientId, professionalId, date, time, price, paymentMethod, address } = req.body;
 
     if (!serviceTitle || !clientId || !professionalId || !date || !time || price === undefined || !paymentMethod || !address) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      const missing = [];
+      if (!serviceTitle) missing.push('serviceTitle');
+      if (!clientId) missing.push('clientId');
+      if (!professionalId) missing.push('professionalId');
+      if (!date) missing.push('date');
+      if (!time) missing.push('time');
+      if (price === undefined) missing.push('price');
+      if (!paymentMethod) missing.push('paymentMethod');
+      if (!address) missing.push('address');
+      return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
     }
 
     const orderId = `o_${crypto.randomBytes(4).toString('hex')}`;
@@ -95,7 +103,8 @@ export const createOrder = async (req: Request, res: Response) => {
     res.status(201).json(newOrder[0]);
   } catch (error) {
     console.error('Error creating order:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    const message = error instanceof Error ? error.message : 'Internal Server Error';
+    res.status(500).json({ error: 'Internal Server Error', message });
   }
 };
 
