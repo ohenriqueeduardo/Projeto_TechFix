@@ -16,7 +16,8 @@ import {
   Copy, 
   Check, 
   CreditCard as CardIcon,
-  Laptop
+  Laptop,
+  Plus
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { services } from '@/data/mockData';
@@ -203,7 +204,31 @@ const CheckoutFlow = () => {
       if (!res.ok) {
         const errorText = await res.text();
         console.error('Backend sync returned error:', res.status, errorText);
-        throw new Error('Falha ao criar o pedido no servidor: ' + errorText);
+        
+        if (res.status === 401 || res.status === 403) {
+          toast.error('Sua sessão expirou ou é inválida. Por favor, faça login novamente.');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          navigate('/login');
+          setIsProcessing(false);
+          return;
+        }
+
+        let errMsg = 'Falha ao criar o pedido no servidor.';
+        try {
+          const parsed = JSON.parse(errorText);
+          errMsg = parsed.error || errMsg;
+        } catch (e) {
+          if (errorText.includes('token') || errorText.includes('expired') || errorText.includes('denied')) {
+            toast.error('Sua sessão expirou ou é inválida. Por favor, faça login novamente.');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            navigate('/login');
+            setIsProcessing(false);
+            return;
+          }
+        }
+        throw new Error(errMsg);
       }
 
       const createdOrder = await res.json();
@@ -247,7 +272,34 @@ const CheckoutFlow = () => {
 
       if (!paymentRes.ok) {
         const errText = await paymentRes.text();
-        throw new Error('Falha ao gerar o link de pagamento: ' + errText);
+        console.error('Payment intent generation returned error:', paymentRes.status, errText);
+
+        if (paymentRes.status === 401 || paymentRes.status === 403) {
+          toast.error('Sua sessão expirou ou é inválida. Por favor, faça login novamente.');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          navigate('/login');
+          setIsProcessing(false);
+          return;
+        }
+
+        let errMsg = 'Falha ao gerar o link de pagamento.';
+        try {
+          const parsed = JSON.parse(errText);
+          if (parsed.error && parsed.error.includes('invalid token')) {
+            toast.error('Erro de credenciais no gateway de pagamento (Mercado Pago). Por favor, avise o administrador.');
+            setIsProcessing(false);
+            return;
+          }
+          errMsg = parsed.error || errMsg;
+        } catch (e) {
+          if (errText.includes('invalid token') || errText.includes('access_token')) {
+            toast.error('Erro de credenciais no gateway de pagamento (Mercado Pago). Por favor, avise o administrador.');
+            setIsProcessing(false);
+            return;
+          }
+        }
+        throw new Error(errMsg);
       }
 
       const { initPoint } = await paymentRes.json();
@@ -580,6 +632,54 @@ const Step3 = ({
   const navigate = useNavigate();
   const [isSearchingCep, setIsSearchingCep] = React.useState(false);
 
+  const currentUser = React.useMemo(() => {
+    const stored = localStorage.getItem('user');
+    return stored ? JSON.parse(stored) : null;
+  }, []);
+
+  const hasSavedAddress = !!(currentUser?.street && currentUser?.number && currentUser?.city && currentUser?.cep);
+
+  const [addressOption, setAddressOption] = React.useState<'saved' | 'new'>(() => {
+    if (!hasSavedAddress) return 'new';
+    
+    // Check if the current state fields match the saved address or are completely empty
+    const isSavedMatch = 
+      street === currentUser.street &&
+      number === currentUser.number &&
+      cep === currentUser.cep;
+      
+    return isSavedMatch || (!street && !number && !cep) ? 'saved' : 'new';
+  });
+
+  React.useEffect(() => {
+    if (hasSavedAddress && addressOption === 'saved') {
+      setCep(currentUser.cep || '');
+      setStreet(currentUser.street || '');
+      setNumber(currentUser.number || '');
+      setComplement(currentUser.complement || '');
+      setNeighborhood(currentUser.neighborhood || '');
+      setCity(currentUser.city || '');
+      setState(currentUser.state || '');
+      setPhone(currentUser.phone || '');
+    } else if (addressOption === 'new') {
+      // Clear fields to let user enter new address, only if they currently match the saved one
+      const isSavedMatch = 
+        street === currentUser.street &&
+        number === currentUser.number &&
+        cep === currentUser.cep;
+      if (isSavedMatch) {
+        setCep('');
+        setStreet('');
+        setNumber('');
+        setComplement('');
+        setNeighborhood('');
+        setCity('');
+        setState('');
+        setPhone(currentUser?.phone || '');
+      }
+    }
+  }, [addressOption, hasSavedAddress, currentUser, setCep, setStreet, setNumber, setComplement, setNeighborhood, setCity, setState, setPhone, cep, street, number]);
+
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     // Mask CEP: 00000-000
     let value = e.target.value.replace(/\D/g, '');
@@ -638,100 +738,185 @@ const Step3 = ({
       <div className="glass-card p-8 rounded-3xl space-y-6">
         <div>
           <h2 className="text-2xl font-black mb-1">Local de Atendimento</h2>
-          <p className="text-xs text-muted-foreground">Preencha seu CEP para que possamos verificar a logística de atendimento.</p>
+          <p className="text-xs text-muted-foreground">Escolha o endereço cadastrado para atendimento ou informe um novo local.</p>
         </div>
 
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-1 space-y-1.5 relative">
-              <Label htmlFor="cep" className="font-bold text-xs">CEP</Label>
-              <Input 
-                id="cep" 
-                placeholder="00000-000" 
-                value={cep} 
-                onChange={handleCepChange} 
-                className="bg-card/50 border-foreground/10 h-12 rounded-xl text-sm" 
-              />
-              {isSearchingCep && (
-                <span className="absolute bottom-3 right-3 h-5 w-5 rounded-full border-2 border-t-primary border-white/5 animate-spin"></span>
-              )}
+        {hasSavedAddress && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            {/* Card 1: Saved Address */}
+            <div 
+              onClick={() => setAddressOption('saved')}
+              className={`p-5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between h-40 relative overflow-hidden group ${
+                addressOption === 'saved'
+                  ? 'bg-primary/5 border-primary shadow-[0_0_15px_rgba(6,182,212,0.15)] animate-in fade-in zoom-in-95 duration-200'
+                  : 'border-foreground/10 hover:border-foreground/20 hover:bg-card/25'
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div className={`p-2.5 rounded-xl transition-all ${addressOption === 'saved' ? 'bg-primary/20 text-primary scale-110 shadow-[0_0_8px_rgba(6,182,212,0.3)]' : 'bg-foreground/5 text-muted-foreground'}`}>
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-bold text-sm leading-none flex items-center gap-2">
+                    Endereço Cadastrado
+                    {addressOption === 'saved' && <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />}
+                  </h4>
+                  <p className="text-[11px] text-muted-foreground mt-2 line-clamp-3 leading-relaxed">
+                    {currentUser.street}, {currentUser.number} {currentUser.complement ? `(${currentUser.complement})` : ''} <br />
+                    {currentUser.neighborhood} • {currentUser.city} - {currentUser.state} <br />
+                    CEP: {currentUser.cep}
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-foreground/5 text-[9px] font-black uppercase tracking-widest text-muted-foreground">
+                <span>Usar este local</span>
+                <span className={addressOption === 'saved' ? 'text-primary' : ''}>
+                  {addressOption === 'saved' ? 'Selecionado' : 'Selecionar'}
+                </span>
+              </div>
             </div>
-            <div className="md:col-span-2 space-y-1.5">
-              <Label htmlFor="street" className="font-bold text-xs">Endereço</Label>
+
+            {/* Card 2: New Address */}
+            <div 
+              onClick={() => setAddressOption('new')}
+              className={`p-5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between h-40 relative overflow-hidden group ${
+                addressOption === 'new'
+                  ? 'bg-primary/5 border-primary shadow-[0_0_15px_rgba(6,182,212,0.15)] animate-in fade-in zoom-in-95 duration-200'
+                  : 'border-foreground/10 hover:border-foreground/20 hover:bg-card/25'
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div className={`p-2.5 rounded-xl transition-all ${addressOption === 'new' ? 'bg-primary/20 text-primary scale-110 shadow-[0_0_8px_rgba(6,182,212,0.3)]' : 'bg-foreground/5 text-muted-foreground'}`}>
+                  <Plus className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-bold text-sm leading-none flex items-center gap-2">
+                    Outro Endereço
+                    {addressOption === 'new' && <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />}
+                  </h4>
+                  <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+                    Informar e cadastrar um novo endereço de atendimento específico para este serviço.
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-foreground/5 text-[9px] font-black uppercase tracking-widest text-muted-foreground">
+                <span>Cadastrar novo</span>
+                <span className={addressOption === 'new' ? 'text-primary' : ''}>
+                  {addressOption === 'new' ? 'Selecionado' : 'Selecionar'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {addressOption === 'new' ? (
+          <div className="space-y-4 animate-in fade-in duration-300">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-1 space-y-1.5 relative">
+                <Label htmlFor="cep" className="font-bold text-xs">CEP</Label>
+                <Input 
+                  id="cep" 
+                  placeholder="00000-000" 
+                  value={cep} 
+                  onChange={handleCepChange} 
+                  className="bg-card/50 border-foreground/10 h-12 rounded-xl text-sm" 
+                />
+                {isSearchingCep && (
+                  <span className="absolute bottom-3 right-3 h-5 w-5 rounded-full border-2 border-t-primary border-white/5 animate-spin"></span>
+                )}
+              </div>
+              <div className="md:col-span-2 space-y-1.5">
+                <Label htmlFor="street" className="font-bold text-xs">Endereço</Label>
+                <Input 
+                  id="street" 
+                  placeholder="Rua, Avenida..." 
+                  value={street}
+                  onChange={(e) => setStreet(e.target.value)}
+                  className="bg-card/50 border-foreground/10 h-12 rounded-xl text-sm" 
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="number" className="font-bold text-xs">Número</Label>
+                <Input 
+                  id="number" 
+                  placeholder="123" 
+                  value={number}
+                  onChange={(e) => setNumber(e.target.value)}
+                  className="bg-card/50 border-foreground/10 h-12 rounded-xl text-sm" 
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="complement" className="font-bold text-xs">Complemento (Opcional)</Label>
+                <Input 
+                  id="complement" 
+                  placeholder="Apto, Bloco..." 
+                  value={complement}
+                  onChange={(e) => setComplement(e.target.value)}
+                  className="bg-card/50 border-foreground/10 h-12 rounded-xl text-sm" 
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="neighborhood" className="font-bold text-xs">Bairro</Label>
+                <Input 
+                  id="neighborhood" 
+                  placeholder="Bairro" 
+                  value={neighborhood}
+                  onChange={(e) => setNeighborhood(e.target.value)}
+                  className="bg-card/50 border-foreground/10 h-12 rounded-xl text-sm" 
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="city" className="font-bold text-xs">Cidade</Label>
+                <Input 
+                  id="city" 
+                  placeholder="São Paulo" 
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="bg-card/50 border-foreground/10 h-12 rounded-xl text-sm" 
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="state" className="font-bold text-xs">Estado</Label>
+                <Input 
+                  id="state" 
+                  placeholder="SP" 
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  className="bg-card/50 border-foreground/10 h-12 rounded-xl text-sm" 
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="phone" className="font-bold text-xs">Telefone para Contato</Label>
               <Input 
-                id="street" 
-                placeholder="Rua, Avenida..." 
-                value={street}
-                onChange={(e) => setStreet(e.target.value)}
+                id="phone" 
+                placeholder="(11) 99999-9999" 
+                value={phone} 
+                onChange={handlePhoneChange}
                 className="bg-card/50 border-foreground/10 h-12 rounded-xl text-sm" 
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="number" className="font-bold text-xs">Número</Label>
-              <Input 
-                id="number" 
-                placeholder="123" 
-                value={number}
-                onChange={(e) => setNumber(e.target.value)}
-                className="bg-card/50 border-foreground/10 h-12 rounded-xl text-sm" 
-              />
+        ) : (
+          <div className="p-6 rounded-2xl bg-foreground/5 border border-foreground/10 space-y-4 animate-in fade-in duration-300">
+            <div className="flex items-center gap-2 pb-2 border-b border-foreground/5">
+              <MapPin className="w-4 h-4 text-primary" />
+              <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Resumo do Endereço de Atendimento</h4>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="complement" className="font-bold text-xs">Complemento (Opcional)</Label>
-              <Input 
-                id="complement" 
-                placeholder="Apto, Bloco..." 
-                value={complement}
-                onChange={(e) => setComplement(e.target.value)}
-                className="bg-card/50 border-foreground/10 h-12 rounded-xl text-sm" 
-              />
+            <div className="space-y-1.5 text-xs">
+              <p className="font-bold text-sm text-foreground">{street}, {number} {complement ? `(${complement})` : ''}</p>
+              <p className="text-muted-foreground font-semibold">{neighborhood} • {city} - {state}</p>
+              <p className="text-muted-foreground font-semibold">CEP: {cep}</p>
+              <p className="text-muted-foreground flex items-center gap-1.5 pt-2 font-black uppercase tracking-wider text-[9px]">
+                Telefone de contato: <span className="text-primary font-bold normal-case text-xs">{phone}</span>
+              </p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="neighborhood" className="font-bold text-xs">Bairro</Label>
-              <Input 
-                id="neighborhood" 
-                placeholder="Bairro" 
-                value={neighborhood}
-                onChange={(e) => setNeighborhood(e.target.value)}
-                className="bg-card/50 border-foreground/10 h-12 rounded-xl text-sm" 
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="city" className="font-bold text-xs">Cidade</Label>
-              <Input 
-                id="city" 
-                placeholder="São Paulo" 
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className="bg-card/50 border-foreground/10 h-12 rounded-xl text-sm" 
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="state" className="font-bold text-xs">Estado</Label>
-              <Input 
-                id="state" 
-                placeholder="SP" 
-                value={state}
-                onChange={(e) => setState(e.target.value)}
-                className="bg-card/50 border-foreground/10 h-12 rounded-xl text-sm" 
-              />
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="phone" className="font-bold text-xs">Telefone para Contato</Label>
-            <Input 
-              id="phone" 
-              placeholder="(11) 99999-9999" 
-              value={phone} 
-              onChange={handlePhoneChange}
-              className="bg-card/50 border-foreground/10 h-12 rounded-xl text-sm" 
-            />
-          </div>
-        </div>
+        )}
 
         <div className="flex gap-4 pt-4">
           <Button variant="outline" onClick={() => navigate(-1)} className="h-12 px-6 rounded-xl text-xs font-bold border-foreground/10">Voltar</Button>

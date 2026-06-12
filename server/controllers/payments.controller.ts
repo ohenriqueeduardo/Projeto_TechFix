@@ -6,6 +6,12 @@ dotenv.config();
 
 const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN || '';
 
+if (accessToken) {
+  console.log(`[Mercado Pago] Access Token loaded. Prefix: ${accessToken.substring(0, 12)}... (Length: ${accessToken.length})`);
+} else {
+  console.warn('[Mercado Pago] MERCADO_PAGO_ACCESS_TOKEN environment variable is missing! Using sandbox fallback.');
+}
+
 const mpClient = new MercadoPagoConfig({
   accessToken: accessToken || 'TEST-8418049818816812-061111-c88f28f804981681a28a3f89a8126b1a-12345678', // Default fallback for dev environment check
 });
