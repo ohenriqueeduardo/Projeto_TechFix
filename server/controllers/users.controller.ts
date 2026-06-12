@@ -82,7 +82,7 @@ export const createUser = async (req: Request, res: Response) => {
 export const updateUser = async (req: Request, res: Response) => {
   try {
     const id = req.params.id as string;
-    const { name, email, password, avatar, level, status } = req.body;
+    const { name, email, password, avatar, level, status, phone, cep, street, number, complement, neighborhood, city, state } = req.body;
 
     const existingUser = await db.select().from(users).where(eq(users.id, id)).limit(1);
     if (existingUser.length === 0) {
@@ -96,7 +96,15 @@ export const updateUser = async (req: Request, res: Response) => {
         ...(password !== undefined && { password: hashPassword(password) }),
         ...(avatar !== undefined && { avatar }),
         ...(level !== undefined && { level }),
-        ...(status !== undefined && { status })
+        ...(status !== undefined && { status }),
+        ...(phone !== undefined && { phone }),
+        ...(cep !== undefined && { cep }),
+        ...(street !== undefined && { street }),
+        ...(number !== undefined && { number }),
+        ...(complement !== undefined && { complement }),
+        ...(neighborhood !== undefined && { neighborhood }),
+        ...(city !== undefined && { city }),
+        ...(state !== undefined && { state })
       })
       .where(eq(users.id, id))
       .returning();

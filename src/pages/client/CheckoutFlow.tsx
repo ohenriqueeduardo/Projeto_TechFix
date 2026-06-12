@@ -741,73 +741,79 @@ const Step3 = ({
           <p className="text-xs text-muted-foreground">Escolha o endereço cadastrado para atendimento ou informe um novo local.</p>
         </div>
 
-        {hasSavedAddress && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            {/* Card 1: Saved Address */}
-            <div 
-              onClick={() => setAddressOption('saved')}
-              className={`p-5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between h-40 relative overflow-hidden group ${
-                addressOption === 'saved'
-                  ? 'bg-primary/5 border-primary shadow-[0_0_15px_rgba(6,182,212,0.15)] animate-in fade-in zoom-in-95 duration-200'
-                  : 'border-foreground/10 hover:border-foreground/20 hover:bg-card/25'
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl transition-all ${addressOption === 'saved' ? 'bg-primary/20 text-primary scale-110 shadow-[0_0_8px_rgba(6,182,212,0.3)]' : 'bg-foreground/5 text-muted-foreground'}`}>
-                  <MapPin className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-sm leading-none flex items-center gap-2">
-                    Endereço Cadastrado
-                    {addressOption === 'saved' && <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />}
-                  </h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          {/* Card 1: Saved Address */}
+          <div 
+            onClick={() => hasSavedAddress && setAddressOption('saved')}
+            className={`p-5 rounded-2xl border transition-all flex flex-col justify-between h-40 relative overflow-hidden group ${
+              !hasSavedAddress 
+                ? 'opacity-50 cursor-not-allowed bg-muted/30 border-dashed border-foreground/10'
+                : addressOption === 'saved'
+                  ? 'bg-primary/5 border-primary shadow-[0_0_15px_rgba(6,182,212,0.15)] animate-in fade-in zoom-in-95 duration-200 cursor-pointer'
+                  : 'border-foreground/10 hover:border-foreground/20 hover:bg-card/25 cursor-pointer'
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <div className={`p-2.5 rounded-xl transition-all ${addressOption === 'saved' ? 'bg-primary/20 text-primary scale-110 shadow-[0_0_8px_rgba(6,182,212,0.3)]' : 'bg-foreground/5 text-muted-foreground'}`}>
+                <MapPin className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-sm leading-none flex items-center gap-2">
+                  Endereço Cadastrado
+                  {addressOption === 'saved' && <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />}
+                </h4>
+                {hasSavedAddress ? (
                   <p className="text-[11px] text-muted-foreground mt-2 line-clamp-3 leading-relaxed">
                     {currentUser.street}, {currentUser.number} {currentUser.complement ? `(${currentUser.complement})` : ''} <br />
                     {currentUser.neighborhood} • {currentUser.city} - {currentUser.state} <br />
                     CEP: {currentUser.cep}
                   </p>
-                </div>
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t border-foreground/5 text-[9px] font-black uppercase tracking-widest text-muted-foreground">
-                <span>Usar este local</span>
-                <span className={addressOption === 'saved' ? 'text-primary' : ''}>
-                  {addressOption === 'saved' ? 'Selecionado' : 'Selecionar'}
-                </span>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+                    Você ainda não possui um endereço cadastrado. Preencha abaixo para salvar.
+                  </p>
+                )}
               </div>
             </div>
-
-            {/* Card 2: New Address */}
-            <div 
-              onClick={() => setAddressOption('new')}
-              className={`p-5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between h-40 relative overflow-hidden group ${
-                addressOption === 'new'
-                  ? 'bg-primary/5 border-primary shadow-[0_0_15px_rgba(6,182,212,0.15)] animate-in fade-in zoom-in-95 duration-200'
-                  : 'border-foreground/10 hover:border-foreground/20 hover:bg-card/25'
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <div className={`p-2.5 rounded-xl transition-all ${addressOption === 'new' ? 'bg-primary/20 text-primary scale-110 shadow-[0_0_8px_rgba(6,182,212,0.3)]' : 'bg-foreground/5 text-muted-foreground'}`}>
-                  <Plus className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-sm leading-none flex items-center gap-2">
-                    Outro Endereço
-                    {addressOption === 'new' && <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />}
-                  </h4>
-                  <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
-                    Informar e cadastrar um novo endereço de atendimento específico para este serviço.
-                  </p>
-                </div>
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t border-foreground/5 text-[9px] font-black uppercase tracking-widest text-muted-foreground">
-                <span>Cadastrar novo</span>
-                <span className={addressOption === 'new' ? 'text-primary' : ''}>
-                  {addressOption === 'new' ? 'Selecionado' : 'Selecionar'}
-                </span>
-              </div>
+            <div className="flex justify-between items-center pt-2 border-t border-foreground/5 text-[9px] font-black uppercase tracking-widest text-muted-foreground">
+              <span>Usar este local</span>
+              <span className={addressOption === 'saved' ? 'text-primary' : ''}>
+                {hasSavedAddress ? (addressOption === 'saved' ? 'Selecionado' : 'Selecionar') : 'Indisponível'}
+              </span>
             </div>
           </div>
-        )}
+
+          {/* Card 2: New Address */}
+          <div 
+            onClick={() => setAddressOption('new')}
+            className={`p-5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between h-40 relative overflow-hidden group ${
+              addressOption === 'new'
+                ? 'bg-primary/5 border-primary shadow-[0_0_15px_rgba(6,182,212,0.15)] animate-in fade-in zoom-in-95 duration-200'
+                : 'border-foreground/10 hover:border-foreground/20 hover:bg-card/25'
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <div className={`p-2.5 rounded-xl transition-all ${addressOption === 'new' ? 'bg-primary/20 text-primary scale-110 shadow-[0_0_8px_rgba(6,182,212,0.3)]' : 'bg-foreground/5 text-muted-foreground'}`}>
+                <Plus className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-sm leading-none flex items-center gap-2">
+                  Outro Endereço
+                  {addressOption === 'new' && <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />}
+                </h4>
+                <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+                  Informar e cadastrar um novo endereço de atendimento específico para este serviço.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-between items-center pt-2 border-t border-foreground/5 text-[9px] font-black uppercase tracking-widest text-muted-foreground">
+              <span>Cadastrar novo</span>
+              <span className={addressOption === 'new' ? 'text-primary' : ''}>
+                {addressOption === 'new' ? 'Selecionado' : 'Selecionar'}
+              </span>
+            </div>
+          </div>
+        </div>
 
         {addressOption === 'new' ? (
           <div className="space-y-4 animate-in fade-in duration-300">
@@ -921,7 +927,33 @@ const Step3 = ({
         <div className="flex gap-4 pt-4">
           <Button variant="outline" onClick={() => navigate(-1)} className="h-12 px-6 rounded-xl text-xs font-bold border-foreground/10">Voltar</Button>
           <Button 
-            onClick={() => navigate(`/cliente/contratar/${service.id}/pagamento`)} 
+            onClick={async () => {
+              // Save address to user profile if they typed a new one and didn't have one before
+              if (addressOption === 'new' && currentUser) {
+                const token = localStorage.getItem('token');
+                try {
+                  const res = await fetch(`/api/users/${currentUser.id}`, {
+                    method: 'PUT',
+                    headers: { 
+                      'Content-Type': 'application/json',
+                      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                    },
+                    body: JSON.stringify({ cep, street, number, complement, neighborhood, city, state, phone })
+                  });
+                  if (res.ok) {
+                    const updatedUser = { ...currentUser, cep, street, number, complement, neighborhood, city, state, phone };
+                    localStorage.setItem('user', JSON.stringify(updatedUser));
+                    // Update local storage techfix_users for full persistence simulator
+                    const localUsers = JSON.parse(localStorage.getItem('techfix_users') || '[]');
+                    const updatedUsers = localUsers.map((u: any) => u.id === currentUser.id ? updatedUser : u);
+                    localStorage.setItem('techfix_users', JSON.stringify(updatedUsers));
+                  }
+                } catch (e) {
+                  console.error("Error saving address:", e);
+                }
+              }
+              navigate(`/cliente/contratar/${service.id}/pagamento`);
+            }} 
             disabled={!isValid}
             className="flex-1 btn-primary h-12 text-sm font-black gap-2"
           >
