@@ -114,6 +114,7 @@ export const processTransparentPayment = async (req: Request, res: Response) => 
       payer: {
         email: payer.email,
         first_name: payer.first_name || 'Cliente',
+        ...(payer.identification ? { identification: payer.identification } : {})
       },
       external_reference: order_id
     };
