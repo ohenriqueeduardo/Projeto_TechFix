@@ -336,7 +336,7 @@ export const acceptOffer = async (req: Request, res: Response) => {
     const updatedOrder = await db.update(orders)
       .set({
         price: order.proposedPrice !== null ? order.proposedPrice : order.price,
-        status: 'scheduled',
+        status: 'provisional',
         proposedPrice: null,
         negotiationMessage: null,
         lastNegotiator: null
