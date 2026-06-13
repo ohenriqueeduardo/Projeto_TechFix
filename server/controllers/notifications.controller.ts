@@ -7,7 +7,7 @@ import crypto from 'crypto';
 // GET /api/notifications/:userId
 export const getUserNotifications = async (req: Request, res: Response) => {
   try {
-    const userId = req.params.userId;
+    const userId = String(req.params.userId);
     const userNotifications = await db
       .select()
       .from(notifications)
@@ -50,7 +50,7 @@ export const createNotification = async (req: Request, res: Response) => {
 // PUT /api/notifications/:id/read
 export const markAsRead = async (req: Request, res: Response) => {
   try {
-    const id = req.params.id;
+    const id = String(req.params.id);
     
     const updated = await db.update(notifications)
       .set({ read: 1 })
@@ -71,7 +71,7 @@ export const markAsRead = async (req: Request, res: Response) => {
 // DELETE /api/notifications/:id
 export const deleteNotification = async (req: Request, res: Response) => {
   try {
-    const id = req.params.id;
+    const id = String(req.params.id);
     
     const deleted = await db.delete(notifications)
       .where(eq(notifications.id, id))

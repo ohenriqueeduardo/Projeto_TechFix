@@ -9,6 +9,8 @@ import { Professional } from '@/types';
 const ServiceDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const currentUser = React.useMemo(() => JSON.parse(localStorage.getItem('user') || 'null'), []);
+  const isProfessional = currentUser?.role === 'professional';
   const [service, setService] = useState<any>(null);
   const [dbProfessionals, setDbProfessionals] = useState<Professional[]>([]);
   const [isLoading, setIsLoading] = useState(true);
