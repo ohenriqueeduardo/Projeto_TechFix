@@ -6,7 +6,8 @@ import {
   rejectProfessional, 
   deleteUser, 
   getWithdrawals, 
-  approveWithdrawal 
+  approveWithdrawal,
+  rejectWithdrawal
 } from '../controllers/admin.controller.js';
 
 export const adminRoutes = Router();
@@ -18,5 +19,6 @@ adminRoutes.post('/users/:id/reject', rejectProfessional);
 adminRoutes.delete('/users/:id', deleteUser);
 adminRoutes.get('/withdrawals', getWithdrawals);
 adminRoutes.post('/withdrawals/:id/approve', approveWithdrawal);
+adminRoutes.post('/withdrawals/:id/reject', rejectWithdrawal);
 
 export default adminRoutes;

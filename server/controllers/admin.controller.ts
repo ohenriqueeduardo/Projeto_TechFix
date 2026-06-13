@@ -109,7 +109,7 @@ export const getWithdrawals = async (req: Request, res: Response) => {
   try {
     const pendingWithdrawals = await db.select()
       .from(transactions)
-      .where(eq(transactions.type, 'withdrawal'))
+      .where(eq(transactions.type, 'expense'))
       .orderBy(desc(transactions.createdAt));
 
     // Get the professional names for the withdrawals
@@ -149,6 +149,21 @@ export const approveWithdrawal = async (req: Request, res: Response) => {
     res.json({ success: true, message: 'Saque aprovado com sucesso.' });
   } catch (error) {
     console.error('Error approving withdrawal:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// POST /api/admin/withdrawals/:id/reject
+export const rejectWithdrawal = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+    await db.update(transactions)
+      .set({ status: 'failed' })
+      .where(eq(transactions.id, id));
+      
+    res.json({ success: true, message: 'Saque rejeitado com sucesso.' });
+  } catch (error) {
+    console.error('Error rejecting withdrawal:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };

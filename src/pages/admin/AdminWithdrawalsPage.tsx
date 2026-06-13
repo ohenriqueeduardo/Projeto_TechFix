@@ -71,11 +71,9 @@ const AdminWithdrawalsPage = () => {
 
   const handleReject = async (id: string, name: string, value: number) => {
     try {
-      // Assuming a reject endpoint or just updating local state for now
-      // In a real app we would have a `/api/admin/withdrawals/${id}/reject` endpoint
-      // For now we'll simulate the rejection:
-      setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'failed' } : r));
+      await fetch(`/api/admin/withdrawals/${id}/reject`, { method: 'POST' });
       toast.error(`Solicitação de saque de ${formatCurrency(value)} para ${name} foi estornada.`);
+      fetchWithdrawals();
     } catch (e) {
       toast.error('Erro ao rejeitar o saque.');
     }
