@@ -274,16 +274,18 @@ export const negotiateOrder = async (req: Request, res: Response) => {
     const order = existingOrder[0];
     
     // If a professional initiates negotiation on an open order, assign it to them
-    const updates: Record<string, any> = {
+    const updates = {
       status: 'negotiating',
       proposedPrice: Number(proposedPrice),
       negotiationMessage: message,
-      lastNegotiator: actorType
+      lastNegotiator: actorType,
+      professionalId: order.professionalId
     };
 
     if (actorType === 'professional' && !order.professionalId) {
       // Get professional ID from user ID
-      const profUser = await db.select().from(professionals).where(eq(professionals.userId, (req as any).user?.id || '')).limit(1);
+      const reqWithUser = req as unknown as { user?: { id?: string } };
+      const profUser = await db.select().from(professionals).where(eq(professionals.userId, reqWithUser.user?.id || '')).limit(1);
       if (profUser.length > 0) {
         updates.professionalId = profUser[0].userId;
       }
