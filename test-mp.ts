@@ -1,6 +1,6 @@
 import { MercadoPagoConfig, PaymentMethod } from 'mercadopago';
 
-const client = new MercadoPagoConfig({ accessToken: 'TEST-4714972698787037-061309-4bdf57c87c7a6b1886c196c3b104cf6d-1730247701' });
+const client = new MercadoPagoConfig({ accessToken: 'APP_USR-4714972698787037-061309-ce60a56d73f55aff5375981823d0b434-1730247701' });
 const paymentMethods = new PaymentMethod(client);
 
 paymentMethods.get().then((result) => {

@@ -10,7 +10,7 @@ dotenv.config();
 
 const rawToken = process.env.MERCADO_PAGO_ACCESS_TOKEN || process.env.MERCADOPAGO_ACCESS_TOKEN || '';
 const validToken = rawToken.trim();
-const accessToken = validToken || 'TEST-4714972698787037-061309-4bdf57c87c7a6b1886c196c3b104cf6d-1730247701';
+const accessToken = validToken || 'APP_USR-4714972698787037-061309-ce60a56d73f55aff5375981823d0b434-1730247701';
 
 const mpClient = new MercadoPagoConfig({
   accessToken: accessToken,
