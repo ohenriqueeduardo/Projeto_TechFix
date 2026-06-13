@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { db } from '../../src/db/index.js';
 import { users, professionals, orders, transactions, services } from '../../src/db/schema.js';
-import { eq, desc, sql, sum, count } from 'drizzle-orm';
+import { eq, desc, sql, sum, count, and } from 'drizzle-orm';
 
 // GET /api/admin/dashboard
 export const getDashboardMetrics = async (req: Request, res: Response) => {
