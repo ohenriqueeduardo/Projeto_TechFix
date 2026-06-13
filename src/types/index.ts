@@ -10,6 +10,8 @@ export interface User {
   status?: "active" | "inactive";
   specialty?: string;
   city?: string;
+  isVerified?: boolean;
+  verificationStatus?: "unverified" | "pending" | "verified";
 }
 
 export interface Professional extends User {

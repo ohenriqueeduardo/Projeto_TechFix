@@ -23,6 +23,7 @@ interface UserItem {
   email: string;
   role: 'client' | 'professional' | 'admin';
   status: 'active' | 'blocked';
+  verificationStatus?: 'unverified' | 'pending' | 'verified';
   city: string;
   specialty?: string;
   avatar: string;
@@ -31,15 +32,43 @@ interface UserItem {
 const AdminUsersPage = () => {
   const [users, setUsers] = React.useState<UserItem[]>([
     { id: 'u1', name: 'Sofia Spencer', email: 'sofia@example.com', role: 'client', status: 'active', city: 'São Paulo, SP', avatar: 'https://i.pravatar.cc/150?u=sofia' },
-    { id: 'u2', name: 'Carlos Mendes', email: 'carlos@example.com', role: 'professional', status: 'active', city: 'São Paulo, SP', specialty: 'Hardware Expert', avatar: 'https://i.pravatar.cc/150?u=carlos' },
-    { id: 'u3', name: 'Diego Faria', email: 'diego@example.com', role: 'professional', status: 'active', city: 'Rio de Janeiro, RJ', specialty: 'Redes & Segurança', avatar: 'https://i.pravatar.cc/150?u=diego' },
+    { id: 'u2', name: 'Carlos Mendes', email: 'carlos@example.com', role: 'professional', status: 'active', verificationStatus: 'verified', city: 'São Paulo, SP', specialty: 'Hardware Expert', avatar: 'https://i.pravatar.cc/150?u=carlos' },
+    { id: 'u3', name: 'Diego Faria', email: 'diego@example.com', role: 'professional', status: 'active', verificationStatus: 'pending', city: 'Rio de Janeiro, RJ', specialty: 'Redes & Segurança', avatar: 'https://i.pravatar.cc/150?u=diego' },
     { id: 'u4', name: 'Mariana Silva', email: 'mariana@example.com', role: 'client', status: 'active', city: 'Belo Horizonte, MG', avatar: 'https://i.pravatar.cc/150?u=mariana' },
-    { id: 'u5', name: 'Rodrigo Albuquerque', email: 'rodrigo@example.com', role: 'professional', status: 'blocked', city: 'Belo Horizonte, MG', specialty: 'MacBooks', avatar: 'https://i.pravatar.cc/150?u=rodrigo' },
+    { id: 'u5', name: 'Rodrigo Albuquerque', email: 'rodrigo@example.com', role: 'professional', status: 'blocked', verificationStatus: 'unverified', city: 'Belo Horizonte, MG', specialty: 'MacBooks', avatar: 'https://i.pravatar.cc/150?u=rodrigo' },
     { id: 'u6', name: 'Pedro Rocha', email: 'pedro@example.com', role: 'client', status: 'active', city: 'Curitiba, PR', avatar: 'https://i.pravatar.cc/150?u=pedro' }
   ]);
 
   const [searchTerm, setSearchTerm] = React.useState('');
   const [roleFilter, setRoleFilter] = React.useState<'all' | 'client' | 'professional'>('all');
+  const [verificationModalOpen, setVerificationModalOpen] = React.useState(false);
+  const [selectedUserForVerification, setSelectedUserForVerification] = React.useState<UserItem | null>(null);
+
+  const openVerificationModal = (user: UserItem) => {
+    setSelectedUserForVerification(user);
+    setVerificationModalOpen(true);
+  };
+
+  const closeVerificationModal = () => {
+    setSelectedUserForVerification(null);
+    setVerificationModalOpen(false);
+  };
+
+  const handleApproveVerification = () => {
+    if (selectedUserForVerification) {
+      setUsers(prev => prev.map(u => u.id === selectedUserForVerification.id ? { ...u, verificationStatus: 'verified' } : u));
+      toast.success(`Conta de ${selectedUserForVerification.name} aprovada e verificada com sucesso!`);
+      closeVerificationModal();
+    }
+  };
+
+  const handleRejectVerification = () => {
+    if (selectedUserForVerification) {
+      setUsers(prev => prev.map(u => u.id === selectedUserForVerification.id ? { ...u, verificationStatus: 'unverified' } : u));
+      toast.error(`Documentos de ${selectedUserForVerification.name} foram rejeitados.`);
+      closeVerificationModal();
+    }
+  };
 
   const handleToggleStatus = (id: string, name: string, currentStatus: 'active' | 'blocked') => {
     const newStatus = currentStatus === 'active' ? 'blocked' : 'active';
@@ -148,6 +177,12 @@ const AdminUsersPage = () => {
                 <Badge className={`rounded-md text-[8px] font-black uppercase ${u.role === 'professional' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-blue-500/10 text-blue-500 border-blue-500/20'}`}>
                   {u.role === 'professional' ? 'Especialista' : 'Cliente'}
                 </Badge>
+                {u.verificationStatus === 'verified' && (
+                  <ShieldCheck className="w-4 h-4 text-primary" />
+                )}
+                {u.verificationStatus === 'pending' && (
+                  <Badge variant="outline" className="text-[8px] font-black border-orange-500/50 text-orange-500 bg-orange-500/10">Aguardando Verificação</Badge>
+                )}
               </div>
 
               {u.specialty && (
@@ -166,7 +201,17 @@ const AdminUsersPage = () => {
               </div>
 
               {/* Action trigger */}
-              <div className="pt-2 border-t border-white/5 flex justify-end">
+              <div className="pt-2 border-t border-white/5 flex justify-end gap-2">
+                {u.verificationStatus === 'pending' && (
+                  <Button 
+                    onClick={() => openVerificationModal(u)}
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs font-bold border-primary text-primary hover:bg-primary/10 rounded-xl px-3.5 h-9"
+                  >
+                    Analisar Docs
+                  </Button>
+                )}
                 {u.status === 'active' ? (
                   <Button 
                     onClick={() => handleToggleStatus(u.id, u.name, 'active')}
@@ -174,7 +219,7 @@ const AdminUsersPage = () => {
                     size="sm" 
                     className="text-xs font-bold text-red-400 hover:bg-red-500/10 rounded-xl px-3.5 h-9 gap-1"
                   >
-                    <UserMinus className="w-4 h-4" /> Bloquear Acesso
+                    <UserMinus className="w-4 h-4" /> Bloquear
                   </Button>
                 ) : (
                   <Button 
@@ -183,7 +228,7 @@ const AdminUsersPage = () => {
                     size="sm" 
                     className="text-xs font-bold text-green-400 hover:bg-green-500/10 rounded-xl px-3.5 h-9 gap-1"
                   >
-                    <UserPlus className="w-4 h-4" /> Reativar Conta
+                    <UserPlus className="w-4 h-4" /> Reativar
                   </Button>
                 )}
               </div>
@@ -191,6 +236,58 @@ const AdminUsersPage = () => {
           </Card>
         ))}
       </div>
+
+      {/* Identity Verification Modal */}
+      {verificationModalOpen && selectedUserForVerification && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-card w-full max-w-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-6 border-b border-white/5 flex justify-between items-center bg-muted/30">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-full">
+                  <ShieldCheck className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-black text-lg">Revisão de Identidade</h3>
+                  <p className="text-xs text-muted-foreground">Especialista: {selectedUserForVerification.name}</p>
+                </div>
+              </div>
+              <button onClick={closeVerificationModal} className="text-muted-foreground hover:text-foreground">✕</button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Documento Frente/Verso</span>
+                  <div className="w-full h-48 bg-slate-800 rounded-2xl border border-white/5 overflow-hidden relative group cursor-pointer flex items-center justify-center">
+                    <img src={`https://placehold.co/600x400/1e293b/cbd5e1?text=RG/CNH+Frente\n${selectedUserForVerification.name.replace(/\s+/g, '+')}`} alt="Document" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Selfie de Validação</span>
+                  <div className="w-full h-48 bg-slate-800 rounded-2xl border border-white/5 overflow-hidden relative group cursor-pointer flex items-center justify-center">
+                    <img src={selectedUserForVerification.avatar} alt="Selfie" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </div>
+              </div>
+              <div className="bg-orange-500/10 border border-orange-500/20 p-4 rounded-xl flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-orange-200/80 leading-relaxed font-medium">
+                  Verifique se o rosto na selfie corresponde à foto do documento e se os dados estão legíveis. A aprovação desta conta liberará o selo oficial de Especialista Verificado na plataforma.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-white/5 bg-muted/30 flex justify-end gap-3">
+              <Button onClick={handleRejectVerification} variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-500/10 font-bold">
+                Rejeitar Documentos
+              </Button>
+              <Button onClick={handleApproveVerification} className="btn-primary font-black gap-2">
+                <CheckCircle className="w-4 h-4" /> Aprovar e Verificar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

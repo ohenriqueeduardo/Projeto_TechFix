@@ -3,14 +3,28 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User, Briefcase, ArrowLeft, ShieldCheck, Cpu, CheckCircle2, Sparkles } from 'lucide-react';
+import { User, Briefcase, ArrowLeft, ShieldCheck, Cpu, CheckCircle2, Sparkles, Chrome, UploadCloud } from 'lucide-react';
 import { toast } from 'sonner';
+
+interface GoogleGIS {
+  accounts: {
+    oauth2: {
+      initTokenClient: (config: {
+        client_id: string;
+        scope: string;
+        callback: (res: { error?: string; access_token?: string }) => void;
+      }) => { requestAccessToken: () => void };
+    };
+  };
+}
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const [step, setStep] = React.useState(1);
   const [role, setRole] = React.useState<'client' | 'professional' | 'admin'>('client');
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isSocialLoading, setIsSocialLoading] = React.useState(false);
+  const [googleClient, setGoogleClient] = React.useState<{ requestAccessToken: () => void } | null>(null);
 
   const [firstName, setFirstName] = React.useState('');
   const [lastName, setLastName] = React.useState('');
@@ -37,6 +51,99 @@ const RegisterPage = () => {
     }
     return () => clearInterval(interval);
   }, [step, timer]);
+
+  const handleRealGoogleLogin = React.useCallback(async (accessToken: string) => {
+    setIsSocialLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: accessToken, role }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao autenticar com o Google.');
+      }
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+
+      if (data.isNewUser || !data.user.phone || !data.user.cep) {
+        if (data.isNewUser) {
+          toast.success('Conta inicial criada com o Google! Continue com seu endereço e telefone.');
+        } else {
+          toast.info('Por favor, complete as informações do seu perfil para continuar.');
+        }
+        
+        // Populate local states so user sees their name/email
+        if (data.user.name) {
+          const names = data.user.name.split(' ');
+          setFirstName(names[0] || '');
+          setLastName(names.slice(1).join(' ') || '');
+        }
+        if (data.user.email) setEmail(data.user.email);
+        
+        setStep(3); // Jump to address
+      } else {
+        toast.success('Bem-vindo de volta!');
+        if (data.user.role === 'professional') {
+          navigate('/profissional/dashboard');
+        } else {
+          navigate('/cliente/dashboard');
+        }
+      }
+    } catch (error: unknown) {
+      console.error('Erro no cadastro social:', error);
+      toast.error((error as Error).message || 'Erro ao conectar com o servidor. Tente novamente.');
+    } finally {
+      setIsSocialLoading(false);
+    }
+  }, [navigate, role]);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const win = window as Window & { google?: GoogleGIS };
+      const initGoogle = () => {
+        if (win.google) {
+          const client = win.google.accounts.oauth2.initTokenClient({
+            client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
+            scope: 'openid email profile',
+            callback: async (response) => {
+              if (response.error) {
+                console.error('Google Auth Error:', response.error);
+                toast.error('Erro na autenticação com o Google.');
+                return;
+              }
+              if (response.access_token) {
+                await handleRealGoogleLogin(response.access_token);
+              }
+            },
+          });
+          setGoogleClient(client);
+        }
+      };
+
+      if (win.google) {
+        initGoogle();
+      } else {
+        const script = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+        if (script) {
+          script.addEventListener('load', initGoogle);
+        }
+      }
+    }
+  }, [handleRealGoogleLogin]);
+
+  const handleGoogleClick = () => {
+    if (googleClient) {
+      googleClient.requestAccessToken();
+    } else {
+      toast.error('O serviço do Google está carregando. Aguarde um momento...');
+    }
+  };
 
   const updateVerificationCode = (digits: string[]) => {
     const code = digits.join('');
@@ -241,7 +348,7 @@ const RegisterPage = () => {
 
       // Route to correct layout dashboard depending on role
       if (role === 'professional') {
-        navigate('/profissional/dashboard');
+        setStep(5);
       } else {
         navigate('/cliente/dashboard');
       }
@@ -300,7 +407,19 @@ const RegisterPage = () => {
       </div>
 
       {/* RIGHT COLUMN: Interactive Form */}
-      <div className="flex items-center justify-center p-8 md:p-16 bg-background">
+      <div className="flex items-center justify-center p-8 md:p-16 bg-background relative">
+        
+        {/* Social Authentication Spinner Overlay */}
+        {isSocialLoading && (
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center animate-in fade-in duration-300">
+            <div className="glass-card p-8 rounded-3xl border border-primary/20 text-center space-y-4 shadow-2xl max-w-xs">
+              <span className="h-10 w-10 rounded-full border-4 border-t-primary border-white/5 animate-spin mx-auto block"></span>
+              <h3 className="font-black text-lg text-foreground">Conectando com o Google</h3>
+              <p className="text-xs text-muted-foreground">Estabelecendo conexão segura. Aguarde...</p>
+            </div>
+          </div>
+        )}
+
         <div className="w-full max-w-md space-y-8">
           
           {step === 1 ? (
@@ -357,7 +476,22 @@ const RegisterPage = () => {
                 <p className="text-xs text-muted-foreground">Preencha os dados básicos para habilitar seu painel de controle</p>
               </div>
 
-              <form onSubmit={(e) => { e.preventDefault(); setStep(3); }} className="space-y-4 pt-2">
+              <div className="pt-2">
+                <Button 
+                  onClick={handleGoogleClick}
+                  variant="outline" 
+                  className="w-full h-12 rounded-xl border-foreground/10 hover:bg-foreground/5 font-bold text-xs gap-2"
+                >
+                  <Chrome className="w-4 h-4 text-red-500" /> Cadastrar-se com Google
+                </Button>
+                
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-foreground/5"></span></div>
+                  <div className="relative flex justify-center text-[10px] uppercase tracking-widest"><span className="bg-background px-4 text-muted-foreground font-black">Ou preencha os dados</span></div>
+                </div>
+              </div>
+
+              <form onSubmit={(e) => { e.preventDefault(); setStep(3); }} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="firstName" className="font-bold text-xs">Nome</Label>
@@ -594,6 +728,52 @@ const RegisterPage = () => {
                   {isLoading ? 'Verificando...' : 'Confirmar e Criar Conta'}
                 </Button>
               </form>
+            </div>
+          ) : step === 5 ? (
+            <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-6">
+              <div className="space-y-2 text-center">
+                <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                  <ShieldCheck className="w-8 h-8 text-primary" />
+                </div>
+                <h1 className="text-2xl font-black tracking-tight">Verificação de Identidade</h1>
+                <p className="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto">
+                  Para garantir a segurança da plataforma, precisamos validar sua identidade como prestador de serviço.
+                </p>
+              </div>
+
+              <div className="space-y-4 pt-4">
+                <div className="border-2 border-dashed border-foreground/10 rounded-2xl p-6 text-center hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group">
+                  <UploadCloud className="w-8 h-8 text-muted-foreground mx-auto mb-3 group-hover:text-primary transition-colors" />
+                  <p className="text-sm font-bold">Frente e Verso do Documento (RG/CNH)</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Formatos suportados: JPG, PNG ou PDF</p>
+                </div>
+
+                <div className="border-2 border-dashed border-foreground/10 rounded-2xl p-6 text-center hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer group">
+                  <UploadCloud className="w-8 h-8 text-muted-foreground mx-auto mb-3 group-hover:text-primary transition-colors" />
+                  <p className="text-sm font-bold">Selfie Segurando o Documento</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Rosto e documento devem estar nítidos</p>
+                </div>
+              </div>
+
+              <Button 
+                onClick={() => {
+                  toast.success('Documentos enviados com sucesso! Seu perfil está em análise.');
+                  navigate('/profissional/dashboard');
+                }} 
+                className="w-full btn-primary h-12 text-sm font-black mt-8"
+              >
+                Enviar para Análise e Finalizar
+              </Button>
+              <Button 
+                onClick={() => {
+                  toast.info('Você pulou a verificação. Sua conta ficará sem o selo oficial por enquanto.');
+                  navigate('/profissional/dashboard');
+                }} 
+                variant="ghost"
+                className="w-full h-12 text-sm font-bold text-muted-foreground hover:text-foreground mt-2"
+              >
+                Pular por enquanto
+              </Button>
             </div>
           ) : null}
         </div>

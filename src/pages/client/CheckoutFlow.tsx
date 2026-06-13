@@ -153,6 +153,7 @@ const CheckoutFlow = () => {
   const [cpf, setCpf] = React.useState('');
   const [cardFocus, setCardFocus] = React.useState<'number' | 'name' | 'expiry' | 'cvc' | ''>('');
   const [isProcessing, setIsProcessing] = React.useState(false);
+  const [saveCard, setSaveCard] = React.useState(false);
 
 
 
@@ -373,6 +374,15 @@ const CheckoutFlow = () => {
         }
       }
 
+      // Save Card to localStorage if user requested
+      if (saveCard && paymentMethod !== 'pix' && cardNumber) {
+        localStorage.setItem('techfix_saved_card', JSON.stringify({ 
+          last4: cardNumber.slice(-4), 
+          name: cardName,
+          expiry: cardExpiry 
+        }));
+      }
+
       // 4. Trigger success notification
       addNotification(
         "Aguardando Pagamento",
@@ -445,6 +455,7 @@ const CheckoutFlow = () => {
             cpf={cpf} setCpf={setCpf}
             cardFocus={cardFocus} setCardFocus={setCardFocus}
             installments={installments} setInstallments={setInstallments}
+            saveCard={saveCard} setSaveCard={setSaveCard}
             handleFinish={handleFinish}
             isProcessing={isProcessing}
           />
@@ -594,28 +605,26 @@ const Step2 = ({
   const navigate = useNavigate();
   
   const dates = React.useMemo(() => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = today.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    
     // Map JS getDay() 0-6 (Sun-Sat) to the Portuguese names used in our availableDays
     const jsDayToPt = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
     const profDays = selectedProf?.availableDays || ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
 
-    const monthDates = [];
-    for (let i = 1; i <= daysInMonth; i++) {
-      const dateObj = new Date(year, month, i);
+    const rollingDates = [];
+    const today = new Date();
+    // Generate the next 30 days starting from today
+    for (let i = 0; i < 30; i++) {
+      const dateObj = new Date(today);
+      dateObj.setDate(today.getDate() + i);
       const dayName = jsDayToPt[dateObj.getDay()];
       
       // Somente incluir se for um dia da semana em que o profissional trabalha
       if (profDays.includes(dayName)) {
-        const dayStr = i.toString().padStart(2, '0');
-        const monthStr = (month + 1).toString().padStart(2, '0');
-        monthDates.push(`${dayStr}/${monthStr}`);
+        const dayStr = dateObj.getDate().toString().padStart(2, '0');
+        const monthStr = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+        rollingDates.push(`${dayStr}/${monthStr}`);
       }
     }
-    return monthDates;
+    return rollingDates;
   }, [selectedProf]);
 
   const times = selectedProf?.availableTimes?.length ? selectedProf.availableTimes : ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'];
@@ -1061,6 +1070,8 @@ interface Step4Props {
   setCardFocus: (val: "number" | "name" | "expiry" | "cvc" | "") => void;
   installments: number;
   setInstallments: (val: number) => void;
+  saveCard: boolean;
+  setSaveCard: (val: boolean) => void;
   handleFinish: () => void;
   isProcessing: boolean;
 }
@@ -1076,6 +1087,7 @@ const Step4 = ({
   cpf, setCpf,
   cardFocus, setCardFocus,
   installments, setInstallments,
+  saveCard, setSaveCard,
   handleFinish,
   isProcessing
 }: Step4Props) => {
@@ -1273,6 +1285,20 @@ const Step4 = ({
                   </select>
                 </div>
               )}
+
+              {/* Save Card Checkbox */}
+              <div className="md:col-span-2 flex items-center gap-3 bg-card/25 p-3 rounded-xl border border-foreground/5 mt-2">
+                <input 
+                  type="checkbox" 
+                  id="saveCard" 
+                  checked={saveCard}
+                  onChange={(e) => setSaveCard(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary bg-background"
+                />
+                <Label htmlFor="saveCard" className="text-xs text-muted-foreground font-semibold cursor-pointer">
+                  Salvar este cartão para agilizar minhas próximas contratações
+                </Label>
+              </div>
             </div>
           </div>
         )}

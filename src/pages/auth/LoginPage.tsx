@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Cpu, Chrome, Apple, ShieldCheck, Sparkles, Star, ArrowRight, UserCheck } from 'lucide-react';
+import { Cpu, Chrome, ShieldCheck, Sparkles, Star, ArrowRight, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { User } from '@/types';
 interface GoogleGIS {
@@ -22,7 +22,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = React.useState(false);
   const [isSocialLoading, setIsSocialLoading] = React.useState(false);
-  const [socialProvider, setSocialProvider] = React.useState<'Google' | 'Apple' | null>(null);
+  const [socialProvider, setSocialProvider] = React.useState<'Google' | null>(null);
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [googleClient, setGoogleClient] = React.useState<{ requestAccessToken: () => void } | null>(null);
@@ -157,59 +157,7 @@ const LoginPage = () => {
     }
   };
 
-  const handleSocialLogin = async (provider: 'Google' | 'Apple') => {
-    // Simulador: Pede o e-mail para fingir que a rede social retornou os dados
-    const simulatedEmail = window.prompt(`[Ambiente de Demonstração] O login da Apple requer conta paga de desenvolvedor Apple.\nDigite o e-mail de teste para prosseguir com a simulação:`, `user_${provider.toLowerCase()}@techfix.com`);
-    
-    if (!simulatedEmail) {
-      toast.error('Autenticação cancelada pelo usuário.');
-      return;
-    }
 
-    setSocialProvider(provider);
-    setIsSocialLoading(true);
-
-    try {
-      const response = await fetch('/api/auth/social', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: simulatedEmail,
-          name: `Usuário ${provider}`,
-          provider,
-          avatar: `https://api.dicebear.com/7.x/adventurer/svg?seed=${simulatedEmail}`
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || `Erro ao autenticar com ${provider}.`);
-      }
-
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-
-      if (data.isNewUser || !data.user.phone || !data.user.cep) {
-        if (data.isNewUser) {
-          toast.success(`Conta criada automaticamente via ${provider}! Precisamos de mais alguns dados.`);
-        } else {
-          toast.info('Por favor, complete as informações do seu perfil para continuar.');
-        }
-        navigate('/completar-cadastro');
-        return;
-      } else {
-        toast.success(`Acesso concedido via ${provider}! Bem-vindo de volta.`);
-        navigate('/cliente/dashboard');
-      }
-    } catch (error: unknown) {
-      console.error('Erro no login social:', error);
-      toast.error((error as Error).message || 'Erro de conexão com o servidor. Tente novamente.');
-    } finally {
-      setIsSocialLoading(false);
-      setSocialProvider(null);
-    }
-  };
 
   return (
     <div className="min-h-[calc(100vh-64px)] grid grid-cols-1 lg:grid-cols-2 animate-in fade-in duration-500 overflow-hidden">
@@ -314,20 +262,13 @@ const LoginPage = () => {
             <div className="relative flex justify-center text-[10px] uppercase tracking-widest"><span className="bg-background px-4 text-muted-foreground font-black">Ou conecte com</span></div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3.5">
+          <div className="flex gap-3.5">
             <Button 
               onClick={handleGoogleClick}
               variant="outline" 
-              className="h-12 rounded-xl border-foreground/10 hover:bg-foreground/5 font-bold text-xs gap-2"
+              className="h-12 w-full rounded-xl border-foreground/10 hover:bg-foreground/5 font-bold text-xs gap-2"
             >
-              <Chrome className="w-4 h-4 text-red-500" /> Google
-            </Button>
-            <Button 
-              onClick={() => handleSocialLogin('Apple')}
-              variant="outline" 
-              className="h-12 rounded-xl border-foreground/10 hover:bg-foreground/5 font-bold text-xs gap-2"
-            >
-              <Apple className="w-4 h-4 text-foreground" /> Apple
+              <Chrome className="w-4 h-4 text-red-500" /> Entrar com Google
             </Button>
           </div>
 
