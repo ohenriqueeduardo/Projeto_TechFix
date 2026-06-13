@@ -45,7 +45,6 @@ const NewServiceRequestPage = () => {
   }, [profId]);
 
   // Form states
-  const [photo, setPhoto] = React.useState<string | null>(null);
   const [title, setTitle] = React.useState('');
   const [category, setCategory] = React.useState('Manutenção');
   const [description, setDescription] = React.useState('');
@@ -54,16 +53,18 @@ const NewServiceRequestPage = () => {
   const [city, setCity] = React.useState('');
   const [urgency, setUrgency] = React.useState('Média'); // Baixa, Média, Alta
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhoto(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-      toast.success('Imagem carregada com sucesso!');
-    }
+  const getCategoryBanner = (cat: string) => {
+    const banners: Record<string, string> = {
+      'Manutenção': 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=800&q=80',
+      'Upgrade': 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
+      'Formatação': 'https://images.unsplash.com/photo-1629654297299-c8506221ca97?auto=format&fit=crop&w=800&q=80',
+      'Redes': 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=800&q=80',
+      'Recuperação': 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&w=800&q=80',
+      'Montagem Gamer': 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=800&q=80',
+      'Diagnóstico': 'https://images.unsplash.com/photo-1563206767-5b18f218e8de?auto=format&fit=crop&w=800&q=80',
+      'Suporte remoto': 'https://images.unsplash.com/photo-1588508065123-287b28e01390?auto=format&fit=crop&w=800&q=80'
+    };
+    return banners[cat] || banners['Manutenção'];
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -139,24 +140,25 @@ const NewServiceRequestPage = () => {
 
       <form onSubmit={handleSubmit} className="glass-card p-8 rounded-3xl space-y-6 border border-foreground/5 bg-card/20">
 
-        {/* Photo Upload Section */}
+        {/* Dynamic Category Banner */}
         <div className="space-y-3">
-          <Label className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Foto Ilustrativa do Equipamento</Label>
-          <div className="flex items-center justify-center w-full">
-            <label className="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed border-foreground/10 hover:border-primary/45 rounded-2xl cursor-pointer transition-all bg-card/30 relative overflow-hidden group">
-              {photo ? (
-                <img src={photo} alt="Preview" className="w-full h-full object-cover rounded-2xl" />
-              ) : (
-                <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center space-y-2">
-                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Camera className="w-6 h-6 text-primary" />
-                  </div>
-                  <p className="text-xs text-muted-foreground font-bold">Arraste ou clique para carregar uma imagem</p>
-                  <p className="text-[10px] text-muted-foreground uppercase">PNG, JPG ou WEBP (Max 5MB)</p>
-                </div>
-              )}
-              <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} />
-            </label>
+          <Label className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Banner Gerado Automaticamente</Label>
+          <div className="w-full h-44 rounded-2xl overflow-hidden relative shadow-lg">
+            <img 
+              src={getCategoryBanner(category)} 
+              alt={category} 
+              className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" 
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-4">
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-widest text-primary bg-primary/20 px-2 py-1 rounded-md backdrop-blur-md">
+                  {category}
+                </span>
+                <p className="text-white text-xs font-medium opacity-90">
+                  Esta imagem ilustrará seu chamado no mural de serviços.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
