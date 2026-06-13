@@ -124,7 +124,10 @@ export const registerProfessional = async (req: Request, res: Response) => {
     }
 
     // Update user role to professional
-    await db.update(users).set({ role: 'professional' }).where(eq(users.id, userId));
+    if (!user.role.includes('professional')) {
+      const newRoleString = `${user.role},professional`;
+      await db.update(users).set({ role: newRoleString }).where(eq(users.id, userId));
+    }
 
     // Create professional profile
     const newProf = await db.insert(professionals).values({

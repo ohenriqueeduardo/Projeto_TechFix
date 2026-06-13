@@ -71,6 +71,24 @@ const RegisterPage = () => {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
+      if (role === 'professional') {
+        // Try creating profile (if it already exists, backend will just return 400 which is fine for upgrades)
+        await fetch('/api/professionals', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${data.token}`,
+          },
+          body: JSON.stringify({
+            userId: data.user.id,
+            specialty: 'Técnico Especialista',
+            city: 'São Paulo', // Default city for demonstration
+            yearsExperience: 1,
+            bio: 'Técnico recém-cadastrado no TechFix via Google.',
+          }),
+        }).catch(err => console.error(err));
+      }
+
       if (data.isNewUser || !data.user.phone || !data.user.cep) {
         if (data.isNewUser) {
           toast.success('Conta inicial criada com o Google! Continue com seu endereço e telefone.');
