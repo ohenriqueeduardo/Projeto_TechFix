@@ -375,11 +375,11 @@ const CheckoutFlow = () => {
       // 5. Navigate to confirmation/QR Code page
       if (paymentMethod === 'pix' && paymentData.qr_code) {
         // Send QR code data to next page via state
-        navigate(`/cliente/checkout/${service.id}/confirmado?orderId=${createdOrder.id}&pix=true`, {
+        navigate(`/cliente/contratar/${service.id}/confirmado?orderId=${createdOrder.id}&pix=true`, {
           state: { qrCode: paymentData.qr_code_base64, qrString: paymentData.qr_code }
         });
       } else {
-        navigate(`/cliente/checkout/${service.id}/confirmado?payment_intent=success&orderId=${createdOrder.id}`);
+        navigate(`/cliente/contratar/${service.id}/confirmado?payment_intent=success&orderId=${createdOrder.id}`);
       }
       
     } catch (err) {
