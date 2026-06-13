@@ -145,10 +145,18 @@ export const processTransparentPayment = async (req: Request, res: Response) => 
       });
     }
 
-  } catch (error: unknown) {
-    const err = error as Error & { cause?: unknown };
-    console.error('Error processing transparent payment:', err);
-    const message = err.message || 'Falha ao processar pagamento transparente';
-    res.status(500).json({ error: message, details: err.cause });
+  } catch (error: any) {
+    console.error('Error processing transparent payment:', error);
+    
+    // Extract Mercado Pago specific API error details if available
+    const apiResponse = error.api_response || error.response || {};
+    const message = apiResponse.message || error.message || 'Falha ao processar pagamento transparente';
+    const detailedErrors = apiResponse.cause || apiResponse.error || error.cause || [];
+
+    res.status(500).json({ 
+      error: message, 
+      details: detailedErrors,
+      full_error: apiResponse 
+    });
   }
 };
