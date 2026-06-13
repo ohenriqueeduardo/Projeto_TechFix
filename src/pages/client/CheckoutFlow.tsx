@@ -28,8 +28,7 @@ import { saveLocalOrders, getLocalOrders, getLocalServices, getLocalProfessional
 import { useNotifications } from '@/context/NotificationsContext';
 import Cards from 'react-credit-cards-2';
 import 'react-credit-cards-2/dist/es/styles-compiled.css';
-import { initMercadoPago } from '@mercadopago/sdk-react';
-import { createCardToken } from '@mercadopago/sdk-react/core/createCardToken';
+import { initMercadoPago, createCardToken } from '@mercadopago/sdk-react';
 
 // Inicializar Mercado Pago
 initMercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY || 'TEST-82e753da-e906-4447-b86e-bcfc4fc59160');
@@ -286,9 +285,10 @@ const CheckoutFlow = () => {
             throw new Error('Falha ao tokenizar cartão. Verifique os dados inseridos.');
           }
           cardToken = tokenRes.id;
-        } catch (cardErr: any) {
-          console.error("Tokenization error:", cardErr);
-          throw new Error('Erro ao validar o cartão: ' + (cardErr.message || 'Dados inválidos'));
+        } catch (cardErr: unknown) {
+          const err = cardErr as Error;
+          console.error("Tokenization error:", err);
+          throw new Error('Erro ao validar o cartão: ' + (err.message || 'Dados inválidos'));
         }
       }
 
@@ -329,7 +329,9 @@ const CheckoutFlow = () => {
         try {
           const parsed = JSON.parse(errText);
           errMsg = parsed.error || errMsg;
-        } catch (e) {}
+        } catch (e) {
+          console.error("Parse falhou", e);
+        }
         throw new Error(errMsg);
       }
 
@@ -404,6 +406,8 @@ const CheckoutFlow = () => {
             cardName={cardName} setCardName={setCardName}
             cardExpiry={cardExpiry} setCardExpiry={setCardExpiry}
             cardCvv={cardCvv} setCardCvv={setCardCvv}
+            cpf={cpf} setCpf={setCpf}
+            cardFocus={cardFocus} setCardFocus={setCardFocus}
             installments={installments} setInstallments={setInstallments}
             handleFinish={handleFinish}
             isProcessing={isProcessing}
@@ -1053,7 +1057,7 @@ const Step4 = ({
   };
 
   const handleCardExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
+    const value = e.target.value.replace(/\D/g, '');
     let formatted = value;
     if (value.length >= 2) {
       formatted = `${value.slice(0, 2)}/${value.slice(2)}`;
@@ -1148,7 +1152,7 @@ const Step4 = ({
                 expiry={cardExpiry}
                 cvc={cardCvv}
                 name={cardName}
-                focused={cardFocus as any}
+                focused={cardFocus || undefined}
                 locale={{ valid: 'Validade' }}
                 placeholders={{ name: 'SEU NOME IMPRESSO' }}
               />
@@ -1302,7 +1306,7 @@ const OrderConfirmed = ({ service, selectedProf, selectedDate, selectedTime }: O
   const paymentIntentParam = searchParams.get('payment_intent');
   const isPixPayment = searchParams.get('pix') === 'true';
 
-  const { qrCode, qrString } = (location.state as any) || {};
+  const { qrCode, qrString } = (location.state as { qrCode?: string, qrString?: string }) || {};
 
   const [isLoading, setIsLoading] = React.useState(!!orderIdParam && !isPixPayment);
   const [confirmedCode, setConfirmedCode] = React.useState('');

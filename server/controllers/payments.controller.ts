@@ -104,7 +104,7 @@ export const processTransparentPayment = async (req: Request, res: Response) => 
 
     const payment = new Payment(mpClient);
 
-    const body: any = {
+    const body: Record<string, unknown> = {
       transaction_amount: Number(transaction_amount),
       description: description || 'Serviço TechFix',
       payment_method_id,
@@ -142,9 +142,10 @@ export const processTransparentPayment = async (req: Request, res: Response) => 
       });
     }
 
-  } catch (error: any) {
-    console.error('Error processing transparent payment:', error);
-    const message = error.message || 'Falha ao processar pagamento transparente';
-    res.status(500).json({ error: message, details: error.cause });
+  } catch (error: unknown) {
+    const err = error as Error & { cause?: unknown };
+    console.error('Error processing transparent payment:', err);
+    const message = err.message || 'Falha ao processar pagamento transparente';
+    res.status(500).json({ error: message, details: err.cause });
   }
 };
