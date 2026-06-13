@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { db } from '../../src/db/index.js';
 import { orders, transactions, professionals } from '../../src/db/schema.js';
-import { eq, and, lt } from 'drizzle-orm';
+import { eq, and, lt, or, isNull } from 'drizzle-orm';
 import crypto from 'crypto';
 import { MercadoPagoConfig, PaymentRefund } from 'mercadopago';
 import dotenv from 'dotenv';
@@ -50,7 +50,12 @@ export const getOrders = async (req: Request, res: Response) => {
       conditions.push(eq(orders.clientId, clientId as string));
     }
     if (professionalId) {
-      conditions.push(eq(orders.professionalId, professionalId as string));
+      conditions.push(
+        or(
+          eq(orders.professionalId, professionalId as string),
+          and(isNull(orders.professionalId), eq(orders.status, 'pending'))
+        )
+      );
     }
 
     let list;
@@ -191,8 +196,21 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
+    const updates: Record<string, any> = { status };
+
+    // If an open order is directly accepted, assign it to the professional who accepted it
+    if (status === 'scheduled' && !existingOrder[0].professionalId) {
+      const reqWithUser = req as unknown as { user?: { id?: string } };
+      if (reqWithUser.user?.id) {
+        const profUser = await db.select().from(professionals).where(eq(professionals.userId, reqWithUser.user.id)).limit(1);
+        if (profUser.length > 0) {
+          updates.professionalId = profUser[0].userId;
+        }
+      }
+    }
+
     const updatedOrder = await db.update(orders)
-      .set({ status })
+      .set(updates)
       .where(eq(orders.id, id))
       .returning();
 
