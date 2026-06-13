@@ -10,9 +10,7 @@ import {
   Clock, 
   CheckCircle2, 
   AlertTriangle,
-  History,
-  ShieldCheck,
-  Search
+  ShieldCheck
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
@@ -25,30 +23,67 @@ interface WithdrawalRequest {
   date: string;
   pixType: string;
   pixKey: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'completed' | 'failed';
 }
 
 const AdminWithdrawalsPage = () => {
-  const [requests, setRequests] = React.useState<WithdrawalRequest[]>([
-    { id: 'w1', professionalName: 'Carlos Mendes', professionalAvatar: 'https://i.pravatar.cc/150?u=carlos', value: 300.00, date: '2024-05-19', pixType: 'CPF', pixKey: '123.456.789-00', status: 'pending' },
-    { id: 'w2', professionalName: 'Diego Faria', professionalAvatar: 'https://i.pravatar.cc/150?u=diego', value: 150.00, date: '2024-05-18', pixType: 'Celular', pixKey: '(11) 98765-4321', status: 'pending' },
-    { id: 'w3', professionalName: 'Carlos Mendes', professionalAvatar: 'https://i.pravatar.cc/150?u=carlos', value: 200.00, date: '2024-05-12', pixType: 'E-mail', pixKey: 'carlos@example.com', status: 'approved' },
-    { id: 'w4', professionalName: 'Diego Faria', professionalAvatar: 'https://i.pravatar.cc/150?u=diego', value: 400.00, date: '2024-05-10', pixType: 'Chave Aleatória', pixKey: 'dx92b-8a21-9d2a-761a', status: 'approved' }
-  ]);
+  const [requests, setRequests] = React.useState<WithdrawalRequest[]>([]);
+  const [activeTab, setActiveTab] = React.useState<'all' | 'pending' | 'completed' | 'failed'>('all');
+  const [isLoading, setIsLoading] = React.useState(true);
 
-  const [activeTab, setActiveTab] = React.useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
-
-  const handleApprove = (id: string, name: string, value: number) => {
-    setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'approved' } : r));
-    toast.success(`Saque de ${formatCurrency(value)} homologado com sucesso! Lançamento via PIX transmitido para ${name}.`);
+  const fetchWithdrawals = async () => {
+    try {
+      const res = await fetch('/api/admin/withdrawals');
+      if (res.ok) {
+        const data = await res.json();
+        const mapped = data.map((t: { id: string; professionalName: string; professionalAvatar: string; value: number; date: string; status: 'pending' | 'completed' | 'failed' }) => ({
+          id: t.id,
+          professionalName: t.professionalName || 'Desconhecido',
+          professionalAvatar: t.professionalAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(t.professionalName || 'D')}`,
+          value: t.value,
+          date: t.date,
+          pixType: 'E-mail', // Fallback, since PIX info is not in DB yet
+          pixKey: `${t.professionalName?.split(' ')[0].toLowerCase()}@exemplo.com`,
+          status: t.status
+        }));
+        setRequests(mapped);
+      }
+    } catch (e) {
+      console.error('Error loading withdrawals:', e);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleReject = (id: string, name: string, value: number) => {
-    setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'rejected' } : r));
-    toast.error(`Solicitação de saque de ${formatCurrency(value)} para ${name} foi estornada.`);
+  React.useEffect(() => {
+    fetchWithdrawals();
+  }, []);
+
+  const handleApprove = async (id: string, name: string, value: number) => {
+    try {
+      await fetch(`/api/admin/withdrawals/${id}/approve`, { method: 'POST' });
+      toast.success(`Saque de ${formatCurrency(value)} homologado com sucesso! Lançamento via PIX transmitido para ${name}.`);
+      fetchWithdrawals();
+    } catch (e) {
+      toast.error('Erro ao aprovar o saque.');
+    }
+  };
+
+  const handleReject = async (id: string, name: string, value: number) => {
+    try {
+      // Assuming a reject endpoint or just updating local state for now
+      // In a real app we would have a `/api/admin/withdrawals/${id}/reject` endpoint
+      // For now we'll simulate the rejection:
+      setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'failed' } : r));
+      toast.error(`Solicitação de saque de ${formatCurrency(value)} para ${name} foi estornada.`);
+    } catch (e) {
+      toast.error('Erro ao rejeitar o saque.');
+    }
   };
 
   const filteredRequests = requests.filter(r => activeTab === 'all' || r.status === activeTab);
+
+  if (isLoading) return <div className="p-12 text-center">Carregando fila de saques...</div>;
 
   return (
     <div className="space-y-10 animate-page-entrance max-w-7xl mx-auto">
@@ -81,7 +116,7 @@ const AdminWithdrawalsPage = () => {
         <Card className="p-6 bg-card/30 border-white/5 rounded-3xl">
           <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Saques Homologados (Mês)</p>
           <h3 className="text-2xl font-black text-green-500">
-            {formatCurrency(requests.filter(r => r.status === 'approved').reduce((acc, curr) => acc + curr.value, 0))}
+            {formatCurrency(requests.filter(r => r.status === 'completed').reduce((acc, curr) => acc + curr.value, 0))}
           </h3>
         </Card>
       </div>
@@ -91,12 +126,12 @@ const AdminWithdrawalsPage = () => {
         {[
           { id: 'all', label: 'Todos' },
           { id: 'pending', label: 'Pendentes' },
-          { id: 'approved', label: 'Aprovados' },
-          { id: 'rejected', label: 'Estornados' }
+          { id: 'completed', label: 'Aprovados' },
+          { id: 'failed', label: 'Estornados' }
         ].map(tab => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as 'all' | 'pending' | 'approved' | 'rejected')}
+            onClick={() => setActiveTab(tab.id as 'all' | 'pending' | 'completed' | 'failed')}
             className={`px-4 py-2 text-xs font-bold rounded-xl transition-all duration-300 ${
               activeTab === tab.id
               ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
@@ -167,13 +202,13 @@ const AdminWithdrawalsPage = () => {
                       </>
                     )}
 
-                    {r.status === 'approved' && (
+                    {r.status === 'completed' && (
                       <Badge className="bg-green-500/10 text-green-500 border-green-500/20 py-2 px-4 rounded-xl text-xs font-bold gap-1.5">
                         <CheckCircle2 className="w-4 h-4" /> Transmitido com Sucesso
                       </Badge>
                     )}
 
-                    {r.status === 'rejected' && (
+                    {r.status === 'failed' && (
                       <Badge className="bg-red-500/10 text-red-500 border-red-500/20 py-2 px-4 rounded-xl text-xs font-bold gap-1.5">
                         <AlertTriangle className="w-4 h-4" /> Estornado / Cancelado
                       </Badge>

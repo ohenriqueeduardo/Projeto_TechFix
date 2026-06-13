@@ -14,7 +14,6 @@ import {
   FileText,
   UserCheck
 } from 'lucide-react';
-import { getLocalOrders, saveLocalOrders, getLocalProfessionals } from '@/utils/localDb';
 import { useNotifications } from '@/context/NotificationsContext';
 import { toast } from 'sonner';
 
@@ -24,15 +23,24 @@ const NewServiceRequestPage = () => {
   const { addNotification } = useNotifications();
   const profId = searchParams.get('prof');
 
+  const currentUserStr = localStorage.getItem('user');
+  const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
   const [assignedProfessional, setAssignedProfessional] = React.useState<{ id: string, name: string } | null>(null);
 
   React.useEffect(() => {
-    const profs = getLocalProfessionals();
     if (profId) {
-      const found = profs.find(p => p.id === profId);
-      if (found) {
-        setAssignedProfessional({ id: found.id, name: found.name });
-      }
+      const fetchProf = async () => {
+        try {
+          const res = await fetch(`/api/professionals/${profId}`);
+          if (res.ok) {
+            const data = await res.json();
+            setAssignedProfessional({ id: data.id, name: data.name });
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      };
+      fetchProf();
     }
   }, [profId]);
 
@@ -58,7 +66,7 @@ const NewServiceRequestPage = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!title || !description || !expectedValue || !city) {
@@ -66,40 +74,49 @@ const NewServiceRequestPage = () => {
       return;
     }
 
-    const orderId = `o_request_${Date.now()}`;
-    const orderCode = `TF-REQ-${Math.floor(10000 + Math.random() * 90000)}`;
+    if (!currentUser) {
+      toast.error('Sessão expirada. Faça login novamente.');
+      return;
+    }
 
-    const newRequestedOrder = {
-      id: orderId,
-      code: orderCode,
-      serviceId: 's_custom',
-      serviceTitle: title,
-      clientName: "Sofia Spencer",
-      clientId: "u1",
-      professionalId: assignedProfessional?.id || 'p1',
-      professionalName: assignedProfessional?.name || 'Carlos Mendes',
-      date: new Date().toLocaleDateString('pt-BR').slice(0, 5),
-      time: 'A Combinar',
-      status: 'pending' as const, // pending since it's a custom request awaiting offers
-      price: Number(expectedValue),
-      paymentMethod: 'pix' as const,
-      address: `Suporte ${serviceType} - ${city}`
-    };
+    try {
+      const payload = {
+        serviceId: 's_custom',
+        serviceTitle: title,
+        clientId: currentUser.id,
+        clientName: currentUser.name,
+        professionalId: assignedProfessional?.id || null, // Will be picked up by any professional if null
+        professionalName: assignedProfessional?.name || null,
+        date: new Date().toLocaleDateString('pt-BR').slice(0, 5),
+        time: 'A Combinar',
+        price: Number(expectedValue),
+        paymentMethod: 'pix',
+        address: `Suporte ${serviceType} - ${city}`
+      };
 
-    // Save locally
-    const currentOrders = getLocalOrders();
-    currentOrders.unshift(newRequestedOrder);
-    saveLocalOrders(currentOrders);
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
-    // Dynamic notification
-    addNotification(
-      "Suporte Aberto via Classificados",
-      `Sua solicitação de chamado para "${title}" foi criada no painel local com sucesso.`,
-      "info"
-    );
+      if (!res.ok) {
+        throw new Error('Falha ao criar chamado técnico');
+      }
 
-    toast.success('Chamado de suporte publicado com sucesso!');
-    navigate('/cliente/meus-pedidos');
+      // Dynamic notification
+      addNotification(
+        "Suporte Aberto via Classificados",
+        `Sua solicitação de chamado para "${title}" foi criada no painel com sucesso. Aguarde orçamentos ou aceite do profissional selecionado.`,
+        "info"
+      );
+
+      toast.success('Chamado de suporte publicado com sucesso!');
+      navigate('/cliente/meus-pedidos');
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao publicar chamado técnico.');
+    }
   };
 
   const isFormValid = title && description && expectedValue && city;

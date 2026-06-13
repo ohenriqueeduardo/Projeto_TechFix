@@ -6,7 +6,8 @@ import {
   updateProfessional,
   deleteProfessional,
   addPortfolioItem,
-  deletePortfolioItem
+  deletePortfolioItem,
+  requestVerification
 } from '../controllers/professionals.controller.js';
 
 const router = Router();
@@ -18,5 +19,6 @@ router.put('/:id', updateProfessional);
 router.delete('/:id', deleteProfessional);
 router.post('/:id/portfolio', addPortfolioItem);
 router.delete('/:id/portfolio/:portfolioId', deletePortfolioItem);
+router.post('/:id/verify-request', requestVerification);
 
 export default router;

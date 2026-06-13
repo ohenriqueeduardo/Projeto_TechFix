@@ -20,7 +20,6 @@ import {
   DollarSign,
   Briefcase
 } from 'lucide-react';
-import { getLocalOrders, saveLocalOrders, getLocalProfessionals } from '@/utils/localDb';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
 import { useNotifications } from '@/context/NotificationsContext';
@@ -43,11 +42,21 @@ const CheckoutCounterOfferPage = () => {
   const [cardCvv, setCardCvv] = React.useState('');
 
   React.useEffect(() => {
-    const all = getLocalOrders();
-    const found = all.find(o => o.id === id || o.code === id);
-    if (found) {
-      setOrder(found);
-    }
+    const fetchOrder = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`/api/orders/${id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setOrder(data);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    if (id) fetchOrder();
   }, [id]);
 
   React.useEffect(() => {
@@ -112,39 +121,37 @@ const CheckoutCounterOfferPage = () => {
       return;
     }
 
-    // Update order status to 'scheduled' (Agendado)
-    const allOrders = getLocalOrders();
-    const updated = allOrders.map(o => {
-      if (o.id === order.id) {
-        return { 
-          ...o, 
-          status: 'scheduled' as const,
-          paymentMethod,
-          time: '14:00', // Set default testing time
-          date: 'Amanhã' // Set default testing date
-        };
+    const processPayment = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        await fetch(`/api/orders/${order.id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ status: 'scheduled' })
+        });
+        
+        await fetch(`/api/orders/${order.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ paymentMethod })
+        });
+
+        // Create dynamic notifications
+        addNotification(
+          "Pagamento Confirmado!",
+          `O pagamento da contraproposta de R$ ${order.price.toFixed(2)} para o chamado ${order.code} foi confirmado em custódia segura.`,
+          "success"
+        );
+
+        toast.success(`Pagamento simulado com sucesso! Chamado agendado com ${order.professionalName}.`);
+        navigate(`/cliente/pedido/${order.id}/status`);
+      } catch (e) {
+        console.error(e);
+        toast.error('Erro ao processar pagamento.');
       }
-      return o;
-    });
-    saveLocalOrders(updated);
+    };
 
-    // Create dynamic notifications
-    addNotification(
-      "Pagamento Confirmado!",
-      `O pagamento da contraproposta de R$ ${order.price.toFixed(2)} para o chamado ${order.code} foi confirmado em custódia segura.`,
-      "success"
-    );
-
-    // Dynamic alert to Carlos
-    const profs = getLocalProfessionals();
-    const targetProf = profs.find(p => p.id === order.professionalId || p.name === order.professionalName);
-    if (targetProf) {
-      toast.success(`Pagamento simulado com sucesso! Chamado agendado com ${targetProf.name}.`);
-    } else {
-      toast.success('Pagamento simulado com sucesso!');
-    }
-
-    navigate(`/cliente/pedido/${order.id}/status`);
+    processPayment();
   };
 
   const isPix = paymentMethod === 'pix';

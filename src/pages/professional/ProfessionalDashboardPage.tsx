@@ -22,8 +22,8 @@ import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
+import { Printer } from 'lucide-react';
 
-import { getLocalProfessionals, getLocalOrders, saveLocalOrders, getLocalTransactions } from '@/utils/localDb';
 import { User, Order, Transaction, Review, Professional } from '@/types';
 
 const ProfessionalDashboardPage = () => {
@@ -36,6 +36,11 @@ const ProfessionalDashboardPage = () => {
   const [counterOfferOrderId, setCounterOfferOrderId] = React.useState<string | null>(null);
   const [counterOfferPrice, setCounterOfferPrice] = React.useState<string>('');
 
+  const [showVerificationModal, setShowVerificationModal] = React.useState(false);
+  const [idDocBase64, setIdDocBase64] = React.useState('');
+  const [selfieBase64, setSelfieBase64] = React.useState('');
+  const [isVerifying, setIsVerifying] = React.useState(false);
+
   const fetchDashboardData = React.useCallback(async (userId: string, token: string, currentUser: User | null) => {
     try {
       // 1. Fetch Professional Profile
@@ -43,10 +48,6 @@ const ProfessionalDashboardPage = () => {
       if (profResponse.ok) {
         const profData = await profResponse.json();
         setProfessionalProfile(profData);
-      } else {
-        const localProfs = getLocalProfessionals();
-        const matched = localProfs.find(p => p.id === userId || p.email === currentUser?.email);
-        setProfessionalProfile(matched || localProfs[0]);
       }
 
       // 2. Fetch Orders for this professional
@@ -56,11 +57,6 @@ const ProfessionalDashboardPage = () => {
       if (ordersResponse.ok) {
         const ordersData = await ordersResponse.json();
         setOrders(ordersData);
-      } else {
-        // Fallback to local storage orders for this professional
-        const allOrders = getLocalOrders();
-        const profOrders = allOrders.filter(o => o.professionalId === userId || o.professionalName === currentUser?.name);
-        setOrders(profOrders);
       }
 
       // 3. Fetch Transactions for this professional
@@ -70,8 +66,6 @@ const ProfessionalDashboardPage = () => {
       if (txResponse.ok) {
         const txData = await txResponse.json();
         setTransactions(txData);
-      } else {
-        setTransactions(getLocalTransactions());
       }
 
       // 4. Fetch Reviews for this professional
@@ -79,27 +73,10 @@ const ProfessionalDashboardPage = () => {
       if (reviewsResponse.ok) {
         const reviewsData = await reviewsResponse.json();
         setReviews(reviewsData);
-      } else {
-        setReviews([
-          { id: "r1", serviceId: "s1", professionalId: userId, clientName: "Sofia Spencer", rating: 5, comment: "Excelente serviço! Rápido e atencioso.", tags: ["Rapidez"], date: "2026-05-20" }
-        ]);
       }
 
     } catch (error) {
-      console.warn('Backend connection failed, loading dashboard offline:', error);
-      
-      const localProfs = getLocalProfessionals();
-      const matched = localProfs.find(p => p.id === userId);
-      setProfessionalProfile(matched || localProfs[0]);
-
-      const allOrders = getLocalOrders();
-      const profOrders = allOrders.filter(o => o.professionalId === userId);
-      setOrders(profOrders);
-
-      setTransactions(getLocalTransactions());
-      setReviews([
-        { id: "r1", serviceId: "s1", professionalId: userId, clientName: "Sofia Spencer", rating: 5, comment: "Excelente serviço! Rápido e atencioso.", tags: ["Rapidez"], date: "2026-05-20" }
-      ]);
+      console.warn('Backend connection failed:', error);
     } finally {
       setIsLoading(false);
     }
@@ -118,17 +95,43 @@ const ProfessionalDashboardPage = () => {
     }
   }, [fetchDashboardData]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setter: (val: string) => void) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setter(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleVerificationRequest = async () => {
+    if (!idDocBase64 || !selfieBase64) {
+      toast.error('Por favor, anexe a foto do documento e a selfie.');
+      return;
+    }
+    setIsVerifying(true);
+    try {
+      const res = await fetch(`/api/professionals/${user?.id}/verify-request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idDocumentUrl: idDocBase64, selfieUrl: selfieBase64 })
+      });
+      if (res.ok) {
+        toast.success('Documentos enviados com sucesso! Aguarde aprovação.');
+        setShowVerificationModal(false);
+        if (user) fetchDashboardData(user.id, localStorage.getItem('token') || '', user);
+      } else {
+        toast.error('Erro ao enviar documentos.');
+      }
+    } catch (e) {
+      toast.error('Erro ao enviar documentos.');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   const handleAcceptOrder = async (orderId: string) => {
     const token = localStorage.getItem('token');
-    
-    // Sync localStorage offline
-    const allOrders = getLocalOrders();
-    const updated = allOrders.map(o => {
-      if (o.id === orderId) return { ...o, status: 'scheduled' as const };
-      return o;
-    });
-    saveLocalOrders(updated);
-
     try {
       await fetch(`/api/orders/${orderId}/status`, {
         method: 'PATCH',
@@ -139,7 +142,7 @@ const ProfessionalDashboardPage = () => {
         body: JSON.stringify({ status: 'scheduled' })
       });
     } catch (e) {
-      console.warn('Backend sync failed, using localStorage:', e);
+      console.warn('Backend sync failed:', e);
     }
 
     toast.success('Pedido aceito com sucesso! Agendado na sua agenda.');
@@ -148,15 +151,6 @@ const ProfessionalDashboardPage = () => {
 
   const handleCompleteOrder = async (orderId: string, orderPrice: number, orderTitle: string) => {
     const token = localStorage.getItem('token');
-
-    // Sync localStorage offline
-    const allOrders = getLocalOrders();
-    const updated = allOrders.map(o => {
-      if (o.id === orderId) return { ...o, status: 'completed' as const };
-      return o;
-    });
-    saveLocalOrders(updated);
-
     try {
       // 1. Mark Order as Completed on backend
       const orderResponse = await fetch(`/api/orders/${orderId}/status`, {
@@ -188,7 +182,7 @@ const ProfessionalDashboardPage = () => {
         });
       }
     } catch (err: unknown) {
-      console.warn('Backend sync failed, using localStorage:', err);
+      console.warn('Backend sync failed:', err);
     }
 
     toast.success('Parabéns! Serviço marcado como concluído. Pagamento creditado no seu faturamento.');
@@ -197,15 +191,6 @@ const ProfessionalDashboardPage = () => {
 
   const handleCancelOrder = async (orderId: string) => {
     const token = localStorage.getItem('token');
-
-    // Sync localStorage offline
-    const allOrders = getLocalOrders();
-    const updated = allOrders.map(o => {
-      if (o.id === orderId) return { ...o, status: 'cancelled' as const };
-      return o;
-    });
-    saveLocalOrders(updated);
-
     try {
       await fetch(`/api/orders/${orderId}/status`, {
         method: 'PATCH',
@@ -216,7 +201,7 @@ const ProfessionalDashboardPage = () => {
         body: JSON.stringify({ status: 'cancelled' })
       });
     } catch (e) {
-      console.warn('Backend sync failed, using localStorage:', e);
+      console.warn('Backend sync failed:', e);
     }
 
     toast.error('Serviço recusado/cancelado.');
@@ -232,16 +217,6 @@ const ProfessionalDashboardPage = () => {
     const priceNum = Number(counterOfferPrice);
     const token = localStorage.getItem('token');
 
-    // Update localStorage instantly
-    const allOrders = getLocalOrders();
-    const updated = allOrders.map(o => {
-      if (o.id === orderId) {
-        return { ...o, price: priceNum, status: 'counter_offer' as const };
-      }
-      return o;
-    });
-    saveLocalOrders(updated);
-
     // Patch backend
     try {
       await fetch(`/api/orders/${orderId}/status`, {
@@ -253,7 +228,7 @@ const ProfessionalDashboardPage = () => {
         body: JSON.stringify({ status: 'counter_offer', price: priceNum })
       });
     } catch (e) {
-      console.warn('Backend sync failed, using localStorage:', e);
+      console.warn('Backend sync failed:', e);
     }
 
     toast.success('Contraproposta enviada com sucesso! Aguardando cliente.');
@@ -318,6 +293,31 @@ const ProfessionalDashboardPage = () => {
           <p className="text-muted-foreground text-sm mt-1">Aqui está o resumo dos seus reparos e receitas de hoje.</p>
         </div>
       </div>
+
+      {professionalProfile && (professionalProfile.verificationStatus === 'unverified' || professionalProfile.verificationStatus === 'rejected') && (
+        <div className="bg-orange-500/10 border border-orange-500/20 p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <ShieldAlert className="w-8 h-8 text-orange-500 shrink-0" />
+            <div>
+              <h3 className="text-orange-500 font-bold text-sm">Verificação Pendente</h3>
+              <p className="text-xs text-orange-500/80">Sua conta precisa ser verificada com documentos oficiais para receber o selo de confiança e aparecer para clientes.</p>
+            </div>
+          </div>
+          <Button onClick={() => setShowVerificationModal(true)} className="bg-orange-500 hover:bg-orange-600 text-white whitespace-nowrap text-xs h-9">
+            Enviar Documentos
+          </Button>
+        </div>
+      )}
+
+      {professionalProfile?.verificationStatus === 'pending' && (
+        <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl flex items-center gap-3">
+          <Clock className="w-6 h-6 text-blue-500" />
+          <div>
+            <h3 className="text-blue-500 font-bold text-sm">Documentos em Análise</h3>
+            <p className="text-xs text-blue-500/80">O administrador está analisando seus documentos. Em breve você receberá o status final.</p>
+          </div>
+        </div>
+      )}
 
       {/* Statistics Cards Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -499,18 +499,31 @@ const ProfessionalDashboardPage = () => {
                           </>
                         )}
 
-                        {(order.status === 'scheduled' || order.status === 'in_progress') && (
-                          <Button 
-                            onClick={() => handleCompleteOrder(order.id, order.price, order.serviceTitle)} 
-                            size="sm" 
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl text-xs gap-1 h-9 w-full sm:w-auto px-4"
-                          >
-                            <CheckCircle className="w-3.5 h-3.5" /> Concluir Serviço
-                          </Button>
+                        {(order.status === 'scheduled' || order.status === 'in_progress' || order.status === 'completed') && (
+                          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                            <Button 
+                              onClick={() => window.open(`/order/${order.id}/print`, '_blank')} 
+                              size="sm" 
+                              variant="outline"
+                              className="border-primary/20 text-primary hover:bg-primary/10 rounded-xl text-xs gap-1 h-9 px-4"
+                            >
+                              <Printer className="w-3.5 h-3.5" /> Gerar O.S.
+                            </Button>
+                            
+                            {order.status !== 'completed' && (
+                              <Button 
+                                onClick={() => handleCompleteOrder(order.id, order.price, order.serviceTitle)} 
+                                size="sm" 
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl text-xs gap-1 h-9 px-4"
+                              >
+                                <CheckCircle className="w-3.5 h-3.5" /> Concluir Serviço
+                              </Button>
+                            )}
+                          </div>
                         )}
 
                         {order.status === 'completed' && (
-                          <Badge className="bg-green-500/10 text-green-500 border-green-500/20 py-1.5 px-3 rounded-xl text-xs font-bold gap-1">
+                          <Badge className="bg-green-500/10 text-green-500 border-green-500/20 py-1.5 px-3 rounded-xl text-xs font-bold gap-1 mt-2 sm:mt-0">
                             <Check className="w-3.5 h-3.5" /> Finalizado com Sucesso
                           </Badge>
                         )}
@@ -602,6 +615,34 @@ const ProfessionalDashboardPage = () => {
 
       </div>
 
+      {showVerificationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <Card className="max-w-md w-full p-6 space-y-6">
+            <h2 className="text-xl font-bold flex items-center gap-2"><ShieldAlert className="w-5 h-5 text-primary" /> Verificação de Identidade</h2>
+            <p className="text-sm text-muted-foreground">Envie uma foto do seu RG ou CNH (frente e verso) e uma selfie segurando o documento.</p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider mb-2 block">1. Foto do Documento</label>
+                <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, setIdDocBase64)} className="w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20" />
+                {idDocBase64 && <div className="mt-2 text-[10px] text-green-500 font-bold">✓ Imagem carregada</div>}
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider mb-2 block">2. Selfie com Documento</label>
+                <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, setSelfieBase64)} className="w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20" />
+                {selfieBase64 && <div className="mt-2 text-[10px] text-green-500 font-bold">✓ Imagem carregada</div>}
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-4">
+              <Button variant="ghost" onClick={() => setShowVerificationModal(false)}>Cancelar</Button>
+              <Button onClick={handleVerificationRequest} disabled={isVerifying || !idDocBase64 || !selfieBase64} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
+                {isVerifying ? 'Enviando...' : 'Enviar para Análise'}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

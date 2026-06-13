@@ -11,38 +11,69 @@ import {
   UserPlus, 
   Mail, 
   MapPin, 
-  Filter,
   CheckCircle,
   AlertTriangle
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+interface ProfessionalData {
+  verificationStatus: 'unverified' | 'pending' | 'verified' | 'rejected';
+  idDocumentUrl: string | null;
+  selfieUrl: string | null;
+  specialty: string;
+  city: string;
+}
+
 interface UserItem {
   id: string;
   name: string;
   email: string;
-  role: 'client' | 'professional' | 'admin';
+  role: string;
   status: 'active' | 'blocked';
-  verificationStatus?: 'unverified' | 'pending' | 'verified';
-  city: string;
-  specialty?: string;
+  professionalData?: ProfessionalData;
   avatar: string;
 }
 
 const AdminUsersPage = () => {
-  const [users, setUsers] = React.useState<UserItem[]>([
-    { id: 'u1', name: 'Sofia Spencer', email: 'sofia@example.com', role: 'client', status: 'active', city: 'São Paulo, SP', avatar: 'https://i.pravatar.cc/150?u=sofia' },
-    { id: 'u2', name: 'Carlos Mendes', email: 'carlos@example.com', role: 'professional', status: 'active', verificationStatus: 'verified', city: 'São Paulo, SP', specialty: 'Hardware Expert', avatar: 'https://i.pravatar.cc/150?u=carlos' },
-    { id: 'u3', name: 'Diego Faria', email: 'diego@example.com', role: 'professional', status: 'active', verificationStatus: 'pending', city: 'Rio de Janeiro, RJ', specialty: 'Redes & Segurança', avatar: 'https://i.pravatar.cc/150?u=diego' },
-    { id: 'u4', name: 'Mariana Silva', email: 'mariana@example.com', role: 'client', status: 'active', city: 'Belo Horizonte, MG', avatar: 'https://i.pravatar.cc/150?u=mariana' },
-    { id: 'u5', name: 'Rodrigo Albuquerque', email: 'rodrigo@example.com', role: 'professional', status: 'blocked', verificationStatus: 'unverified', city: 'Belo Horizonte, MG', specialty: 'MacBooks', avatar: 'https://i.pravatar.cc/150?u=rodrigo' },
-    { id: 'u6', name: 'Pedro Rocha', email: 'pedro@example.com', role: 'client', status: 'active', city: 'Curitiba, PR', avatar: 'https://i.pravatar.cc/150?u=pedro' }
-  ]);
-
+  const [users, setUsers] = React.useState<UserItem[]>([]);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [roleFilter, setRoleFilter] = React.useState<'all' | 'client' | 'professional'>('all');
   const [verificationModalOpen, setVerificationModalOpen] = React.useState(false);
   const [selectedUserForVerification, setSelectedUserForVerification] = React.useState<UserItem | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch('/api/admin/users');
+      if (res.ok) {
+        const data = await res.json();
+        const mappedUsers = data.map((u: { id: string; name: string; email: string; role: string; status?: string; avatar?: string; professionalProfile?: { verificationStatus: "unverified" | "pending" | "verified" | "rejected"; idDocumentUrl: string | null; selfieUrl: string | null; specialty: string; city: string; } }): UserItem => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          status: 'active', // Placeholder until blocked status is added to schema
+          avatar: u.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}`,
+          professionalData: u.professionalProfile ? {
+            verificationStatus: u.professionalProfile.verificationStatus,
+            idDocumentUrl: u.professionalProfile.idDocumentUrl,
+            selfieUrl: u.professionalProfile.selfieUrl,
+            specialty: u.professionalProfile.specialty,
+            city: u.professionalProfile.city
+          } : undefined
+        }));
+        setUsers(mappedUsers);
+      }
+    } catch (e) {
+      console.error('Failed to load users:', e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const openVerificationModal = (user: UserItem) => {
     setSelectedUserForVerification(user);
@@ -54,30 +85,41 @@ const AdminUsersPage = () => {
     setVerificationModalOpen(false);
   };
 
-  const handleApproveVerification = () => {
+  const handleApproveVerification = async () => {
     if (selectedUserForVerification) {
-      setUsers(prev => prev.map(u => u.id === selectedUserForVerification.id ? { ...u, verificationStatus: 'verified' } : u));
-      toast.success(`Conta de ${selectedUserForVerification.name} aprovada e verificada com sucesso!`);
-      closeVerificationModal();
+      try {
+        await fetch(`/api/admin/users/${selectedUserForVerification.id}/verify`, { method: 'POST' });
+        toast.success(`Conta de ${selectedUserForVerification.name} aprovada e verificada com sucesso!`);
+        fetchUsers();
+        closeVerificationModal();
+      } catch (e) {
+        toast.error('Erro ao aprovar.');
+      }
     }
   };
 
-  const handleRejectVerification = () => {
+  const handleRejectVerification = async () => {
     if (selectedUserForVerification) {
-      setUsers(prev => prev.map(u => u.id === selectedUserForVerification.id ? { ...u, verificationStatus: 'unverified' } : u));
-      toast.error(`Documentos de ${selectedUserForVerification.name} foram rejeitados.`);
-      closeVerificationModal();
+      try {
+        await fetch(`/api/admin/users/${selectedUserForVerification.id}/reject`, { method: 'POST' });
+        toast.error(`Documentos de ${selectedUserForVerification.name} foram rejeitados.`);
+        fetchUsers();
+        closeVerificationModal();
+      } catch (e) {
+        toast.error('Erro ao rejeitar.');
+      }
     }
   };
 
-  const handleToggleStatus = (id: string, name: string, currentStatus: 'active' | 'blocked') => {
-    const newStatus = currentStatus === 'active' ? 'blocked' : 'active';
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, status: newStatus } : u));
-    
-    if (newStatus === 'blocked') {
-      toast.error(`Usuário ${name} foi bloqueado temporariamente da plataforma.`);
-    } else {
-      toast.success(`Acesso do usuário ${name} restabelecido com sucesso!`);
+  const handleDeleteUser = async (id: string, name: string) => {
+    if (window.confirm(`Tem certeza que deseja EXCLUIR o usuário ${name} do sistema? Esta ação é irreversível.`)) {
+      try {
+        await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+        toast.success(`Usuário ${name} excluído do sistema.`);
+        fetchUsers();
+      } catch (e) {
+        toast.error('Erro ao excluir usuário.');
+      }
     }
   };
 
@@ -85,10 +127,14 @@ const AdminUsersPage = () => {
     const matchesSearch = 
       u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.city.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = roleFilter === 'all' || u.role === roleFilter;
+      (u.professionalData?.city || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const isProfessional = u.role.includes('professional');
+    const matchesRole = roleFilter === 'all' || (roleFilter === 'professional' ? isProfessional : !isProfessional);
     return matchesSearch && matchesRole;
   });
+
+  if (isLoading) return <div className="p-12 text-center">Carregando usuários...</div>;
 
   return (
     <div className="space-y-10 animate-page-entrance max-w-7xl mx-auto">
@@ -109,19 +155,19 @@ const AdminUsersPage = () => {
         <Card className="p-6 bg-card/30 border-white/5 rounded-3xl">
           <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Clientes Registrados</p>
           <h3 className="text-2xl font-black text-primary">
-            {users.filter(u => u.role === 'client').length}
+            {users.filter(u => !u.role.includes('professional') && !u.role.includes('admin')).length}
           </h3>
         </Card>
         <Card className="p-6 bg-card/30 border-white/5 rounded-3xl">
-          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Especialistas Homologados</p>
+          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Especialistas</p>
           <h3 className="text-2xl font-black text-green-500">
-            {users.filter(u => u.role === 'professional').length}
+            {users.filter(u => u.role.includes('professional')).length}
           </h3>
         </Card>
         <Card className="p-6 bg-card/30 border-white/5 rounded-3xl">
-          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Contas Bloqueadas</p>
-          <h3 className="text-2xl font-black text-red-500">
-            {users.filter(u => u.status === 'blocked').length}
+          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Aguardando Avaliação</p>
+          <h3 className="text-2xl font-black text-orange-500">
+            {users.filter(u => u.professionalData?.verificationStatus === 'pending').length}
           </h3>
         </Card>
       </div>
@@ -166,27 +212,30 @@ const AdminUsersPage = () => {
           <Card key={u.id} className={`p-5 bg-card/30 border-white/5 rounded-3xl hover:border-primary/20 transition-all duration-300 relative group flex gap-4 ${u.status === 'blocked' ? 'opacity-70 border-red-500/20' : ''}`}>
             {/* Avatar Container */}
             <div className="relative shrink-0">
-              <img src={u.avatar} className="w-16 h-16 rounded-2xl object-cover border border-white/10" alt={u.name} />
-              <span className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-background ${u.status === 'active' ? 'bg-green-500' : 'bg-red-500'}`} />
+              <img src={u.avatar} className="w-16 h-16 rounded-2xl object-cover border border-white/10 bg-black/50" alt={u.name} />
+              <span className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-background bg-green-500`} />
             </div>
 
             {/* Info details */}
             <div className="flex-1 space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="font-bold text-base group-hover:text-primary transition-colors leading-none">{u.name}</h3>
-                <Badge className={`rounded-md text-[8px] font-black uppercase ${u.role === 'professional' ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-blue-500/10 text-blue-500 border-blue-500/20'}`}>
-                  {u.role === 'professional' ? 'Especialista' : 'Cliente'}
+                {u.role.includes('admin') && <Badge className="bg-red-500/10 text-red-500 border-red-500/20 text-[8px] font-black uppercase">Admin</Badge>}
+                <Badge className={`rounded-md text-[8px] font-black uppercase ${u.role.includes('professional') ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-blue-500/10 text-blue-500 border-blue-500/20'}`}>
+                  {u.role.includes('professional') ? 'Especialista' : 'Cliente'}
                 </Badge>
-                {u.verificationStatus === 'verified' && (
-                  <ShieldCheck className="w-4 h-4 text-primary" />
+                {u.professionalData?.verificationStatus === 'verified' && (
+                  <div title="Verificado" className="flex items-center">
+                    <ShieldCheck className="w-4 h-4 text-primary" />
+                  </div>
                 )}
-                {u.verificationStatus === 'pending' && (
-                  <Badge variant="outline" className="text-[8px] font-black border-orange-500/50 text-orange-500 bg-orange-500/10">Aguardando Verificação</Badge>
+                {u.professionalData?.verificationStatus === 'pending' && (
+                  <Badge variant="outline" className="text-[8px] font-black border-orange-500/50 text-orange-500 bg-orange-500/10">Aguardando Avaliação</Badge>
                 )}
               </div>
 
-              {u.specialty && (
-                <p className="text-[10px] text-primary font-black uppercase tracking-wider leading-none">{u.specialty}</p>
+              {u.professionalData?.specialty && (
+                <p className="text-[10px] text-primary font-black uppercase tracking-wider leading-none">{u.professionalData.specialty}</p>
               )}
 
               <div className="space-y-1 text-xs text-muted-foreground font-semibold">
@@ -194,15 +243,17 @@ const AdminUsersPage = () => {
                   <Mail className="w-3.5 h-3.5 text-primary/70 shrink-0" />
                   <span>{u.email}</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-primary/70 shrink-0" />
-                  <span>{u.city}</span>
-                </div>
+                {u.professionalData?.city && (
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-primary/70 shrink-0" />
+                    <span>{u.professionalData.city}</span>
+                  </div>
+                )}
               </div>
 
               {/* Action trigger */}
               <div className="pt-2 border-t border-white/5 flex justify-end gap-2">
-                {u.verificationStatus === 'pending' && (
+                {u.professionalData?.verificationStatus === 'pending' && (
                   <Button 
                     onClick={() => openVerificationModal(u)}
                     variant="outline" 
@@ -212,25 +263,14 @@ const AdminUsersPage = () => {
                     Analisar Docs
                   </Button>
                 )}
-                {u.status === 'active' ? (
-                  <Button 
-                    onClick={() => handleToggleStatus(u.id, u.name, 'active')}
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-xs font-bold text-red-400 hover:bg-red-500/10 rounded-xl px-3.5 h-9 gap-1"
-                  >
-                    <UserMinus className="w-4 h-4" /> Bloquear
-                  </Button>
-                ) : (
-                  <Button 
-                    onClick={() => handleToggleStatus(u.id, u.name, 'blocked')}
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-xs font-bold text-green-400 hover:bg-green-500/10 rounded-xl px-3.5 h-9 gap-1"
-                  >
-                    <UserPlus className="w-4 h-4" /> Reativar
-                  </Button>
-                )}
+                <Button 
+                  onClick={() => handleDeleteUser(u.id, u.name)}
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-xs font-bold text-red-400 hover:bg-red-500/10 rounded-xl px-3.5 h-9 gap-1"
+                >
+                  <UserMinus className="w-4 h-4" /> Excluir
+                </Button>
               </div>
             </div>
           </Card>
@@ -238,7 +278,7 @@ const AdminUsersPage = () => {
       </div>
 
       {/* Identity Verification Modal */}
-      {verificationModalOpen && selectedUserForVerification && (
+      {verificationModalOpen && selectedUserForVerification && selectedUserForVerification.professionalData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-300">
           <div className="bg-card w-full max-w-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
             <div className="p-6 border-b border-white/5 flex justify-between items-center bg-muted/30">
@@ -254,18 +294,26 @@ const AdminUsersPage = () => {
               <button onClick={closeVerificationModal} className="text-muted-foreground hover:text-foreground">✕</button>
             </div>
             
-            <div className="p-6 space-y-6">
-              <div className="grid grid-cols-2 gap-6">
+            <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Documento Frente/Verso</span>
-                  <div className="w-full h-48 bg-slate-800 rounded-2xl border border-white/5 overflow-hidden relative group cursor-pointer flex items-center justify-center">
-                    <img src={`https://placehold.co/600x400/1e293b/cbd5e1?text=RG/CNH+Frente\n${selectedUserForVerification.name.replace(/\s+/g, '+')}`} alt="Document" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Documento</span>
+                  <div className="w-full bg-slate-800 rounded-2xl border border-white/5 overflow-hidden relative flex items-center justify-center min-h-48">
+                    {selectedUserForVerification.professionalData.idDocumentUrl ? (
+                      <img src={selectedUserForVerification.professionalData.idDocumentUrl} alt="Document" className="w-full h-auto object-contain max-h-[300px]" />
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Nenhuma imagem</p>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-2">
                   <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Selfie de Validação</span>
-                  <div className="w-full h-48 bg-slate-800 rounded-2xl border border-white/5 overflow-hidden relative group cursor-pointer flex items-center justify-center">
-                    <img src={selectedUserForVerification.avatar} alt="Selfie" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                  <div className="w-full bg-slate-800 rounded-2xl border border-white/5 overflow-hidden relative flex items-center justify-center min-h-48">
+                    {selectedUserForVerification.professionalData.selfieUrl ? (
+                      <img src={selectedUserForVerification.professionalData.selfieUrl} alt="Selfie" className="w-full h-auto object-contain max-h-[300px]" />
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Nenhuma imagem</p>
+                    )}
                   </div>
                 </div>
               </div>

@@ -17,7 +17,6 @@ import {
 import { Transaction, User, Order } from '@/types';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
-import { getLocalOrders, getLocalTransactions, saveLocalTransactions } from '@/utils/localDb';
 
 const ProfessionalFinancePage = () => {
   const [user, setUser] = React.useState<User | null>(null);
@@ -38,8 +37,6 @@ const ProfessionalFinancePage = () => {
       });
       if (ordersResponse.ok) {
         setOrders(await ordersResponse.json());
-      } else {
-        setOrders(getLocalOrders().filter((o: Order) => o.professionalId === userId));
       }
 
       // 2. Fetch Transactions
@@ -48,13 +45,9 @@ const ProfessionalFinancePage = () => {
       });
       if (txResponse.ok) {
         setTransactions(await txResponse.json());
-      } else {
-        setTransactions(getLocalTransactions().filter((t: Transaction) => t.professionalId === userId));
       }
     } catch (error) {
-      console.warn('Backend connection failed, loading offline finance data:', error);
-      setOrders(getLocalOrders().filter((o: Order) => o.professionalId === userId));
-      setTransactions(getLocalTransactions().filter((t: Transaction) => t.professionalId === userId));
+      console.warn('Backend connection failed:', error);
     } finally {
       setIsLoading(false);
     }
@@ -119,20 +112,6 @@ const ProfessionalFinancePage = () => {
 
     const token = localStorage.getItem('token');
     
-    // Save to local storage offline fallback
-    const localTxs = getLocalTransactions();
-    const localNewTx: Transaction = {
-      id: `t_new_${Date.now()}`,
-      type: 'expense',
-      title: `Saque PIX (${pixKey}) - Pendente de Liberação`,
-      value: val,
-      date: new Date().toISOString().split('T')[0],
-      status: 'pending',
-      professionalId: user?.id
-    };
-    localTxs.unshift(localNewTx);
-    saveLocalTransactions(localTxs);
-
     // POST to backend
     try {
       const res = await fetch('/api/transactions', {
@@ -153,12 +132,11 @@ const ProfessionalFinancePage = () => {
       if (res.ok) {
         toast.success('Solicitação de saque PIX registrada! Aguarde aprovação do administrador.');
       } else {
-        console.warn('Backend failed to create withdrawal transaction, using local storage.');
-        toast.success('Solicitação de saque PIX registrada (offline)!');
+        toast.error('Falha ao registrar saque PIX.');
       }
     } catch (err) {
-      console.warn('Offline request, using local storage:', err);
-      toast.success('Solicitação de saque PIX registrada (offline)!');
+      console.warn('Request failed:', err);
+      toast.error('Falha ao comunicar com o servidor.');
     }
 
     setWithdrawValue('');

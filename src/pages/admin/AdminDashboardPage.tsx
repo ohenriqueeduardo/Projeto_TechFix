@@ -21,51 +21,67 @@ import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 
-interface CandidateTech {
+interface LogItem {
+  id: string | number;
+  action: string;
+  details: string;
+  time: string;
+  type: string;
+}
+
+interface CandidateItem {
   id: string;
   name: string;
-  specialty: string;
-  city: string;
-  experience: string;
   status: 'pending' | 'approved' | 'rejected';
 }
 
 const AdminDashboardPage = () => {
-  // Local state for candidate technician approval list
-  const [candidates, setCandidates] = React.useState<CandidateTech[]>([
-    { id: 'c1', name: 'Rodrigo Albuquerque', specialty: 'Reparo Apple & MacBooks', city: 'Belo Horizonte, MG', experience: '6 anos', status: 'pending' },
-    { id: 'c2', name: 'Fernanda Lima', specialty: 'Administração de Banco de Dados', city: 'Porto Alegre, RS', experience: '4 anos', status: 'pending' },
-    { id: 'c3', name: 'Gabriel Barbosa', specialty: 'Segurança da Informação', city: 'Curitiba, PR', experience: '8 anos', status: 'pending' }
-  ]);
+  const [metrics, setMetrics] = React.useState({
+    totalUsers: 0,
+    totalServices: 0,
+    totalRevenue: 0,
+    openOrders: 0
+  });
 
-  const [systemLogs, setSystemLogs] = React.useState([
-    { id: 1, action: 'Novo pedido criado', details: 'Sofia Spencer contratou Manutenção Preventiva PC (#TF-2024-00842)', time: '5 min atrás', type: 'info' },
-    { id: 2, action: 'Saque solicitado', details: 'Técnico Carlos Mendes solicitou saque de R$ 300,00 via PIX', time: '20 min atrás', type: 'warning' },
-    { id: 3, action: 'Novo técnico cadastrado', details: 'Diego Faria concluiu o perfil de técnico de Redes', time: '1h atrás', type: 'success' },
-    { id: 4, action: 'Pagamento confirmado', details: 'Aprovação de crédito para pedido #TF-2024-00711', time: '3h atrás', type: 'success' }
-  ]);
+  const [candidates, setCandidates] = React.useState<CandidateItem[]>([]);
+  const [systemLogs, setSystemLogs] = React.useState<LogItem[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
 
-  const handleApproveTech = (id: string, name: string) => {
-    setCandidates(prev => prev.map(c => c.id === id ? { ...c, status: 'approved' } : c));
-    toast.success(`Técnico ${name} homologado com sucesso na plataforma!`);
-    
-    // Add to audit logs
-    setSystemLogs(prev => [
-      { id: Date.now(), action: 'Técnico homologado', details: `Administrador aprovou o credenciamento de ${name}`, time: 'Agora mesmo', type: 'success' },
-      ...prev
-    ]);
-  };
+  React.useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const res = await fetch('/api/admin/dashboard');
+        if (res.ok) {
+          const data = await res.json();
+          setMetrics({
+            totalUsers: data.metrics.totalUsers,
+            totalServices: data.metrics.totalServices,
+            totalRevenue: data.metrics.totalRevenue,
+            openOrders: data.metrics.openOrders
+          });
 
-  const handleRejectTech = (id: string, name: string) => {
-    setCandidates(prev => prev.map(c => c.id === id ? { ...c, status: 'rejected' } : c));
-    toast.error(`Credenciamento de ${name} foi indeferido.`);
-    
-    // Add to audit logs
-    setSystemLogs(prev => [
-      { id: Date.now(), action: 'Credenciamento recusado', details: `Administrador rejeitou a solicitação de ${name}`, time: 'Agora mesmo', type: 'error' },
-      ...prev
-    ]);
-  };
+          // System logs from recent orders
+          const logs = data.recentOrders.map((o: { id: string; status: string; serviceTitle: string; price: number; createdAt: string }) => ({
+            id: o.id,
+            action: 'Pedido ' + o.status,
+            details: `Serviço ${o.serviceTitle} no valor de ${formatCurrency(o.price)}`,
+            time: new Date(o.createdAt).toLocaleDateString(),
+            type: o.status === 'completed' ? 'success' : 'info'
+          }));
+          
+          setSystemLogs(logs);
+          setCandidates(data.recentUsers); // Used just to show recently joined users
+        }
+      } catch (e) {
+        console.error('Error fetching admin dashboard:', e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDashboard();
+  }, []);
+
+  if (isLoading) return <div className="p-12 text-center">Carregando painel...</div>;
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500 p-6 md:p-12 max-w-7xl mx-auto">
@@ -89,8 +105,8 @@ const AdminDashboardPage = () => {
         <Card className="p-6 bg-gradient-to-br from-cyan-950/20 via-primary/5 to-transparent border-white/5 rounded-2xl relative overflow-hidden group">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Faturamento Total (Mês)</p>
-              <h3 className="text-2xl font-black text-primary">R$ 14.890,00</h3>
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Faturamento Total</p>
+              <h3 className="text-2xl font-black text-primary">{formatCurrency(metrics.totalRevenue)}</h3>
               <p className="text-[10px] text-green-500 font-bold flex items-center gap-1 mt-1.5">
                 <TrendingUp className="w-3.5 h-3.5" /> +18.7% de crescimento
               </p>
@@ -124,9 +140,9 @@ const AdminDashboardPage = () => {
         </Card>
 
         {[
-          { label: 'Clientes Ativos', value: '1.240', icon: Users, color: 'text-blue-400', bg: 'bg-blue-400/10', desc: '+42 novos esta semana' },
-          { label: 'Técnicos Credenciados', value: '48', icon: ShieldCheck, color: 'text-green-400', bg: 'bg-green-400/10', desc: '3 aguardando aprovação' },
-          { label: 'Chamados de Suporte', value: '4', icon: HelpCircle, color: 'text-yellow-500', bg: 'bg-yellow-500/10', desc: '2 marcados como urgentes' },
+          { label: 'Usuários Totais', value: metrics.totalUsers, icon: Users, color: 'text-blue-400', bg: 'bg-blue-400/10', desc: 'Cadastrados na base' },
+          { label: 'Serviços Ofertados', value: metrics.totalServices, icon: ShieldCheck, color: 'text-green-400', bg: 'bg-green-400/10', desc: 'Ativos na plataforma' },
+          { label: 'Chamados Abertos', value: metrics.openOrders, icon: HelpCircle, color: 'text-yellow-500', bg: 'bg-yellow-500/10', desc: 'Pedidos não finalizados' },
         ].map((stat, i) => (
           <Card key={i} className="p-6 bg-card/30 border-white/5 rounded-2xl hover:border-primary/20 transition-all">
             <div className="flex justify-between items-start">
@@ -149,11 +165,8 @@ const AdminDashboardPage = () => {
         <div className="lg:col-span-2 space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-bold flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-primary" /> Fila de Homologação (Técnicos)
+              <UserPlus className="w-5 h-5 text-primary" /> Cadastros Recentes
             </h2>
-            <Badge className="bg-primary/10 text-primary border-primary/20 rounded-md text-[10px] font-black uppercase">
-              {candidates.filter(c => c.status === 'pending').length} solicitações
-            </Badge>
           </div>
 
           <div className="space-y-4">
@@ -163,43 +176,18 @@ const AdminDashboardPage = () => {
                   <div className="space-y-1">
                     <div className="flex items-center gap-2.5">
                       <h4 className="font-bold text-base group-hover:text-primary transition-colors">{tech.name}</h4>
-                      {tech.status === 'approved' && (
-                        <Badge className="bg-green-500/10 text-green-400 border-green-500/20 text-[9px] font-bold">Aprovado</Badge>
-                      )}
-                      {tech.status === 'rejected' && (
-                        <Badge className="bg-red-500/10 text-red-400 border-red-500/20 text-[9px] font-bold">Recusado</Badge>
-                      )}
+                      <Badge className="bg-primary/10 text-primary text-[9px] font-bold">{tech.role.includes('professional') ? 'Especialista' : 'Cliente'}</Badge>
                     </div>
-                    <p className="text-xs text-primary font-semibold">{tech.specialty}</p>
+                    <p className="text-xs text-primary font-semibold">{tech.email}</p>
                     <div className="flex items-center gap-4 text-xs text-muted-foreground font-semibold pt-1">
-                      <span>Experiência: <span className="text-foreground">{tech.experience}</span></span>
-                      <span>•</span>
-                      <span>Cidade: <span className="text-foreground">{tech.city}</span></span>
+                      <span>Criado em: <span className="text-foreground">{new Date(tech.createdAt).toLocaleDateString()}</span></span>
                     </div>
                   </div>
-
-                  {/* Actions buttons */}
-                  {tech.status === 'pending' ? (
-                    <div className="flex gap-2 shrink-0 pt-3 sm:pt-0 border-t sm:border-0 border-white/5">
-                      <Button 
-                        onClick={() => handleApproveTech(tech.id, tech.name)} 
-                        size="sm" 
-                        className="bg-primary hover:bg-primary/95 text-primary-foreground font-bold rounded-xl text-xs gap-1 h-9 px-3"
-                      >
-                        <Check className="w-3.5 h-3.5" /> Aprovar
-                      </Button>
-                      <Button 
-                        onClick={() => handleRejectTech(tech.id, tech.name)} 
-                        size="sm" 
-                        variant="outline" 
-                        className="border-red-500/20 text-red-400 hover:bg-red-500/10 rounded-xl text-xs h-9 px-3"
-                      >
-                        <X className="w-3.5 h-3.5" /> Rejeitar
-                      </Button>
-                    </div>
-                  ) : (
-                    <span className="text-xs font-bold text-muted-foreground">Avaliado</span>
-                  )}
+                  <Link to="/admin/users">
+                    <Button size="sm" variant="outline" className="border-white/10 text-xs h-9">
+                      Ver Usuários
+                    </Button>
+                  </Link>
                 </div>
               </Card>
             ))}

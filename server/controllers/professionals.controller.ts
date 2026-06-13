@@ -261,3 +261,29 @@ export const deletePortfolioItem = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+// POST /api/professionals/:id/verify-request
+export const requestVerification = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { idDocumentUrl, selfieUrl } = req.body;
+
+    if (!idDocumentUrl || !selfieUrl) {
+      return res.status(400).json({ error: 'Missing required document fields' });
+    }
+
+    const existingProf = await db.select().from(professionals).where(eq(professionals.userId, id)).limit(1);
+    if (existingProf.length === 0) {
+      return res.status(404).json({ error: 'Professional not found' });
+    }
+
+    await db.update(professionals)
+      .set({ verificationStatus: 'pending', idDocumentUrl, selfieUrl })
+      .where(eq(professionals.userId, id));
+
+    res.json({ success: true, message: 'Verification requested successfully' });
+  } catch (error) {
+    console.error('Error requesting verification:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};

@@ -1,8 +1,8 @@
-import { getLocalOrders } from './localDb';
+
 import { Order } from '@/types';
 
-export const calculateUserLevelInfo = (userId: string, fetchedOrders?: Order[]) => {
-  const orders = fetchedOrders || getLocalOrders();
+export const calculateUserLevelInfo = (userId: string, fetchedOrders: Order[] = []) => {
+  const orders = fetchedOrders;
   const completedOrders = orders.filter(o => o.clientId === userId && o.status === 'completed');
   const count = completedOrders.length;
 

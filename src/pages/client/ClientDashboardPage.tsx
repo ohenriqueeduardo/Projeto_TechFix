@@ -8,7 +8,6 @@ import { formatCurrency } from '@/utils/formatters';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 import { toast } from 'sonner';
 
-import { getLocalOrders, getLocalServices } from '@/utils/localDb';
 import { calculateUserLevelInfo } from '@/utils/levels';
 import { User, Order, Service } from '@/types';
 
@@ -41,9 +40,6 @@ const ClientDashboardPage = () => {
           if (ordersResponse.ok) {
             const ordersData = await ordersResponse.json();
             setOrders(ordersData);
-          } else {
-            // Load local database on non-ok response
-            setOrders(getLocalOrders().filter(o => o.clientId === parsedUser.id));
           }
 
           // 2. Fetch Public Services for Recommendations
@@ -51,13 +47,9 @@ const ClientDashboardPage = () => {
           if (servicesResponse.ok) {
             const servicesData = await servicesResponse.json();
             setServices(servicesData.slice(0, 2)); // Show top 2 recommended services
-          } else {
-            setServices(getLocalServices().slice(0, 2));
           }
         } catch (error) {
-          console.warn('Error loading dashboard data from backend, loading locally:', error);
-          setOrders(getLocalOrders().filter(o => o.clientId === parsedUser.id));
-          setServices(getLocalServices().slice(0, 2));
+          console.warn('Error loading dashboard data from backend:', error);
         } finally {
           setIsLoading(false);
         }

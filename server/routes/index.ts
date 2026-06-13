@@ -8,6 +8,8 @@ import reviewsRoutes from './reviews.routes.js';
 import messagesRoutes from './messages.routes.js';
 import transactionsRoutes from './transactions.routes.js';
 import { paymentsRoutes } from './payments.routes.js';
+import notificationsRoutes from './notifications.routes.js';
+import adminRoutes from './admin.routes.js';
 
 export const apiRoutes = Router();
 
@@ -20,3 +22,5 @@ apiRoutes.use('/reviews', reviewsRoutes);
 apiRoutes.use('/messages', messagesRoutes);
 apiRoutes.use('/transactions', transactionsRoutes);
 apiRoutes.use('/payments', paymentsRoutes);
+apiRoutes.use('/admin', adminRoutes);
+apiRoutes.use('/notifications', notificationsRoutes);

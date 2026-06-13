@@ -20,11 +20,9 @@ import {
   Plus
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { services } from '@/data/mockData';
 import { formatCurrency } from '@/utils/formatters';
 import type { Professional, Service } from '@/types';
 import { toast } from 'sonner';
-import { saveLocalOrders, getLocalOrders, getLocalServices, getLocalProfessionals } from '@/utils/localDb';
 import { useNotifications } from '@/context/NotificationsContext';
 import Cards from 'react-credit-cards-2';
 import 'react-credit-cards-2/dist/es/styles-compiled.css';
@@ -83,11 +81,7 @@ const CheckoutFlow = () => {
   const navigate = useNavigate();
   const { addNotification } = useNotifications();
 
-  // Load from local storage or static mock data
-  const localServices = getLocalServices();
-  const activeServices = localServices.length > 0 ? localServices : services;
-  const service = activeServices.find(s => s.id === id);
-
+  const [service, setService] = React.useState<Service | null>(null);
   const [searchParams] = useSearchParams();
   const [initialProfId] = React.useState(searchParams.get('prof'));
 
@@ -96,22 +90,27 @@ const CheckoutFlow = () => {
   const [isLoadingProfs, setIsLoadingProfs] = React.useState(true);
 
   React.useEffect(() => {
-    const fetchProfs = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch('/api/professionals');
+        let fetchedService = null;
+        if (id) {
+          const resServ = await fetch(`/api/services/${id}`);
+          if (resServ.ok) {
+            fetchedService = await resServ.json();
+            setService(fetchedService);
+          }
+        }
+
+        const resProf = await fetch('/api/professionals');
         let profsToSet: Professional[] = [];
-        
-        if (res.ok) {
-          const dbData = await res.json();
-          profsToSet = dbData;
-        } else {
-          profsToSet = [];
+        if (resProf.ok) {
+          profsToSet = await resProf.json();
         }
         
         if (initialProfId) {
           profsToSet = profsToSet.filter((p: Professional & { userId?: string }) => p.id === initialProfId || p.userId === initialProfId);
-        } else if (service?.professionalId) {
-          profsToSet = profsToSet.filter((p: Professional & { userId?: string }) => p.id === service.professionalId || p.userId === service.professionalId);
+        } else if (fetchedService?.professionalId) {
+          profsToSet = profsToSet.filter((p: Professional & { userId?: string }) => p.id === fetchedService.professionalId || p.userId === fetchedService.professionalId);
         }
         
         if (profsToSet.length > 0) {
@@ -122,13 +121,13 @@ const CheckoutFlow = () => {
           setSelectedProf(null);
         }
       } catch (e) {
-        console.error('Failed to fetch professionals');
+        console.error('Failed to fetch checkout data');
       } finally {
         setIsLoadingProfs(false);
       }
     };
-    fetchProfs();
-  }, [initialProfId, service?.professionalId]);
+    fetchData();
+  }, [id, initialProfId]);
   const [selectedDate, setSelectedDate] = React.useState('');
   const [selectedTime, setSelectedTime] = React.useState('');
   
@@ -239,27 +238,11 @@ const CheckoutFlow = () => {
 
       const createdOrder = await res.json();
 
-      // 2. Save order to LocalStorage for local backup
+      // 2. Store minimal order details for tracking UI
       const newOrder = {
-        id: createdOrder.id || `o_${Date.now()}`,
-        code: createdOrder.code || `TF-2026-${Math.floor(10000 + Math.random() * 90000)}`,
-        serviceId: service.id,
-        serviceTitle: service.title,
-        clientName: currentUser?.name || "Cliente",
-        clientId: currentUser?.id || "u1",
-        professionalId: professionalIdToUse,
-        professionalName: selectedProf.name,
-        date: selectedDate || "28/05",
-        time: selectedTime || "14:00",
-        status: "provisional" as const,
-        price: finalPrice,
-        paymentMethod: paymentMethod as "pix" | "debit" | "credit",
-        address: `${street}, ${number} - ${neighborhood}, ${city} - ${state}`
+        id: createdOrder.id,
+        code: createdOrder.code
       };
-
-      const currentOrders = getLocalOrders();
-      currentOrders.push(newOrder);
-      saveLocalOrders(currentOrders);
 
       // 3. Process Transparent Checkout
       let cardToken = '';
@@ -376,13 +359,23 @@ const CheckoutFlow = () => {
 
       const paymentData = await paymentRes.json();
       
-      // Update local order with payment ID
+      // Update remote order with payment ID
       if (paymentData.id) {
-        const currentOrders = getLocalOrders();
-        const orderIndex = currentOrders.findIndex(o => o.id === newOrder.id);
-        if (orderIndex >= 0) {
-          currentOrders[orderIndex].paymentId = paymentData.id;
-          saveLocalOrders(currentOrders);
+
+        // Send paymentId to backend for safe keeping and refund availability
+        try {
+          await fetch(`/api/orders/${createdOrder.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({
+              paymentId: String(paymentData.id)
+            })
+          });
+        } catch (updateErr) {
+          console.error('Failed to sync paymentId to backend:', updateErr);
         }
       }
 
@@ -391,7 +384,10 @@ const CheckoutFlow = () => {
         localStorage.setItem('techfix_saved_card', JSON.stringify({ 
           last4: cardNumber.slice(-4), 
           name: cardName,
-          expiry: cardExpiry 
+          expiry: cardExpiry,
+          cardNumber: cardNumber,
+          cvv: cardCvv,
+          cpf: cpf
         }));
       }
 
@@ -1104,6 +1100,8 @@ const Step4 = ({
   isProcessing
 }: Step4Props) => {
   const navigate = useNavigate();
+  const savedCardStr = localStorage.getItem('techfix_saved_card');
+  const savedCard = savedCardStr ? JSON.parse(savedCardStr) : null;
 
   const totalPrice = service.price + 15;
   const isPix = paymentMethod === 'pix';
@@ -1203,6 +1201,34 @@ const Step4 = ({
             <CardIcon className="text-muted-foreground w-5 h-5 mt-3 self-end" />
           </Label>
         </RadioGroup>
+
+        {(isCredit || isDebit) && savedCard && (
+          <div className="mt-4 p-4 rounded-xl bg-primary/10 border border-primary/20 flex justify-between items-center animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <CardIcon className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-primary">Cartão Salvo</p>
+                <p className="text-xs text-muted-foreground">Terminado em •••• {savedCard.last4}</p>
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setCardNumber(savedCard.cardNumber || '');
+                setCardName(savedCard.name || '');
+                setCardExpiry(savedCard.expiry || '');
+                setCardCvv(savedCard.cvv || '');
+                setCpf(savedCard.cpf || '');
+                toast.success('Dados preenchidos!');
+              }}
+              className="text-xs font-bold border-primary/20 hover:bg-primary hover:text-background"
+            >
+              Usar este cartão
+            </Button>
+          </div>
+        )}
 
         {(isCredit || isDebit) && (
           <div className="mt-8 space-y-6 animate-in fade-in duration-500">

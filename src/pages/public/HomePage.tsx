@@ -24,7 +24,6 @@ import {
   Briefcase,
   MapPin
 } from 'lucide-react';
-import { getLocalServices, getLocalProfessionals } from '@/utils/localDb';
 import { Service, Professional } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/utils/formatters';
@@ -61,8 +60,27 @@ const HomePage = () => {
   const [isMobile, setIsMobile] = React.useState(false);
 
   React.useEffect(() => {
-    setLocalServices(getLocalServices() || []);
-    setLocalProfs(getLocalProfessionals() || []);
+    const fetchData = async () => {
+      try {
+        const [servicesRes, profsRes] = await Promise.all([
+          fetch('/api/services'),
+          fetch('/api/professionals')
+        ]);
+        
+        if (servicesRes.ok) {
+          const s = await servicesRes.json();
+          setLocalServices(s);
+        }
+        
+        if (profsRes.ok) {
+          const p = await profsRes.json();
+          setLocalProfs(p);
+        }
+      } catch (err) {
+        console.error('Failed to fetch home page data', err);
+      }
+    };
+    fetchData();
   }, []);
 
   // Track window size for responsive translation calculations

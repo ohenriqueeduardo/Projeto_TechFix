@@ -18,7 +18,6 @@ import {
   ChevronRight,
   TrendingUp
 } from 'lucide-react';
-import { getLocalProfessionals, getLocalServices } from '@/utils/localDb';
 import { Service, Professional } from '@/types';
 import { formatCurrency } from '@/utils/formatters';
 
@@ -30,17 +29,35 @@ const ProfessionalProfilePage = () => {
   const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
   const isProfessional = currentUser?.role === 'professional';
 
-  React.useEffect(() => {
-    const profs = getLocalProfessionals();
-    const foundProf = profs.find(p => p.id === id);
-    if (foundProf) {
-      setProfessional(foundProf);
+  const [isLoading, setIsLoading] = React.useState(true);
 
-      const allServices = getLocalServices();
-      const profServices = allServices.filter(s => s.professionalId === id);
-      setServices(profServices);
-    }
+  React.useEffect(() => {
+    const fetchData = async () => {
+      if (!id) return;
+      try {
+        const [profRes, servicesRes] = await Promise.all([
+          fetch(`/api/professionals/${id}`),
+          fetch(`/api/services?professionalId=${id}`)
+        ]);
+
+        if (profRes.ok) {
+          const profData = await profRes.json();
+          setProfessional(profData);
+        }
+        if (servicesRes.ok) {
+          const servicesData = await servicesRes.json();
+          setServices(servicesData);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
   }, [id]);
+
+  if (isLoading) return <div className="flex items-center gap-2 h-screen justify-center"><span className="h-4 w-4 border-2 border-t-primary rounded-full animate-spin"></span> Carregando perfil...</div>;
 
   if (!professional) {
     return (

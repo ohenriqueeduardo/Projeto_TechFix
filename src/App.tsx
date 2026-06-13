@@ -61,6 +61,7 @@ import AdminDashboardPage from "@/pages/admin/AdminDashboardPage";
 import AdminUsersPage from "@/pages/admin/AdminUsersPage";
 import AdminWithdrawalsPage from "@/pages/admin/AdminWithdrawalsPage";
 import AdminServicesPage from "@/pages/admin/AdminServicesPage";
+import OrderPrintPage from "@/pages/shared/OrderPrintPage";
 import NotFound from "@/pages/NotFound";
 import { useAutoLogout } from "@/hooks/useAutoLogout";
 
@@ -125,6 +126,9 @@ const App = () => (
               <Route path="/notificacoes" element={<ClientLayout />}>
                 <Route index element={<NotificationsPage />} />
               </Route>
+              
+              {/* Shared Routes */}
+              <Route path="/order/:id/print" element={<OrderPrintPage />} />
 
               {/* Professional Routes */}
               <Route path="/profissional" element={<ProfessionalLayout />}>

@@ -33,6 +33,9 @@ export const professionals = pgTable('professionals', {
   bio: text('bio'),
   availableDays: text('available_days').array().default(['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta']),
   availableTimes: text('available_times').array().default(['09:00', '10:00', '11:00', '14:00', '15:00', '16:00']),
+  verificationStatus: text('verification_status').notNull().default('unverified'), // 'unverified', 'pending', 'verified', 'rejected'
+  idDocumentUrl: text('id_document_url'),
+  selfieUrl: text('selfie_url'),
 });
 
 export const professionalPortfolioItems = pgTable('professional_portfolio_items', {
@@ -76,6 +79,7 @@ export const orders = pgTable('orders', {
   status: text('status').notNull(), // 'pending', 'scheduled', 'in_progress', 'completed', 'cancelled'
   price: real('price').notNull(),
   paymentMethod: text('payment_method').notNull(), // 'pix', 'debit', 'credit'
+  paymentId: text('payment_id'), // MercadoPago Payment ID
   address: text('address').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
@@ -127,5 +131,15 @@ export const verificationCodes = pgTable('verification_codes', {
   email: text('email').notNull(),
   code: text('code').notNull(),
   expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const notifications = pgTable('notifications', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  message: text('message').notNull(),
+  type: text('type').notNull().default('info'), // 'info', 'success', 'warning', 'error'
+  read: integer('read').notNull().default(0), // 0 for false, 1 for true
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });

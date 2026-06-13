@@ -3,40 +3,43 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Star, Clock, Shield, ArrowLeft, CheckCircle2, UserCheck } from 'lucide-react';
-import { services } from '@/data/mockData';
 import { formatCurrency } from '@/utils/formatters';
 import { Professional } from '@/types';
 
 const ServiceDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const service = services.find(s => s.id === id);
-  const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
-  const isProfessional = currentUser?.role === 'professional';
-
+  const [service, setService] = useState<any>(null);
   const [dbProfessionals, setDbProfessionals] = useState<Professional[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProfessionals = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch('/api/professionals');
-        if (res.ok) {
-          const dbData = await res.json();
+        const [profRes, serviceRes] = await Promise.all([
+          fetch('/api/professionals'),
+          fetch(`/api/services/${id}`)
+        ]);
+
+        if (profRes.ok) {
+          const dbData = await profRes.json();
           setDbProfessionals(dbData);
-        } else {
-          setDbProfessionals([]);
+        }
+        
+        if (serviceRes.ok) {
+          const serviceData = await serviceRes.json();
+          setService(serviceData);
         }
       } catch (error) {
-        console.error("Failed to fetch professionals:", error);
-        setDbProfessionals([]);
+        console.error("Failed to fetch data:", error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchProfessionals();
-  }, []);
+    fetchData();
+  }, [id]);
 
+  if (isLoading) return <div className="flex items-center gap-2 h-32 justify-center"><span className="h-4 w-4 border-2 border-t-primary rounded-full animate-spin"></span> Carregando detalhes...</div>;
   if (!service) return <div>Serviço não encontrado</div>;
 
   return (

@@ -1,7 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Notification } from '@/types';
-import { getLocalNotifications, saveLocalNotifications } from '@/utils/localDb';
 
 interface NotificationsContextType {
   notifications: Notification[];
@@ -18,42 +17,119 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
-    setNotifications(getLocalNotifications());
+    const fetchNotifications = async () => {
+      const userStr = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      if (!userStr || !token) return;
+      
+      try {
+        const user = JSON.parse(userStr);
+        const res = await fetch(`/api/notifications/${user.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          // Transform db fields (read: 0/1) to context fields (unread: boolean)
+          setNotifications(data.map((n: any) => ({
+            id: n.id,
+            title: n.title,
+            desc: n.message,
+            time: new Date(n.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+            date: new Date(n.createdAt).toISOString().split('T')[0],
+            type: n.type,
+            unread: n.read === 0
+          })));
+        }
+      } catch (e) {
+        console.error('Failed to fetch notifications', e);
+      }
+    };
+    fetchNotifications();
+    
+    // Polling every 30s as a simple realtime alternative
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const unreadCount = notifications.filter(n => n.unread).length;
 
-  const markAsRead = (id: string) => {
-    const updated = notifications.map(n => n.id === id ? { ...n, unread: false } : n);
-    setNotifications(updated);
-    saveLocalNotifications(updated);
+  const markAsRead = async (id: string) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      await fetch(`/api/notifications/${id}/read`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const markAllAsRead = () => {
-    const updated = notifications.map(n => ({ ...n, unread: false }));
-    setNotifications(updated);
-    saveLocalNotifications(updated);
+    notifications.forEach(n => {
+      if (n.unread) markAsRead(n.id);
+    });
   };
 
-  const addNotification = (title: string, desc: string, type: "info" | "success" | "warning" | "error" = "info") => {
-    const newNote: Notification = {
-      id: `n_${Date.now()}`,
-      title,
-      desc,
-      time: "Agora mesmo",
-      unread: true,
-      type,
-      date: new Date().toISOString().split('T')[0]
-    };
-    const updated = [newNote, ...notifications];
-    setNotifications(updated);
-    saveLocalNotifications(updated);
+  const addNotification = async (title: string, desc: string, type: "info" | "success" | "warning" | "error" = "info") => {
+    const userStr = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    if (!userStr || !token) return;
+    
+    try {
+      const user = JSON.parse(userStr);
+      const res = await fetch('/api/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          title,
+          message: desc,
+          type
+        })
+      });
+      if (res.ok) {
+        const n = await res.json();
+        const newNote: Notification = {
+          id: n.id,
+          title: n.title,
+          desc: n.message,
+          time: new Date(n.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+          date: new Date(n.createdAt).toISOString().split('T')[0],
+          type: n.type,
+          unread: n.read === 0
+        };
+        setNotifications(prev => [newNote, ...prev]);
+      }
+    } catch (e) {
+      console.error(e);
+    }
   };
 
-  const deleteNotification = (id: string) => {
-    const updated = notifications.filter(n => n.id !== id);
-    setNotifications(updated);
-    saveLocalNotifications(updated);
+  const deleteNotification = async (id: string) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      await fetch(`/api/notifications/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   return (

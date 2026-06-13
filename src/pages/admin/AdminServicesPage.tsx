@@ -16,7 +16,6 @@ import {
   Sliders,
   Check
 } from 'lucide-react';
-import { services as initialServices } from '@/data/mockData';
 import { toast } from 'sonner';
 
 interface CategoryItem {
@@ -26,17 +25,57 @@ interface CategoryItem {
   status: 'active' | 'inactive';
 }
 
-const AdminServicesPage = () => {
-  const [categories, setCategories] = React.useState<CategoryItem[]>([
-    { id: 'cat1', name: 'Manutenção', count: 32, status: 'active' },
-    { id: 'cat2', name: 'Montagem', count: 18, status: 'active' },
-    { id: 'cat3', name: 'Redes', count: 12, status: 'active' },
-    { id: 'cat4', name: 'Software', count: 24, status: 'active' },
-    { id: 'cat5', name: 'Smartphones', count: 0, status: 'inactive' }
-  ]);
+interface ServiceItem {
+  id: string;
+  title: string;
+  category: string;
+  price: number;
+  image?: string;
+}
 
-  const [services, setServices] = React.useState(initialServices);
+const AdminServicesPage = () => {
+  const [categories, setCategories] = React.useState<CategoryItem[]>([]);
+  const [services, setServices] = React.useState<ServiceItem[]>([]);
   const [newCatName, setNewCatName] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const res = await fetch('/api/services');
+        if (res.ok) {
+          const data = await res.json();
+          setServices(data.map((s: { id: string; title: string; category: string; price: number; image?: string }) => ({
+            id: s.id,
+            title: s.title,
+            category: s.category || 'Outros',
+            price: s.price,
+            image: s.image
+          })));
+
+          // Group by category
+          const catMap = new Map<string, number>();
+          data.forEach((s: { category?: string }) => {
+            const c = s.category || 'Outros';
+            catMap.set(c, (catMap.get(c) || 0) + 1);
+          });
+
+          const catList: CategoryItem[] = Array.from(catMap.entries()).map(([name, count], index) => ({
+            id: `cat_${index}`,
+            name,
+            count,
+            status: 'active'
+          }));
+          setCategories(catList);
+        }
+      } catch (e) {
+        console.error('Failed to fetch services:', e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchServices();
+  }, []);
 
   const handleToggleCategory = (id: string, name: string, currentStatus: 'active' | 'inactive') => {
     const nextStatus = currentStatus === 'active' ? 'inactive' : 'active';
@@ -67,6 +106,8 @@ const AdminServicesPage = () => {
     setNewCatName('');
     toast.success(`Categoria '${newCatName}' criada com sucesso!`);
   };
+
+  if (isLoading) return <div className="p-12 text-center">Carregando serviços...</div>;
 
   return (
     <div className="space-y-10 animate-page-entrance max-w-7xl mx-auto">

@@ -17,7 +17,6 @@ import {
   CheckCircle2,
   FolderOpen
 } from 'lucide-react';
-import { getLocalServices, getLocalProfessionals } from '@/utils/localDb';
 import { Service, Professional } from '@/types';
 import { formatCurrency } from '@/utils/formatters';
 
@@ -30,10 +29,31 @@ const BuscaPage = () => {
   const [selectedCategory, setSelectedCategory] = React.useState<string>('todos');
   const [services, setServices] = React.useState<Service[]>([]);
   const [localProfs, setLocalProfs] = React.useState<Professional[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    setServices(getLocalServices() || []);
-    setLocalProfs(getLocalProfessionals() || []);
+    const fetchData = async () => {
+      try {
+        const [servicesRes, profsRes] = await Promise.all([
+          fetch('/api/services'),
+          fetch('/api/professionals')
+        ]);
+        
+        if (servicesRes.ok) {
+          const data = await servicesRes.json();
+          setServices(data);
+        }
+        if (profsRes.ok) {
+          const data = await profsRes.json();
+          setLocalProfs(data);
+        }
+      } catch (err) {
+        console.error('Error fetching data:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
   // Set searchQuery when URL parameter changes (e.g. from homepage click)
@@ -185,7 +205,13 @@ const BuscaPage = () => {
         {/* Results Info */}
         <div className="flex justify-between items-center text-xs text-muted-foreground font-medium px-1">
           <span>
-            Mostrando <strong className="text-foreground">{filteredServices.length}</strong> {filteredServices.length === 1 ? 'serviço encontrado' : 'serviços encontrados'}.
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded-full border-2 border-t-primary border-white/5 animate-spin"></span> Carregando...
+              </span>
+            ) : (
+              <>Mostrando <strong className="text-foreground">{filteredServices.length}</strong> {filteredServices.length === 1 ? 'serviço encontrado' : 'serviços encontrados'}.</>
+            )}
           </span>
         </div>
 

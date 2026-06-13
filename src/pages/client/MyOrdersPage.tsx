@@ -1,5 +1,4 @@
 import React from 'react';
-import { getLocalOrders } from '@/utils/localDb';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -16,7 +15,8 @@ import {
   Compass, 
   DollarSign, 
   Activity,
-  Sparkles
+  Sparkles,
+  Printer
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
 import { Link } from 'react-router-dom';
@@ -50,11 +50,9 @@ const MyOrdersPage = () => {
         if (res.ok) {
           const data = await res.json();
           setOrders(data);
-        } else {
-          setOrders(getLocalOrders().filter(o => o.clientId === currentUser.id));
         }
       } catch (error) {
-        setOrders(getLocalOrders().filter(o => o.clientId === currentUser.id));
+        console.error('Failed to fetch orders:', error);
       } finally {
         setIsLoading(false);
       }
@@ -202,6 +200,17 @@ const MyOrdersPage = () => {
                   </div>
 
                   <div className="flex gap-2 w-full sm:w-auto">
+                    {(order.status === 'scheduled' || order.status === 'in_progress' || order.status === 'completed') && (
+                      <Button 
+                        onClick={() => window.open(`/order/${order.id}/print`, '_blank')} 
+                        variant="ghost" 
+                        size="icon" 
+                        title="Imprimir O.S."
+                        className="hidden sm:flex rounded-xl hover:bg-primary/10 hover:text-primary w-10 h-10 border border-transparent hover:border-primary/20"
+                      >
+                        <Printer className="w-4 h-4" />
+                      </Button>
+                    )}
                     <Link to={`/cliente/pedido/${order.id}/status`}>
                       <Button variant="ghost" size="icon" className="hidden sm:flex rounded-xl hover:bg-primary hover:text-background w-10 h-10">
                         <ChevronRight className="w-4 h-4" />

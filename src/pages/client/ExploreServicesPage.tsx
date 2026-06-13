@@ -3,7 +3,6 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Star, SlidersHorizontal, Clock, ArrowRight } from 'lucide-react';
-import { getLocalServices, getLocalProfessionals } from '@/utils/localDb';
 import { Service, Professional } from '@/types';
 import { formatCurrency } from '@/utils/formatters';
 import { 
@@ -27,10 +26,31 @@ const ExploreServicesPage = () => {
 
   const [servicesList, setServicesList] = React.useState<Service[]>([]);
   const [profsList, setProfsList] = React.useState<Professional[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    setServicesList(getLocalServices() || []);
-    setProfsList(getLocalProfessionals() || []);
+    const fetchData = async () => {
+      try {
+        const [servicesRes, profsRes] = await Promise.all([
+          fetch('/api/services'),
+          fetch('/api/professionals')
+        ]);
+        
+        if (servicesRes.ok) {
+          const data = await servicesRes.json();
+          setServicesList(data);
+        }
+        if (profsRes.ok) {
+          const data = await profsRes.json();
+          setProfsList(data);
+        }
+      } catch (err) {
+        console.error('Error fetching explore data:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
   // Update searchTerm when URL query changes
@@ -191,8 +211,16 @@ const ExploreServicesPage = () => {
       {/* Results Header Info */}
       <div className="flex items-center justify-between text-xs text-muted-foreground font-medium px-1 relative z-10">
         <p>
-          Mostrando <span className="text-foreground font-bold">{sortedServices.length}</span> resultados
-          {searchTerm && <span> para "<span className="text-primary">{searchTerm}</span>"</span>}
+          {isLoading ? (
+            <span className="flex items-center gap-2">
+              <span className="h-3 w-3 rounded-full border-2 border-t-primary border-white/5 animate-spin"></span> Carregando...
+            </span>
+          ) : (
+            <>
+              Mostrando <span className="text-foreground font-bold">{sortedServices.length}</span> resultados
+              {searchTerm && <span> para "<span className="text-primary">{searchTerm}</span>"</span>}
+            </>
+          )}
         </p>
       </div>
 

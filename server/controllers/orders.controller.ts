@@ -3,6 +3,18 @@ import { db } from '../../src/db/index.js';
 import { orders, transactions } from '../../src/db/schema.js';
 import { eq, and, lt } from 'drizzle-orm';
 import crypto from 'crypto';
+import { MercadoPagoConfig, PaymentRefund } from 'mercadopago';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const rawToken = process.env.MERCADO_PAGO_ACCESS_TOKEN || process.env.MERCADOPAGO_ACCESS_TOKEN || '';
+const validToken = rawToken.trim();
+const accessToken = validToken || 'TEST-4714972698787037-061309-4bdf57c87c7a6b1886c196c3b104cf6d-1730247701';
+
+const mpClient = new MercadoPagoConfig({
+  accessToken: accessToken,
+});
 
 // Helper to clean up expired provisional orders
 const cleanupExpiredProvisionalOrders = async () => {
@@ -105,6 +117,7 @@ export const createOrder = async (req: Request, res: Response) => {
       status: 'provisional',
       price: Number(price),
       paymentMethod,
+      paymentId: req.body.paymentId || null,
       address,
       createdAt: new Date()
     }).returning();
@@ -149,6 +162,7 @@ export const updateOrder = async (req: Request, res: Response) => {
         ...(time !== undefined && { time }),
         ...(price !== undefined && { price: Number(price) }),
         ...(paymentMethod !== undefined && { paymentMethod }),
+        ...(req.body.paymentId !== undefined && { paymentId: req.body.paymentId }),
         ...(address !== undefined && { address }),
         ...(status !== undefined && { status }),
       })
@@ -182,6 +196,28 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       .set({ status })
       .where(eq(orders.id, id))
       .returning();
+
+    // Handle Refunds for cancelled orders
+    if (status === 'cancelled') {
+      const order = existingOrder[0];
+      // Only attempt refund if there's a paymentId and payment method is online
+      if (order.paymentId && ['pix', 'credit', 'debit'].includes(order.paymentMethod)) {
+        try {
+          console.log(`[Mercado Pago] Attempting refund for paymentId: ${order.paymentId} (Order: ${order.code})`);
+          const refund = new PaymentRefund(mpClient);
+          await refund.create({ payment_id: Number(order.paymentId) });
+          console.log(`[Mercado Pago] Refund successful for order ${order.code}`);
+        } catch (mpError: any) {
+          console.error(`[Mercado Pago] Refund failed for order ${order.code}:`, mpError.message || mpError);
+          // Note: We log the error but still allow the cancellation to go through.
+        }
+      }
+      
+      // Update pending transaction to failed if cancelled
+      await db.update(transactions)
+        .set({ status: 'failed' })
+        .where(and(eq(transactions.orderId, id), eq(transactions.status, 'pending')));
+    }
 
     // If order is completed, release the funds to the professional
     if (status === 'completed') {

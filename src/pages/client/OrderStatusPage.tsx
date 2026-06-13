@@ -16,7 +16,6 @@ import {
   AlertTriangle,
   Star
 } from 'lucide-react';
-import { getLocalOrders, saveLocalOrders, getLocalProfessionals } from '@/utils/localDb';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
 import { Order } from '@/types';

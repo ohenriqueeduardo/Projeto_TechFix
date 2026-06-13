@@ -1,6 +1,5 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getLocalOrders } from '@/utils/localDb';
 import { formatCurrency } from '@/utils/formatters';
 import { Order } from '@/types';
 import logo from '@/assets/logo.png';
@@ -11,26 +10,18 @@ const OrderReceiptPage = () => {
   const [order, setOrder] = React.useState<Order | null>(null);
 
   React.useEffect(() => {
-    // 1. Fetch from local first for speed
-    const allOrders = getLocalOrders();
-    const found = allOrders.find((o) => o.id === id);
-    if (found) {
-      setOrder(found);
-    } else {
-      // 2. Fetch from API if not local
-      const token = localStorage.getItem('token');
-      fetch(`/api/orders/${id}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+    const token = localStorage.getItem('token');
+    fetch(`/api/orders/${id}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Não encontrado');
+        return res.json();
       })
-        .then((res) => {
-          if (!res.ok) throw new Error('Não encontrado');
-          return res.json();
-        })
-        .then((data) => setOrder(data))
-        .catch(() => {
-          setOrder(null);
-        });
-    }
+      .then((data) => setOrder(data))
+      .catch(() => {
+        setOrder(null);
+      });
   }, [id]);
 
   if (!order) {

@@ -2,14 +2,24 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Award, UserCheck, ShieldCheck, CheckCircle2, Star, Sparkles } from 'lucide-react';
-import { getLocalProfessionals } from '@/utils/localDb';
 import { Professional } from '@/types';
 
 const VerifiedSpecialistsPage = () => {
   const [localProfs, setLocalProfs] = React.useState<Professional[]>([]);
 
   React.useEffect(() => {
-    setLocalProfs(getLocalProfessionals() || []);
+    const fetchProfs = async () => {
+      try {
+        const res = await fetch('/api/professionals');
+        if (res.ok) {
+          const data = await res.json();
+          setLocalProfs(data);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchProfs();
   }, []);
 
   return (
