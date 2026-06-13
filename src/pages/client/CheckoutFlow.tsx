@@ -262,6 +262,8 @@ const CheckoutFlow = () => {
 
       // 3. Process Transparent Checkout
       let cardToken = '';
+      let finalPaymentMethodId = paymentMethod;
+
       if (isCredit || paymentMethod === 'debit') {
         try {
           const expirationMonth = cardExpiry.split('/')[0]?.trim();
@@ -271,8 +273,24 @@ const CheckoutFlow = () => {
           }
 
           await loadMercadoPago();
-          const WindowMP = window as unknown as { MercadoPago: new (key: string) => { createCardToken: (p: Record<string, unknown>) => Promise<{ id?: string }> } };
+          const WindowMP = window as unknown as { MercadoPago: new (key: string) => { 
+            createCardToken: (p: Record<string, unknown>) => Promise<{ id?: string }>;
+            getPaymentMethods: (p: { bin: string }) => Promise<{ results: Array<{ id: string }> }>;
+          } };
           const mp = new WindowMP.MercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY || 'TEST-42f268d3-3ae3-4cbd-81e6-33e507dd8645');
+          
+          const bin = cardNumber.replace(/\D/g, '').substring(0, 6);
+          if (bin.length >= 6) {
+            const pmRes = await mp.getPaymentMethods({ bin });
+            if (pmRes.results && pmRes.results.length > 0) {
+              finalPaymentMethodId = pmRes.results[0].id;
+            } else {
+              finalPaymentMethodId = 'master'; // fallback
+            }
+          } else {
+            finalPaymentMethodId = 'master'; // fallback
+          }
+
           const tokenRes = await mp.createCardToken({
             cardNumber: cardNumber.replace(/\D/g, ''),
             cardholderName: cardName,
@@ -304,7 +322,7 @@ const CheckoutFlow = () => {
           transaction_amount: finalPrice,
           description: service.title,
           order_id: createdOrder.id,
-          payment_method_id: paymentMethod === 'credit' ? 'master' : paymentMethod, // Placeholder for credit method if needed
+          payment_method_id: finalPaymentMethodId,
           token: cardToken,
           installments: Number(installments) || 1,
           payer: {
