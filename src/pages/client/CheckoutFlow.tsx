@@ -89,7 +89,7 @@ const CheckoutFlow = () => {
   const service = activeServices.find(s => s.id === id);
 
   const [searchParams] = useSearchParams();
-  const requestedProfId = searchParams.get('prof');
+  const [initialProfId] = React.useState(searchParams.get('prof'));
 
   const [activeProfessionals, setActiveProfessionals] = React.useState<Professional[]>([]);
   const [selectedProf, setSelectedProf] = React.useState<Professional | null>(null);
@@ -108,8 +108,8 @@ const CheckoutFlow = () => {
           profsToSet = [];
         }
         
-        if (requestedProfId) {
-          profsToSet = profsToSet.filter((p: Professional & { userId?: string }) => p.id === requestedProfId || p.userId === requestedProfId);
+        if (initialProfId) {
+          profsToSet = profsToSet.filter((p: Professional & { userId?: string }) => p.id === initialProfId || p.userId === initialProfId);
         } else if (service?.professionalId) {
           profsToSet = profsToSet.filter((p: Professional & { userId?: string }) => p.id === service.professionalId || p.userId === service.professionalId);
         }
@@ -128,7 +128,7 @@ const CheckoutFlow = () => {
       }
     };
     fetchProfs();
-  }, [requestedProfId, service?.professionalId]);
+  }, [initialProfId, service?.professionalId]);
   const [selectedDate, setSelectedDate] = React.useState('');
   const [selectedTime, setSelectedTime] = React.useState('');
   
