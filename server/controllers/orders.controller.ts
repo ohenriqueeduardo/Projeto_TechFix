@@ -107,7 +107,7 @@ export const createOrder = async (req: Request, res: Response) => {
     const newOrder = await db.insert(orders).values({
       id: orderId,
       code,
-      serviceId: serviceId || null,
+      serviceId: serviceId === 's_custom' ? null : (serviceId || null),
       serviceTitle,
       clientId,
       professionalId,
