@@ -62,8 +62,14 @@ import AdminUsersPage from "@/pages/admin/AdminUsersPage";
 import AdminWithdrawalsPage from "@/pages/admin/AdminWithdrawalsPage";
 import AdminServicesPage from "@/pages/admin/AdminServicesPage";
 import NotFound from "@/pages/NotFound";
+import { useAutoLogout } from "@/hooks/useAutoLogout";
 
 const queryClient = new QueryClient();
+
+const AutoLogoutHandler = () => {
+  useAutoLogout();
+  return null;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -72,6 +78,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster position="top-center" richColors />
           <BrowserRouter>
+            <AutoLogoutHandler />
             <ScrollToTop />
             <Routes>
               {/* Public Routes */}

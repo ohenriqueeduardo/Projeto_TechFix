@@ -245,7 +245,7 @@ const CheckoutFlow = () => {
         professionalName: selectedProf.name,
         date: selectedDate || "28/05",
         time: selectedTime || "14:00",
-        status: "pending" as const,
+        status: "provisional" as const,
         price: finalPrice,
         paymentMethod: paymentMethod as "pix" | "debit" | "credit",
         address: `${street}, ${number} - ${neighborhood}, ${city} - ${state}`

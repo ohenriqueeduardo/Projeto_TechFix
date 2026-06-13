@@ -67,12 +67,14 @@ const MyOrdersPage = () => {
     switch (status) {
       case 'completed': return <CheckCircle2 className="w-4 h-4 text-green-500" />;
       case 'cancelled': return <XCircle className="w-4 h-4 text-red-500" />;
+      case 'provisional': return <Clock className="w-4 h-4 text-orange-500" />;
       default: return <Clock className="w-4 h-4 text-blue-500" />;
     }
   };
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
+      provisional: 'Aguardando Pagamento',
       pending: 'Pendente',
       scheduled: 'Agendado',
       in_progress: 'Em Andamento',

@@ -1,12 +1,34 @@
 import { Request, Response } from 'express';
 import { db } from '../../src/db/index.js';
 import { orders, transactions } from '../../src/db/schema.js';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, lt } from 'drizzle-orm';
 import crypto from 'crypto';
+
+// Helper to clean up expired provisional orders
+const cleanupExpiredProvisionalOrders = async () => {
+  try {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const expiredOrders = await db.select({ id: orders.id })
+      .from(orders)
+      .where(and(eq(orders.status, 'provisional'), lt(orders.createdAt, twentyFourHoursAgo)));
+
+    if (expiredOrders.length > 0) {
+      const orderIds = expiredOrders.map(o => o.id);
+      for (const oId of orderIds) {
+        await db.delete(transactions).where(eq(transactions.orderId, oId));
+        await db.delete(orders).where(eq(orders.id, oId));
+      }
+      console.log(`Cleaned up ${orderIds.length} expired provisional orders.`);
+    }
+  } catch (err) {
+    console.error('Error cleaning up expired orders:', err);
+  }
+};
 
 // GET /api/orders
 export const getOrders = async (req: Request, res: Response) => {
   try {
+    await cleanupExpiredProvisionalOrders();
     const { clientId, professionalId } = req.query;
 
     const query = db.select().from(orders);
@@ -36,6 +58,7 @@ export const getOrders = async (req: Request, res: Response) => {
 // GET /api/orders/:id
 export const getOrderById = async (req: Request, res: Response) => {
   try {
+    await cleanupExpiredProvisionalOrders();
     const id = req.params.id as string;
     const orderList = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
 
@@ -79,7 +102,7 @@ export const createOrder = async (req: Request, res: Response) => {
       professionalId,
       date,
       time,
-      status: 'pending',
+      status: 'provisional',
       price: Number(price),
       paymentMethod,
       address,

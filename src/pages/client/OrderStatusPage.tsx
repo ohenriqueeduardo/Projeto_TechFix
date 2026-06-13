@@ -200,7 +200,7 @@ const OrderStatusPage = () => {
         </div>
         <div className="text-left md:text-right shrink-0">
           <Badge className="bg-primary/20 text-primary border-primary/30 text-xs px-3 py-1 font-bold uppercase rounded-full">
-            {order.status === 'completed' ? 'Concluído' : order.status === 'cancelled' ? 'Cancelado' : 'Ativo'}
+            {order.status === 'completed' ? 'Concluído' : order.status === 'cancelled' ? 'Cancelado' : order.status === 'provisional' ? 'Aguard. Pagamento' : 'Ativo'}
           </Badge>
           <p className="text-xl font-black text-primary mt-1.5">{formatCurrency(order.price)}</p>
         </div>
