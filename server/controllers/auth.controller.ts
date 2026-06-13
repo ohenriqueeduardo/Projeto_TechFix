@@ -28,11 +28,7 @@ export const register = async (req: Request, res: Response) => {
   try {
     const { name, email, password, code, role, avatar, phone, dateOfBirth, cep, street, number, complement, neighborhood, city, state } = req.body;
 
-    // Check if user already exists
-    const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    if (existingUser.length > 0) {
-      return res.status(400).json({ error: 'Este e-mail já está cadastrado no sistema.' });
-    }
+    const userRole = role || 'client';
 
     // Verify verification code
     const latestCodes = await db.select()
@@ -53,44 +49,66 @@ export const register = async (req: Request, res: Response) => {
     // Delete used code(s) for this email
     await db.delete(verificationCodes).where(eq(verificationCodes.email, email));
 
-    const userId = `u_${crypto.randomBytes(4).toString('hex')}`;
-    const hashedPassword = hashPassword(password);
-    const userRole = role || 'client';
+    // Check if user already exists
+    const existingUserList = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    let finalUser;
 
-    const newUser = await db.insert(users).values({
-      id: userId,
-      name,
-      email,
-      password: hashedPassword,
-      role: userRole,
-      avatar: avatar || null,
-      status: 'active',
-      phone: phone || null,
-      dateOfBirth: dateOfBirth || null,
-      cep: cep || null,
-      street: street || null,
-      number: number || null,
-      complement: complement || null,
-      neighborhood: neighborhood || null,
-      city: city || null,
-      state: state || null,
-      createdAt: new Date(),
-    }).returning();
+    if (existingUserList.length > 0) {
+      const existingUser = existingUserList[0];
+      const currentRoles = existingUser.role.split(',');
+      if (currentRoles.includes(userRole)) {
+        return res.status(400).json({ error: 'Este e-mail já possui uma conta com esse perfil.' });
+      }
+
+      // Upgrade Account
+      const newRoleString = `${existingUser.role},${userRole}`;
+      const updatedUser = await db.update(users)
+        .set({ role: newRoleString })
+        .where(eq(users.id, existingUser.id))
+        .returning();
+      
+      finalUser = updatedUser[0];
+    } else {
+      const userId = `u_${crypto.randomBytes(4).toString('hex')}`;
+      const hashedPassword = hashPassword(password);
+
+      const newUser = await db.insert(users).values({
+        id: userId,
+        name,
+        email,
+        password: hashedPassword,
+        role: userRole,
+        avatar: avatar || null,
+        status: 'active',
+        phone: phone || null,
+        dateOfBirth: dateOfBirth || null,
+        cep: cep || null,
+        street: street || null,
+        number: number || null,
+        complement: complement || null,
+        neighborhood: neighborhood || null,
+        city: city || null,
+        state: state || null,
+        createdAt: new Date(),
+      }).returning();
+      
+      finalUser = newUser[0];
+    }
 
     // Generate JWT Token (1 hour session duration limit)
     const token = jwt.sign(
-      { id: newUser[0].id, email: newUser[0].email, role: newUser[0].role },
+      { id: finalUser.id, email: finalUser.email, role: finalUser.role },
       JWT_SECRET,
-      { expiresIn: '2h' } // Limited session duration
+      { expiresIn: '2h' }
     );
 
-    const { password: _, ...userWithoutPassword } = newUser[0];
+    const { password: _, ...userWithoutPassword } = finalUser;
 
     // Send welcome email asynchronously
     sendWelcomeEmail(email, name).catch(console.error);
 
     res.status(201).json({
-      message: 'User registered successfully',
+      message: 'User registered/upgraded successfully',
       user: userWithoutPassword,
       token,
     });
@@ -277,7 +295,8 @@ export const completeProfile = async (req: Request, res: Response) => {
 // POST /api/auth/google
 export const googleLogin = async (req: Request, res: Response) => {
   try {
-    const { token } = req.body;
+    const { token, role } = req.body;
+    const userRole = role || 'client';
 
     // Fetch user profile from Google using the access token
     const googleRes = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`);
@@ -308,6 +327,17 @@ export const googleLogin = async (req: Request, res: Response) => {
       if (user.status !== 'active') {
         return res.status(403).json({ error: 'Sua conta foi desativada.' });
       }
+
+      // Account Upgrade
+      const currentRoles = user.role.split(',');
+      if (!currentRoles.includes(userRole)) {
+        const newRoleString = `${user.role},${userRole}`;
+        const updatedUser = await db.update(users)
+          .set({ role: newRoleString })
+          .where(eq(users.id, user.id))
+          .returning();
+        user = updatedUser[0];
+      }
     } else {
       isNewUser = true;
       const userId = `u_${crypto.randomBytes(4).toString('hex')}`;
@@ -319,7 +349,7 @@ export const googleLogin = async (req: Request, res: Response) => {
         name: name || 'Usuário Google',
         email,
         password: hashedPassword,
-        role: 'client',
+        role: userRole,
         avatar: picture || `https://api.dicebear.com/7.x/adventurer/svg?seed=${email}`,
         status: 'active',
         createdAt: new Date(),
@@ -356,12 +386,18 @@ export const googleLogin = async (req: Request, res: Response) => {
 // POST /api/auth/send-verification-code
 export const sendVerificationCode = async (req: Request, res: Response) => {
   try {
-    const { email } = req.body;
+    const { email, role } = req.body;
 
     // Check if email already exists
     const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
     if (existingUser.length > 0) {
-      return res.status(400).json({ error: 'Este e-mail já está cadastrado no sistema.' });
+      if (!role) {
+        return res.status(400).json({ error: 'Este e-mail já está cadastrado no sistema.' });
+      }
+      const currentRoles = existingUser[0].role.split(',');
+      if (currentRoles.includes(role)) {
+        return res.status(400).json({ error: 'Este e-mail já possui uma conta com esse perfil.' });
+      }
     }
 
     // Generate random 6-digit OTP code

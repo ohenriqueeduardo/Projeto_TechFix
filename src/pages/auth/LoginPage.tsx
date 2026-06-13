@@ -56,7 +56,13 @@ const LoginPage = () => {
         navigate('/completar-cadastro');
       } else {
         toast.success('Acesso concedido via Google! Bem-vindo de volta.');
-        navigate('/cliente/dashboard');
+        if (data.user.role.includes('admin')) {
+          navigate('/admin/dashboard');
+        } else if (data.user.role.includes('professional')) {
+          navigate('/profissional/dashboard');
+        } else {
+          navigate('/cliente/dashboard');
+        }
       }
     } catch (error: unknown) {
       console.error('Erro no login social do Google:', error);
@@ -142,9 +148,9 @@ const LoginPage = () => {
         return;
       }
 
-      if (userRole === 'admin') {
+      if (userRole.includes('admin')) {
         navigate('/admin/dashboard');
-      } else if (userRole === 'professional') {
+      } else if (userRole.includes('professional')) {
         navigate('/profissional/dashboard');
       } else {
         navigate('/cliente/dashboard');

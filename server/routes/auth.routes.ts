@@ -55,12 +55,14 @@ const socialLoginSchema = z.object({
 const googleLoginSchema = z.object({
   body: z.object({
     token: z.string({ required_error: 'Token is required' }),
+    role: z.enum(['client', 'professional', 'admin']).optional(),
   }),
 });
 
 const sendVerificationCodeSchema = z.object({
   body: z.object({
     email: z.string({ required_error: 'Email is required' }).email('Invalid email address'),
+    role: z.enum(['client', 'professional', 'admin']).optional(),
   }),
 });
 

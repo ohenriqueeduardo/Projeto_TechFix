@@ -89,7 +89,7 @@ const RegisterPage = () => {
         setStep(3); // Jump to address
       } else {
         toast.success('Bem-vindo de volta!');
-        if (data.user.role === 'professional') {
+        if (data.user.role.includes('professional')) {
           navigate('/profissional/dashboard');
         } else {
           navigate('/cliente/dashboard');
@@ -207,7 +207,7 @@ const RegisterPage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, role }),
       });
 
       const data = await response.json();

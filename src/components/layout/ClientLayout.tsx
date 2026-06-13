@@ -14,7 +14,8 @@ import {
   ChevronRight,
   CreditCard,
   ShieldCheck,
-  PlusCircle
+  PlusCircle,
+  Briefcase
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -291,6 +292,11 @@ const ClientLayout = () => {
                   <Settings className="w-4 h-4 text-primary" /> Configurações
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-white/5" />
+                {currentUser?.role?.includes('professional') && (
+                  <DropdownMenuItem onClick={() => navigate('/profissional/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-blue-400 focus:text-blue-400 bg-blue-500/10 focus:bg-blue-500/20 font-bold mb-2">
+                    <Briefcase className="w-4 h-4" /> Acessar Painel Técnico
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive">
                   <LogOut className="w-4 h-4" /> Sair da Conta
                 </DropdownMenuItem>

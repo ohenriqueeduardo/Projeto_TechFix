@@ -246,6 +246,11 @@ const ProfessionalLayout = () => {
                   <LayoutDashboard className="w-4 h-4 text-primary" /> Painel Técnico
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-white/5" />
+                {currentUser?.role?.includes('client') && (
+                  <DropdownMenuItem onClick={() => navigate('/cliente/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-primary focus:text-primary bg-primary/10 focus:bg-primary/20 font-bold mb-2">
+                    <UserIcon className="w-4 h-4" /> Acessar Painel Cliente
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive">
                   <LogOut className="w-4 h-4" /> Sair da Conta
                 </DropdownMenuItem>
