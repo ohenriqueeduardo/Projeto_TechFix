@@ -15,6 +15,13 @@
       "when": 1781377021304,
       "tag": "0001_fancy_frog_thor",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781379480593,
+      "tag": "0002_neat_human_fly",
+      "breakpoints": true
     }
   ]
 }
