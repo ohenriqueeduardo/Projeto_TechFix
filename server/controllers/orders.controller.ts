@@ -118,7 +118,7 @@ export const createOrder = async (req: Request, res: Response) => {
       professionalId,
       date,
       time,
-      status: 'provisional',
+      status: serviceId === 's_custom' ? 'pending' : 'provisional',
       price: Number(price),
       paymentMethod,
       paymentId: req.body.paymentId || null,
