@@ -32,7 +32,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         if (res.ok) {
           const data = await res.json();
           // Transform db fields (read: 0/1) to context fields (unread: boolean)
-          setNotifications(data.map((n: { id: string; title: string; message: string; createdAt: string; type: any; read: number }) => ({
+          setNotifications(data.map((n: { id: string; title: string; message: string; createdAt: string; type: string; read: number }) => ({
             id: n.id,
             title: n.title,
             desc: n.message,

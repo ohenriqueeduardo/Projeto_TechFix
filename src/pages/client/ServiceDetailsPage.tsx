@@ -4,14 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Star, Clock, Shield, ArrowLeft, CheckCircle2, UserCheck } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
-import { Professional } from '@/types';
+import { Professional, Service } from '@/types';
 
 const ServiceDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const currentUser = React.useMemo(() => JSON.parse(localStorage.getItem('user') || 'null'), []);
   const isProfessional = currentUser?.role === 'professional';
-  const [service, setService] = useState<any>(null);
+  const [service, setService] = useState<Service | null>(null);
   const [dbProfessionals, setDbProfessionals] = useState<Professional[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
