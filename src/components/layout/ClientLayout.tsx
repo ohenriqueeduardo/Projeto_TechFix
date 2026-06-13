@@ -58,7 +58,6 @@ const ClientLayout = () => {
     { icon: Search, label: 'Explorar Serviços', path: '/cliente/servicos' },
     ...(currentUser?.role !== 'professional' ? [{ icon: PlusCircle, label: 'Solicitar Serviço', path: '/cliente/novo-servico' }] : []),
     { icon: ClipboardList, label: 'Meus Pedidos', path: '/cliente/meus-pedidos' },
-    { icon: MessageSquare, label: 'Chat', path: '/cliente/chat/1' },
   ];
 
   const handleLogout = () => {
@@ -183,7 +182,7 @@ const ClientLayout = () => {
               if (path.includes('/cliente/contratar')) return 'Contratação Segura';
               if (path.includes('/cliente/meus-pedidos')) return 'Meus Pedidos';
               if (path.includes('/cliente/perfil')) return 'Meu Perfil';
-              if (path.includes('/cliente/chat')) return 'Chat & Conversas';
+              if (path.includes('/cliente/configuracoes')) return 'Configurações de Conta';
               if (path.includes('/cliente/ajuda')) return 'Central de Ajuda';
               if (path.includes('/cliente/configuracoes')) return 'Configurações';
               if (path.includes('/status')) return 'Status do Chamado';

@@ -597,18 +597,7 @@ const ProfessionalDashboardPage = () => {
             </div>
           </Card>
 
-          {/* Quick Chat Shortcut Card */}
-          <Card className="p-5 bg-gradient-to-br from-primary/10 via-blue-500/5 to-transparent border-primary/20 rounded-3xl relative overflow-hidden group">
-            <h3 className="text-sm font-bold mb-1.5">Precisa falar com o cliente?</h3>
-            <p className="text-[11px] text-muted-foreground leading-relaxed mb-4">
-              Use a Central de Mensagens para tirar dúvidas sobre o serviço ou reagendar horários.
-            </p>
-            <Link to={orders.length > 0 ? `/profissional/chat/${orders[0].clientId}` : '#'}>
-              <Button variant="outline" className="w-full h-10 rounded-xl text-xs gap-1.5 border-white/10 hover:bg-primary hover:text-background transition-all" disabled={orders.length === 0}>
-                <MessageSquare className="w-3.5 h-3.5 text-primary group-hover:text-inherit" /> Abrir Conversas
-              </Button>
-            </Link>
-          </Card>
+
         </div>
 
       </div>

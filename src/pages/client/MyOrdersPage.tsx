@@ -202,9 +202,6 @@ const MyOrdersPage = () => {
                   </div>
 
                   <div className="flex gap-2 w-full sm:w-auto">
-                    <Link to={`/cliente/chat/${order.professionalId}`} className="flex-1 sm:flex-none">
-                      <Button variant="outline" className="w-full rounded-xl border-white/10 text-xs h-10 px-4">Chat</Button>
-                    </Link>
                     <Link to={`/cliente/pedido/${order.id}/status`}>
                       <Button variant="ghost" size="icon" className="hidden sm:flex rounded-xl hover:bg-primary hover:text-background w-10 h-10">
                         <ChevronRight className="w-4 h-4" />

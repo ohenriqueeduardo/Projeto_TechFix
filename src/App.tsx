@@ -40,7 +40,6 @@ import HelpPage from "@/pages/client/HelpPage";
 import SettingsPage from "@/pages/client/SettingsPage";
 import MyOrdersPage from "@/pages/client/MyOrdersPage";
 import ProfilePage from "@/pages/client/ProfilePage";
-import ChatPage from "@/pages/client/ChatPage";
 import OrderStatusPage from "@/pages/client/OrderStatusPage";
 import NewServiceRequestPage from "@/pages/client/NewServiceRequestPage";
 import NotificationsPage from "@/pages/client/NotificationsPage";
@@ -49,6 +48,7 @@ import BuscaPage from "@/pages/client/BuscaPage";
 import ExploreServicesPage from "@/pages/client/ExploreServicesPage";
 import ProfessionalProfilePage from "@/pages/client/ProfessionalProfilePage";
 import CheckoutCounterOfferPage from "@/pages/client/CheckoutCounterOfferPage";
+import OrderReceiptPage from "@/pages/client/OrderReceiptPage";
 
 // Professional Pages
 import ProfessionalDashboardPage from "@/pages/professional/ProfessionalDashboardPage";
@@ -111,10 +111,10 @@ const App = () => (
                 <Route path="contratar/:id/*" element={<CheckoutFlow />} />
                 <Route path="meus-pedidos" element={<MyOrdersPage />} />
                 <Route path="perfil" element={<ProfilePage />} />
-                <Route path="chat/:id" element={<ChatPage />} />
                 <Route path="ajuda" element={<HelpPage />} />
                 <Route path="configuracoes" element={<SettingsPage />} />
                 <Route path="pedido/:id/status" element={<OrderStatusPage />} />
+                <Route path="pedido/:id/os" element={<OrderReceiptPage />} />
                 <Route path="novo-servico" element={<NewServiceRequestPage />} />
                 <Route path="notificacoes" element={<NotificationsPage />} />
                 <Route path="profissional/:id" element={<ProfessionalProfilePage />} />
@@ -131,7 +131,6 @@ const App = () => (
                 <Route path="dashboard" element={<ProfessionalDashboardPage />} />
                 <Route path="servicos" element={<ProfessionalServicesPage />} />
                 <Route path="financeiro" element={<ProfessionalFinancePage />} />
-                <Route path="chat/:id" element={<ChatPage />} />
                 <Route path="configuracoes" element={<ProfessionalSettingsPage />} />
               </Route>
 

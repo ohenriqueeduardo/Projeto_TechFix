@@ -56,6 +56,7 @@ export interface Order {
   status: OrderStatus;
   price: number;
   paymentMethod: "pix" | "debit" | "credit";
+  paymentId?: string | number;
   address: string;
 }
 

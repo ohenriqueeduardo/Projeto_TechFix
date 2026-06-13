@@ -270,6 +270,7 @@ const OrderStatusPage = () => {
                 <div>
                   <span className="text-muted-foreground block text-[10px] uppercase font-black tracking-widest mb-0.5">Forma de Pagamento</span>
                   <span className="text-foreground uppercase">{order.paymentMethod} (Custódia TechFix)</span>
+                  {order.paymentId && <span className="text-[10px] block text-muted-foreground mt-0.5">ID: {order.paymentId}</span>}
                 </div>
               </div>
 
@@ -303,11 +304,9 @@ const OrderStatusPage = () => {
             <p className="text-xs text-muted-foreground leading-relaxed">{prof.bio}</p>
 
             <div className="flex gap-2">
-              <Link to={`/cliente/chat/${prof.id}`} className="flex-1">
-                <Button className="w-full btn-primary h-10 text-xs font-black gap-1.5">
-                  <MessageSquare className="w-4 h-4" /> Conversar
-                </Button>
-              </Link>
+              <Button onClick={() => window.open(`/cliente/pedido/${order.id}/os`, '_blank')} className="w-full btn-primary h-10 text-[11px] font-black gap-1.5 bg-foreground text-background hover:bg-foreground/90 uppercase">
+                Imprimir Ordem de Serviço (PDF)
+              </Button>
             </div>
 
             <div className="pt-4 border-t border-foreground/5 text-center">
@@ -316,12 +315,19 @@ const OrderStatusPage = () => {
             </div>
 
             {order.status !== 'completed' && order.status !== 'cancelled' && (
-              <div className="pt-4">
+              <div className="pt-4 flex flex-col gap-3">
                 <Button 
                   onClick={handleCompleteOrder} 
-                  className="w-full bg-green-500 hover:bg-green-600 text-white text-xs font-black h-11 uppercase"
+                  className="w-full bg-green-500 hover:bg-green-600 text-white text-xs font-black h-auto py-3 whitespace-normal uppercase leading-tight"
                 >
                   Serviço Concluído (Liberar Pagamento)
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => toast.info('Solicitação de cancelamento enviada ao suporte.')} 
+                  className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive text-xs font-black h-auto py-3 whitespace-normal uppercase leading-tight"
+                >
+                  Cancelar serviço e solicitar reembolso
                 </Button>
               </div>
             )}

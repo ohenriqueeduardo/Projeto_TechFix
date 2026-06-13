@@ -280,11 +280,6 @@ const ClientDashboardPage = () => {
           <p className="text-muted-foreground text-lg">Seu setup está em boas mãos hoje.</p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Link to={orders.length > 0 ? `/cliente/chat/${orders[0].professionalId}` : '#'}>
-            <Button variant="outline" className="rounded-2xl h-14 px-6 border-white/10 gap-2" disabled={orders.length === 0}>
-              <MessageSquare className="w-5 h-5 text-primary" /> Chat
-            </Button>
-          </Link>
         </div>
       </div>
 

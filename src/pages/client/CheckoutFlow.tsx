@@ -363,6 +363,16 @@ const CheckoutFlow = () => {
 
       const paymentData = await paymentRes.json();
       
+      // Update local order with payment ID
+      if (paymentData.id) {
+        const currentOrders = getLocalOrders();
+        const orderIndex = currentOrders.findIndex(o => o.id === newOrder.id);
+        if (orderIndex >= 0) {
+          currentOrders[orderIndex].paymentId = paymentData.id;
+          saveLocalOrders(currentOrders);
+        }
+      }
+
       // 4. Trigger success notification
       addNotification(
         "Aguardando Pagamento",
