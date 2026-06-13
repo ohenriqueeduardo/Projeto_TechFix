@@ -196,7 +196,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    const updates: Record<string, any> = { status };
+    const updates: Partial<{ status: string; professionalId: string }> = { status };
 
     // If an open order is directly accepted, assign it to the professional who accepted it
     if (status === 'scheduled' && !existingOrder[0].professionalId) {
