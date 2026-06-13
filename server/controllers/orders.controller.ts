@@ -207,8 +207,9 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
           const refund = new PaymentRefund(mpClient);
           await refund.create({ payment_id: Number(order.paymentId) });
           console.log(`[Mercado Pago] Refund successful for order ${order.code}`);
-        } catch (mpError: any) {
-          console.error(`[Mercado Pago] Refund failed for order ${order.code}:`, mpError.message || mpError);
+        } catch (mpError: unknown) {
+          const err = mpError as Error;
+          console.error(`[Mercado Pago] Refund failed for order ${order.code}:`, err.message || err);
           // Note: We log the error but still allow the cancellation to go through.
         }
       }
