@@ -223,7 +223,7 @@ const CheckoutFlow = () => {
         let errMsg = 'Falha ao criar o pedido no servidor.';
         try {
           const parsed = JSON.parse(errorText);
-          errMsg = parsed.error || errMsg;
+          errMsg = parsed.message || parsed.error || errMsg;
         } catch (e) {
           if (errorText.includes('token') || errorText.includes('expired') || errorText.includes('denied')) {
             toast.error('Sua sessão expirou ou é inválida. Por favor, faça login novamente.');
@@ -328,7 +328,11 @@ const CheckoutFlow = () => {
           installments: Number(installments) || 1,
           payer: {
             email: currentUser?.email || 'cliente@email.com',
-            first_name: currentUser?.name || 'Cliente'
+            first_name: currentUser?.name || 'Cliente',
+            identification: {
+              type: 'CPF',
+              number: cpf.replace(/\D/g, '')
+            }
           }
         })
       });
@@ -349,7 +353,7 @@ const CheckoutFlow = () => {
         let errMsg = 'Falha ao processar o pagamento.';
         try {
           const parsed = JSON.parse(errText);
-          errMsg = parsed.error || errMsg;
+          errMsg = parsed.message || parsed.error || errMsg;
           if (parsed.details && Array.isArray(parsed.details)) {
             const detailsText = parsed.details.map((d: Record<string, unknown>) => (d.description || d.message) as string).join(', ');
             if (detailsText) errMsg += ` (Detalhes: ${detailsText})`;
