@@ -28,10 +28,7 @@ import { saveLocalOrders, getLocalOrders, getLocalServices, getLocalProfessional
 import { useNotifications } from '@/context/NotificationsContext';
 import Cards from 'react-credit-cards-2';
 import 'react-credit-cards-2/dist/es/styles-compiled.css';
-import { initMercadoPago } from '@mercadopago/sdk-react';
-
-// Inicializar Mercado Pago
-initMercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY || 'TEST-42f268d3-3ae3-4cbd-81e6-33e507dd8645');
+import { loadMercadoPago } from '@mercadopago/sdk-js';
 
 // StripeCreditCardForm removed
 
@@ -157,16 +154,7 @@ const CheckoutFlow = () => {
   const [cardFocus, setCardFocus] = React.useState<'number' | 'name' | 'expiry' | 'cvc' | ''>('');
   const [isProcessing, setIsProcessing] = React.useState(false);
 
-  React.useEffect(() => {
-    // Carrega o SDK V2 do Mercado Pago manualmente para suportar tokenização segura de formulário customizado
-    const win = window as unknown as { MercadoPago?: unknown };
-    if (!win.MercadoPago) {
-      const script = document.createElement('script');
-      script.src = 'https://sdk.mercadopago.com/js/v2';
-      script.async = true;
-      document.body.appendChild(script);
-    }
-  }, []);
+
 
   if (!service) return <div className="p-8 text-center text-red-500 font-bold glass-card border border-red-500/20 max-w-md mx-auto mt-20">Serviço não encontrado</div>;
   if (isLoadingProfs || !selectedProf) return (
@@ -282,11 +270,7 @@ const CheckoutFlow = () => {
             expirationYear = '20' + expirationYear;
           }
 
-          const win = window as unknown as { MercadoPago?: unknown };
-          if (!win.MercadoPago) {
-            throw new Error('O sistema de segurança do Mercado Pago ainda está conectando. Aguarde alguns segundos e tente novamente.');
-          }
-
+          await loadMercadoPago();
           const WindowMP = window as unknown as { MercadoPago: new (key: string) => { createCardToken: (p: Record<string, unknown>) => Promise<{ id?: string }> } };
           const mp = new WindowMP.MercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY || 'TEST-42f268d3-3ae3-4cbd-81e6-33e507dd8645');
           const tokenRes = await mp.createCardToken({
