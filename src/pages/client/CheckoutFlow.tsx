@@ -159,7 +159,8 @@ const CheckoutFlow = () => {
 
   React.useEffect(() => {
     // Carrega o SDK V2 do Mercado Pago manualmente para suportar tokenização segura de formulário customizado
-    if (!(window as any).MercadoPago) {
+    const win = window as unknown as { MercadoPago?: unknown };
+    if (!win.MercadoPago) {
       const script = document.createElement('script');
       script.src = 'https://sdk.mercadopago.com/js/v2';
       script.async = true;
@@ -281,7 +282,8 @@ const CheckoutFlow = () => {
             expirationYear = '20' + expirationYear;
           }
 
-          if (!(window as any).MercadoPago) {
+          const win = window as unknown as { MercadoPago?: unknown };
+          if (!win.MercadoPago) {
             throw new Error('O sistema de segurança do Mercado Pago ainda está conectando. Aguarde alguns segundos e tente novamente.');
           }
 
