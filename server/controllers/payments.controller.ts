@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { MercadoPagoConfig, Preference } from 'mercadopago';
+import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -83,5 +83,68 @@ export const createPreference = async (req: Request, res: Response) => {
     console.error('Error creating Mercado Pago preference:', error);
     const message = error instanceof Error ? error.message : 'Falha ao processar intenção de pagamento';
     res.status(500).json({ error: message });
+  }
+};
+
+export const processTransparentPayment = async (req: Request, res: Response) => {
+  try {
+    const { 
+      transaction_amount, 
+      payment_method_id, 
+      token, 
+      installments, 
+      payer, 
+      description,
+      order_id
+    } = req.body;
+
+    if (!transaction_amount || !payment_method_id || !payer?.email) {
+      return res.status(400).json({ error: 'Faltam dados obrigatórios para processar o pagamento' });
+    }
+
+    const payment = new Payment(mpClient);
+
+    const body: any = {
+      transaction_amount: Number(transaction_amount),
+      description: description || 'Serviço TechFix',
+      payment_method_id,
+      payer: {
+        email: payer.email,
+        first_name: payer.first_name || 'Cliente',
+      },
+      external_reference: order_id
+    };
+
+    if (payment_method_id === 'pix') {
+      // PIX requires no token, but does not support installments
+      // It returns the QR Code and copy-paste string
+    } else {
+      // Credit or Debit Card
+      if (!token) return res.status(400).json({ error: 'Token do cartão não fornecido' });
+      body.token = token;
+      body.installments = installments || 1;
+    }
+
+    const response = await payment.create({ body });
+
+    if (payment_method_id === 'pix') {
+      return res.json({
+        id: response.id,
+        status: response.status,
+        qr_code_base64: response.point_of_interaction?.transaction_data?.qr_code_base64,
+        qr_code: response.point_of_interaction?.transaction_data?.qr_code,
+      });
+    } else {
+      return res.json({
+        id: response.id,
+        status: response.status,
+        status_detail: response.status_detail
+      });
+    }
+
+  } catch (error: any) {
+    console.error('Error processing transparent payment:', error);
+    const message = error.message || 'Falha ao processar pagamento transparente';
+    res.status(500).json({ error: message, details: error.cause });
   }
 };

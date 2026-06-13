@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
+    "@mercadopago/sdk-react": "^1.0.7",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
     "@radix-ui/react-aspect-ratio": "^1.1.0",
@@ -61,6 +62,7 @@
     "nodemailer": "^8.0.11",
     "pg": "^8.21.0",
     "react": "^19.2.3",
+    "react-credit-cards-2": "^1.2.0",
     "react-day-picker": "^9.13.0",
     "react-dom": "^19.2.3",
     "react-hook-form": "^7.53.0",

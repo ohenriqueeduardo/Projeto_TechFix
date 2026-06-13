@@ -26,7 +26,13 @@ import type { Professional, Service } from '@/types';
 import { toast } from 'sonner';
 import { saveLocalOrders, getLocalOrders, getLocalServices, getLocalProfessionals } from '@/utils/localDb';
 import { useNotifications } from '@/context/NotificationsContext';
-// Stripe package integration removed for Mercado Pago
+import Cards from 'react-credit-cards-2';
+import 'react-credit-cards-2/dist/es/styles-compiled.css';
+import { initMercadoPago } from '@mercadopago/sdk-react';
+import { createCardToken } from '@mercadopago/sdk-react/core/createCardToken';
+
+// Inicializar Mercado Pago
+initMercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY || 'TEST-82e753da-e906-4447-b86e-bcfc4fc59160');
 
 // StripeCreditCardForm removed
 
@@ -148,6 +154,8 @@ const CheckoutFlow = () => {
   const [cardExpiry, setCardExpiry] = React.useState('');
   const [cardCvv, setCardCvv] = React.useState('');
   const [installments, setInstallments] = React.useState(1);
+  const [cpf, setCpf] = React.useState('');
+  const [cardFocus, setCardFocus] = React.useState<'number' | 'name' | 'expiry' | 'cvc' | ''>('');
   const [isProcessing, setIsProcessing] = React.useState(false);
 
 
@@ -255,24 +263,58 @@ const CheckoutFlow = () => {
       currentOrders.push(newOrder);
       saveLocalOrders(currentOrders);
 
-      // 3. Create Mercado Pago checkout preference
-      const paymentRes = await fetch('/api/payments/create-intent', {
+      // 3. Process Transparent Checkout
+      let cardToken = '';
+      if (isCredit || paymentMethod === 'debit') {
+        try {
+          const expirationMonth = cardExpiry.split('/')[0]?.trim();
+          let expirationYear = cardExpiry.split('/')[1]?.trim();
+          if (expirationYear && expirationYear.length === 2) {
+            expirationYear = '20' + expirationYear;
+          }
+          const tokenRes = await createCardToken({
+            cardNumber: cardNumber.replace(/\D/g, ''),
+            cardholderName: cardName,
+            cardExpirationMonth: expirationMonth,
+            cardExpirationYear: expirationYear,
+            securityCode: cardCvv,
+            identificationType: 'CPF',
+            identificationNumber: cpf.replace(/\D/g, '')
+          });
+          
+          if (!tokenRes || !tokenRes.id) {
+            throw new Error('Falha ao tokenizar cartão. Verifique os dados inseridos.');
+          }
+          cardToken = tokenRes.id;
+        } catch (cardErr: any) {
+          console.error("Tokenization error:", cardErr);
+          throw new Error('Erro ao validar o cartão: ' + (cardErr.message || 'Dados inválidos'));
+        }
+      }
+
+      const paymentRes = await fetch('/api/payments/process-transparent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
         body: JSON.stringify({
-          price: finalPrice,
-          serviceTitle: service.title,
-          orderId: createdOrder.id,
-          serviceId: service.id
+          transaction_amount: finalPrice,
+          description: service.title,
+          order_id: createdOrder.id,
+          payment_method_id: paymentMethod === 'credit' ? 'master' : paymentMethod, // Placeholder for credit method if needed
+          token: cardToken,
+          installments: Number(installments) || 1,
+          payer: {
+            email: currentUser?.email || 'cliente@email.com',
+            first_name: currentUser?.name || 'Cliente'
+          }
         })
       });
 
       if (!paymentRes.ok) {
         const errText = await paymentRes.text();
-        console.error('Payment intent generation returned error:', paymentRes.status, errText);
+        console.error('Transparent payment generation returned error:', paymentRes.status, errText);
 
         if (paymentRes.status === 401 || paymentRes.status === 403) {
           toast.error('Sua sessão expirou ou é inválida. Por favor, faça login novamente.');
@@ -283,38 +325,34 @@ const CheckoutFlow = () => {
           return;
         }
 
-        let errMsg = 'Falha ao gerar o link de pagamento.';
+        let errMsg = 'Falha ao processar o pagamento.';
         try {
           const parsed = JSON.parse(errText);
-          if (parsed.error && parsed.error.includes('invalid token')) {
-            toast.error('Erro de credenciais no gateway de pagamento (Mercado Pago). Por favor, avise o administrador.');
-            setIsProcessing(false);
-            return;
-          }
           errMsg = parsed.error || errMsg;
-        } catch (e) {
-          if (errText.includes('invalid token') || errText.includes('access_token')) {
-            toast.error('Erro de credenciais no gateway de pagamento (Mercado Pago). Por favor, avise o administrador.');
-            setIsProcessing(false);
-            return;
-          }
-        }
+        } catch (e) {}
         throw new Error(errMsg);
       }
 
-      const { initPoint } = await paymentRes.json();
+      const paymentData = await paymentRes.json();
       
-      // 4. Trigger success notification for creation
+      // 4. Trigger success notification
       addNotification(
         "Aguardando Pagamento",
-        `Seu chamado de ${service.title} foi criado. Redirecionando para o Mercado Pago para concluir o pagamento.`,
+        `Seu chamado de ${service.title} foi criado.`,
         "info"
       );
 
-      toast.success('Pedido criado! Redirecionando para o pagamento...');
+      toast.success('Pedido criado! Concluindo processamento...');
       
-      // 5. Redirect to Mercado Pago Checkout Pro
-      window.location.href = initPoint;
+      // 5. Navigate to confirmation/QR Code page
+      if (paymentMethod === 'pix' && paymentData.qr_code) {
+        // Send QR code data to next page via state
+        navigate(`/cliente/checkout/${service.id}/confirmado?orderId=${createdOrder.id}&pix=true`, {
+          state: { qrCode: paymentData.qr_code_base64, qrString: paymentData.qr_code }
+        });
+      } else {
+        navigate(`/cliente/checkout/${service.id}/confirmado?payment_intent=success&orderId=${createdOrder.id}`);
+      }
       
     } catch (err) {
       console.error('Checkout error:', err);
@@ -977,6 +1015,10 @@ interface Step4Props {
   setCardExpiry: (val: string) => void;
   cardCvv: string;
   setCardCvv: (val: string) => void;
+  cpf: string;
+  setCpf: (val: string) => void;
+  cardFocus: "number" | "name" | "expiry" | "cvc" | "";
+  setCardFocus: (val: "number" | "name" | "expiry" | "cvc" | "") => void;
   installments: number;
   setInstallments: (val: number) => void;
   handleFinish: () => void;
@@ -987,6 +1029,13 @@ interface Step4Props {
 const Step4 = ({
   service,
   paymentMethod, setPaymentMethod,
+  cardNumber, setCardNumber,
+  cardName, setCardName,
+  cardExpiry, setCardExpiry,
+  cardCvv, setCardCvv,
+  cpf, setCpf,
+  cardFocus, setCardFocus,
+  installments, setInstallments,
   handleFinish,
   isProcessing
 }: Step4Props) => {
@@ -996,6 +1045,41 @@ const Step4 = ({
   const isPix = paymentMethod === 'pix';
   const isDebit = paymentMethod === 'debit';
   const isCredit = paymentMethod === 'credit';
+
+  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 16) value = value.slice(0, 16);
+    setCardNumber(value);
+  };
+
+  const handleCardExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    let formatted = value;
+    if (value.length >= 2) {
+      formatted = `${value.slice(0, 2)}/${value.slice(2)}`;
+    }
+    if (formatted.length > 5) formatted = formatted.slice(0, 5);
+    setCardExpiry(formatted);
+  };
+
+  const handleCardCvvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 4) value = value.slice(0, 4);
+    setCardCvv(value);
+  };
+
+  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 11) value = value.slice(0, 11);
+    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    setCpf(value);
+  };
+
+  const isFormValid = isPix 
+    ? true 
+    : (cardNumber.length >= 15 && cardName.length > 3 && cardExpiry.length === 5 && cardCvv.length >= 3 && cpf.length === 14);
 
   return (
     <div className="animate-in fade-in slide-in-from-right-8 duration-500 space-y-8">
@@ -1056,30 +1140,114 @@ const Step4 = ({
           </Label>
         </RadioGroup>
 
-        {/* MERCADO PAGO INTEGRATION REDIRECT ADVICE */}
+        {(isCredit || isDebit) && (
+          <div className="mt-8 space-y-6 animate-in fade-in duration-500">
+            <div className="flex justify-center mb-6">
+              <Cards
+                number={cardNumber}
+                expiry={cardExpiry}
+                cvc={cardCvv}
+                name={cardName}
+                focused={cardFocus as any}
+                locale={{ valid: 'Validade' }}
+                placeholders={{ name: 'SEU NOME IMPRESSO' }}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5 md:col-span-2">
+                <Label htmlFor="cardNumber" className="font-bold text-[10px] uppercase text-muted-foreground">Número do Cartão</Label>
+                <Input 
+                  id="cardNumber" 
+                  placeholder="0000 0000 0000 0000" 
+                  value={cardNumber} 
+                  onChange={handleCardNumberChange}
+                  onFocus={() => setCardFocus('number')}
+                  className="bg-card/50 border-foreground/10 h-12 rounded-xl" 
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="cardName" className="font-bold text-[10px] uppercase text-muted-foreground">Nome Impresso</Label>
+                <Input 
+                  id="cardName" 
+                  placeholder="Como no cartão" 
+                  value={cardName} 
+                  onChange={(e) => setCardName(e.target.value.toUpperCase())}
+                  onFocus={() => setCardFocus('name')}
+                  className="bg-card/50 border-foreground/10 h-12 rounded-xl uppercase" 
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="cpf" className="font-bold text-[10px] uppercase text-muted-foreground">CPF do Titular</Label>
+                <Input 
+                  id="cpf" 
+                  placeholder="000.000.000-00" 
+                  value={cpf} 
+                  onChange={handleCpfChange}
+                  onFocus={() => setCardFocus('name')}
+                  className="bg-card/50 border-foreground/10 h-12 rounded-xl" 
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 md:col-span-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="cardExpiry" className="font-bold text-[10px] uppercase text-muted-foreground">Validade</Label>
+                  <Input 
+                    id="cardExpiry" 
+                    placeholder="MM/AA" 
+                    value={cardExpiry} 
+                    onChange={handleCardExpiryChange}
+                    onFocus={() => setCardFocus('expiry')}
+                    className="bg-card/50 border-foreground/10 h-12 rounded-xl text-center" 
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="cardCvv" className="font-bold text-[10px] uppercase text-muted-foreground">CVV</Label>
+                  <Input 
+                    id="cardCvv" 
+                    placeholder="123" 
+                    type="password"
+                    value={cardCvv} 
+                    onChange={handleCardCvvChange}
+                    onFocus={() => setCardFocus('cvc')}
+                    className="bg-card/50 border-foreground/10 h-12 rounded-xl text-center" 
+                  />
+                </div>
+              </div>
+
+              {isCredit && (
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label className="font-bold text-[10px] uppercase text-muted-foreground">Parcelas</Label>
+                  <select 
+                    value={installments}
+                    onChange={(e) => setInstallments(Number(e.target.value))}
+                    className="flex h-12 w-full rounded-xl border border-foreground/10 bg-card/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value={1}>1x de {formatCurrency(totalPrice)}</option>
+                    <option value={2}>2x de {formatCurrency(totalPrice / 2)}</option>
+                    <option value={3}>3x de {formatCurrency(totalPrice / 3)}</option>
+                    <option value={6}>6x de {formatCurrency((totalPrice * 1.05) / 6)} (Com Juros)</option>
+                    <option value={12}>12x de {formatCurrency((totalPrice * 1.10) / 12)} (Com Juros)</option>
+                  </select>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {isPix && (
           <div className="p-6 rounded-2xl bg-foreground/5 border border-foreground/5 space-y-3 animate-in fade-in duration-300">
             <h3 className="font-bold text-sm text-primary flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-primary shrink-0" /> Pagamento com Pix via Mercado Pago
+              <CheckCircle2 className="w-5 h-5 text-primary shrink-0" /> Pagamento Rápido com Pix
             </h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Ao clicar em finalizar, criaremos sua intenção de agendamento e você será redirecionado com total segurança para o **Mercado Pago** para concluir o seu pagamento via Pix com o desconto de 5% aplicado.
+              Ao clicar em finalizar, geraremos seu QR Code exclusivo. Você terá 30 minutos para concluir o pagamento com o desconto aplicado.
             </p>
           </div>
         )}
 
-        {(isCredit || isDebit) && (
-          <div className="p-6 rounded-2xl bg-foreground/5 border border-foreground/5 space-y-3 animate-in fade-in duration-300">
-            <h3 className="font-bold text-sm text-primary flex items-center gap-2">
-              <CardIcon className="w-5 h-5 text-primary shrink-0" /> Pagamento com Cartão via Mercado Pago
-            </h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Ao clicar em finalizar, criaremos sua intenção de agendamento e você será redirecionado para a página oficial do **Mercado Pago**, onde poderá inserir os dados do seu cartão com máxima segurança e parcelar em até 12x.
-            </p>
-          </div>
-        )}
-
-        {/* Invoice Summary */}
         <div className="p-6 rounded-2xl bg-foreground/5 border border-foreground/5 space-y-3">
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">Subtotal do Serviço</span>
@@ -1098,7 +1266,7 @@ const Step4 = ({
           <div className="flex justify-between text-base font-black pt-3 border-t border-foreground/5">
             <span>Total da Transação</span>
             <span className="text-primary">
-              {formatCurrency(isPix ? totalPrice * 0.95 : totalPrice)}
+              {formatCurrency(isPix ? totalPrice * 0.95 : (isCredit && installments === 6 ? totalPrice * 1.05 : (isCredit && installments === 12 ? totalPrice * 1.10 : totalPrice)))}
             </span>
           </div>
         </div>
@@ -1107,10 +1275,10 @@ const Step4 = ({
           <Button variant="outline" onClick={() => navigate(-1)} className="h-12 px-6 rounded-xl text-xs font-bold border-foreground/10" disabled={isProcessing}>Voltar</Button>
           <Button 
             onClick={handleFinish} 
-            disabled={isProcessing}
+            disabled={!isFormValid || isProcessing}
             className="flex-1 btn-primary h-12 text-sm font-black gap-2"
           >
-            {isProcessing ? 'Redirecionando...' : 'Finalizar Pagamento Seguro'}
+            {isProcessing ? 'Processando Pagamento...' : 'Finalizar e Pagar'}
           </Button>
         </div>
       </div>
@@ -1132,8 +1300,11 @@ const OrderConfirmed = ({ service, selectedProf, selectedDate, selectedTime }: O
   const [searchParams] = useSearchParams();
   const orderIdParam = searchParams.get('orderId');
   const paymentIntentParam = searchParams.get('payment_intent');
+  const isPixPayment = searchParams.get('pix') === 'true';
 
-  const [isLoading, setIsLoading] = React.useState(!!orderIdParam);
+  const { qrCode, qrString } = (location.state as any) || {};
+
+  const [isLoading, setIsLoading] = React.useState(!!orderIdParam && !isPixPayment);
   const [confirmedCode, setConfirmedCode] = React.useState('');
   const [confirmedPrice, setConfirmedPrice] = React.useState(0);
   const [confirmedDateVal, setConfirmedDateVal] = React.useState(selectedDate);
@@ -1208,11 +1379,25 @@ const OrderConfirmed = ({ service, selectedProf, selectedDate, selectedTime }: O
         <CheckCircle2 className="text-primary w-10 h-10" />
       </div>
       <div>
-        <h1 className="text-3xl font-black mb-1.5">Pagamento Custodiado!</h1>
+        <h1 className="text-3xl font-black mb-1.5">Chamado Registrado!</h1>
         <p className="text-muted-foreground text-sm max-w-sm mx-auto">
-          Seu chamado foi aberto com sucesso e o saldo está guardado com total segurança.
+          Seu chamado foi criado com sucesso. {isPixPayment ? 'Realize o pagamento do Pix abaixo para confirmar.' : 'O saldo está guardado com total segurança.'}
         </p>
       </div>
+
+      {isPixPayment && qrCode && (
+        <div className="glass-card p-6 rounded-2xl max-w-sm mx-auto text-left space-y-4 border border-primary/20 bg-primary/5 mb-8">
+          <h3 className="font-bold text-center text-primary">Pague com Pix</h3>
+          <img src={`data:image/png;base64,${qrCode}`} alt="QR Code Pix" className="w-48 h-48 mx-auto rounded-xl border p-2 bg-white" />
+          <div className="space-y-2">
+            <p className="text-[10px] text-center uppercase font-bold text-muted-foreground">Copia e Cola</p>
+            <div className="flex gap-2">
+              <Input value={qrString} readOnly className="text-xs h-10 bg-card/50" />
+              <Button onClick={() => { navigator.clipboard.writeText(qrString); toast.success('Código copiado!'); }} size="icon" className="h-10 w-10 shrink-0"><Copy className="w-4 h-4" /></Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="glass-card p-6 rounded-2xl max-w-sm mx-auto text-left space-y-3.5 border border-foreground/5">
         {confirmedCode && (
@@ -1234,7 +1419,7 @@ const OrderConfirmed = ({ service, selectedProf, selectedDate, selectedTime }: O
           <span className="font-bold">{confirmedDateVal || '28/05'} às {confirmedTimeVal || '14:00'}</span>
         </div>
         <div className="pt-3 border-t border-foreground/5 flex justify-between text-base font-black">
-          <span>Total Pago</span>
+          <span>Total a Pagar</span>
           <span className="text-primary">{formatCurrency(confirmedPrice)}</span>
         </div>
       </div>
