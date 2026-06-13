@@ -282,7 +282,9 @@ const CheckoutFlow = () => {
           
           const bin = cardNumber.replace(/\D/g, '').substring(0, 6);
           if (bin.length >= 6) {
-            const pmRes = await mp.getPaymentMethods({ bin });
+            const pmPromise = mp.getPaymentMethods({ bin });
+            const pmTimeout = new Promise<{results?: Array<{id: string}>}>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000));
+            const pmRes = await Promise.race([pmPromise, pmTimeout]).catch(() => ({ results: [] }));
             if (pmRes.results && pmRes.results.length > 0) {
               finalPaymentMethodId = pmRes.results[0].id;
             } else {
@@ -292,7 +294,7 @@ const CheckoutFlow = () => {
             finalPaymentMethodId = 'master'; // fallback
           }
 
-          const tokenRes = await mp.createCardToken({
+          const tokenPromise = mp.createCardToken({
             cardNumber: cardNumber.replace(/\D/g, ''),
             cardholderName: cardName,
             cardExpirationMonth: expirationMonth,
@@ -301,6 +303,12 @@ const CheckoutFlow = () => {
             identificationType: 'CPF',
             identificationNumber: cpf.replace(/\D/g, '')
           });
+          
+          const timeoutPromise = new Promise<{id?: string}>((_, reject) => 
+            setTimeout(() => reject(new Error('Tempo limite excedido. Verifique os dados do cartão.')), 10000)
+          );
+          
+          const tokenRes = await Promise.race([tokenPromise, timeoutPromise]);
           
           if (!tokenRes || !tokenRes.id) {
             throw new Error('Falha ao tokenizar cartão. Verifique os dados inseridos.');
