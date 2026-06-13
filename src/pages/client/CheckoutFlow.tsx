@@ -945,7 +945,7 @@ const Step3 = ({
                     localStorage.setItem('user', JSON.stringify(updatedUser));
                     // Update local storage techfix_users for full persistence simulator
                     const localUsers = JSON.parse(localStorage.getItem('techfix_users') || '[]');
-                    const updatedUsers = localUsers.map((u: any) => u.id === currentUser.id ? updatedUser : u);
+                    const updatedUsers = localUsers.map((u: { id: string }) => u.id === currentUser.id ? updatedUser : u);
                     localStorage.setItem('techfix_users', JSON.stringify(updatedUsers));
                   }
                 } catch (e) {

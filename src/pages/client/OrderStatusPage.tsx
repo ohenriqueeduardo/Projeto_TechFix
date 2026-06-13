@@ -24,8 +24,8 @@ import { Order } from '@/types';
 const OrderStatusPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [order, setOrder] = React.useState<any>(null);
-  const [prof, setProf] = React.useState<any>({ name: 'Carregando...', avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=tech', bio: '', specialty: 'Especialista', rating: 5 });
+  const [order, setOrder] = React.useState<Order | null>(null);
+  const [prof, setProf] = React.useState<{ id?: string, name: string, avatar: string, bio: string, specialty: string, rating: number }>({ name: 'Carregando...', avatar: 'https://api.dicebear.com/7.x/adventurer/svg?seed=tech', bio: '', specialty: 'Especialista', rating: 5 });
   const [showDeclineDialog, setShowDeclineDialog] = React.useState(false);
 
   React.useEffect(() => {
@@ -48,7 +48,7 @@ const OrderStatusPage = () => {
               avatar: pData.user?.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${data.professionalId}`
             });
           } else {
-             setProf((prev: any) => ({...prev, name: data.professionalName}));
+             setProf((prev: { id?: string, name: string, avatar: string, bio: string, specialty: string, rating: number }) => ({...prev, name: data.professionalName}));
           }
         }
       } catch (err) {

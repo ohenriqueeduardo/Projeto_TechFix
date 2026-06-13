@@ -40,7 +40,7 @@ export interface Service {
   image?: string;
 }
 
-export type OrderStatus = "pending" | "scheduled" | "in_progress" | "completed" | "cancelled" | "counter_offer";
+export type OrderStatus = "provisional" | "pending" | "scheduled" | "in_progress" | "completed" | "cancelled" | "counter_offer";
 
 export interface Order {
   id: string;
