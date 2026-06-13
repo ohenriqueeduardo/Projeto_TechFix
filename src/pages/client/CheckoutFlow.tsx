@@ -348,7 +348,7 @@ const CheckoutFlow = () => {
           const parsed = JSON.parse(errText);
           errMsg = parsed.error || errMsg;
           if (parsed.details && Array.isArray(parsed.details)) {
-            const detailsText = parsed.details.map((d: any) => d.description || d.message).join(', ');
+            const detailsText = parsed.details.map((d: Record<string, unknown>) => (d.description || d.message) as string).join(', ');
             if (detailsText) errMsg += ` (Detalhes: ${detailsText})`;
           } else if (parsed.details) {
             errMsg += ` (Detalhes: ${JSON.stringify(parsed.details)})`;
