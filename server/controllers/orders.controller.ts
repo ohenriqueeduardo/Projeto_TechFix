@@ -89,11 +89,10 @@ export const createOrder = async (req: Request, res: Response) => {
   try {
     const { serviceId, serviceTitle, clientId, professionalId, date, time, price, paymentMethod, address } = req.body;
 
-    if (!serviceTitle || !clientId || !professionalId || !date || !time || price === undefined || !paymentMethod || !address) {
+    if (!serviceTitle || !clientId || !date || !time || price === undefined || !paymentMethod || !address) {
       const missing = [];
       if (!serviceTitle) missing.push('serviceTitle');
       if (!clientId) missing.push('clientId');
-      if (!professionalId) missing.push('professionalId');
       if (!date) missing.push('date');
       if (!time) missing.push('time');
       if (price === undefined) missing.push('price');

@@ -8,6 +8,13 @@
       "when": 1779706858412,
       "tag": "0000_cuddly_iron_lad",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781377021304,
+      "tag": "0001_fancy_frog_thor",
+      "breakpoints": true
     }
   ]
 }
