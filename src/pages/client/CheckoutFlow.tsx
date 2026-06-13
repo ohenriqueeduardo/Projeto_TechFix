@@ -28,10 +28,10 @@ import { saveLocalOrders, getLocalOrders, getLocalServices, getLocalProfessional
 import { useNotifications } from '@/context/NotificationsContext';
 import Cards from 'react-credit-cards-2';
 import 'react-credit-cards-2/dist/es/styles-compiled.css';
-import { initMercadoPago, createCardToken } from '@mercadopago/sdk-react';
+import { initMercadoPago } from '@mercadopago/sdk-react';
 
 // Inicializar Mercado Pago
-initMercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY || 'TEST-82e753da-e906-4447-b86e-bcfc4fc59160');
+initMercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY || 'TEST-42f268d3-3ae3-4cbd-81e6-33e507dd8645');
 
 // StripeCreditCardForm removed
 
@@ -271,7 +271,8 @@ const CheckoutFlow = () => {
           if (expirationYear && expirationYear.length === 2) {
             expirationYear = '20' + expirationYear;
           }
-          const tokenRes = await createCardToken({
+          const mp = new (window as any).MercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY || 'TEST-42f268d3-3ae3-4cbd-81e6-33e507dd8645');
+          const tokenRes = await mp.createCardToken({
             cardNumber: cardNumber.replace(/\D/g, ''),
             cardholderName: cardName,
             cardExpirationMonth: expirationMonth,

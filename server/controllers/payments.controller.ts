@@ -13,7 +13,7 @@ if (accessToken) {
 }
 
 const mpClient = new MercadoPagoConfig({
-  accessToken: accessToken || 'TEST-8418049818816812-061111-c88f28f804981681a28a3f89a8126b1a-12345678', // Default fallback for dev environment check
+  accessToken: accessToken || 'TEST-4714972698787037-061309-4bdf57c87c7a6b1886c196c3b104cf6d-1730247701', // Default fallback for dev environment check
 });
 
 export const createPreference = async (req: Request, res: Response) => {
