@@ -16,9 +16,10 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
+import { Order } from '@/types';
 
 const ProfessionalServicesPage = () => {
-  const [orders, setOrders] = React.useState<any[]>([]);
+  const [orders, setOrders] = React.useState<Order[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [activeTab, setActiveTab] = React.useState<'all' | 'pending' | 'scheduled' | 'in_progress' | 'completed'>('all');
   const [searchTerm, setSearchTerm] = React.useState('');

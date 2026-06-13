@@ -22,6 +22,7 @@ import { formatCurrency } from '@/utils/formatters';
 import { Link } from 'react-router-dom';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 import { Order } from '@/types';
+import { toast } from 'sonner';
 
 const MyOrdersPage = () => {
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -37,8 +38,6 @@ const MyOrdersPage = () => {
   const [negotiatingOrderId, setNegotiatingOrderId] = React.useState<string | null>(null);
   const [proposedPrice, setProposedPrice] = React.useState('');
   const [negotiationMessage, setNegotiationMessage] = React.useState('');
-  
-  import { toast } from 'sonner';
 
   React.useEffect(() => {
     if (!currentUser) {
