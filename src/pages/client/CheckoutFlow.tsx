@@ -271,7 +271,8 @@ const CheckoutFlow = () => {
           if (expirationYear && expirationYear.length === 2) {
             expirationYear = '20' + expirationYear;
           }
-          const mp = new (window as any).MercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY || 'TEST-42f268d3-3ae3-4cbd-81e6-33e507dd8645');
+          const WindowMP = window as unknown as { MercadoPago: new (key: string) => { createCardToken: (p: Record<string, unknown>) => Promise<{ id?: string }> } };
+          const mp = new WindowMP.MercadoPago(import.meta.env.VITE_MERCADOPAGO_PUBLIC_KEY || 'TEST-42f268d3-3ae3-4cbd-81e6-33e507dd8645');
           const tokenRes = await mp.createCardToken({
             cardNumber: cardNumber.replace(/\D/g, ''),
             cardholderName: cardName,
