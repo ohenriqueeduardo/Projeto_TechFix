@@ -60,6 +60,9 @@ export interface Order {
   paymentMethod: "pix" | "debit" | "credit";
   paymentId?: string | number;
   address: string;
+  proposedPrice?: number | null;
+  negotiationMessage?: string | null;
+  lastNegotiator?: 'client' | 'professional' | null;
 }
 
 export interface Transaction {

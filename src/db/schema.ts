@@ -81,6 +81,9 @@ export const orders = pgTable('orders', {
   paymentMethod: text('payment_method').notNull(), // 'pix', 'debit', 'credit'
   paymentId: text('payment_id'), // MercadoPago Payment ID
   address: text('address').notNull(),
+  proposedPrice: real('proposed_price'),
+  negotiationMessage: text('negotiation_message'),
+  lastNegotiator: text('last_negotiator'), // 'client' or 'professional'
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 

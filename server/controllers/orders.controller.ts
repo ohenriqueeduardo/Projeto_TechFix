@@ -260,3 +260,136 @@ export const confirmPayment = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+// POST /api/orders/:id/negotiate
+export const negotiateOrder = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { proposedPrice, message, actorType } = req.body; // actorType is 'client' or 'professional'
+
+    const existingOrder = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+    if (existingOrder.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const order = existingOrder[0];
+    
+    // If a professional initiates negotiation on an open order, assign it to them
+    const updates: any = {
+      status: 'negotiating',
+      proposedPrice: Number(proposedPrice),
+      negotiationMessage: message,
+      lastNegotiator: actorType
+    };
+
+    if (actorType === 'professional' && !order.professionalId) {
+      // Get professional ID from user ID
+      const profUser = await db.select().from(professionals).where(eq(professionals.userId, req.user?.id || '')).limit(1);
+      if (profUser.length > 0) {
+        updates.professionalId = profUser[0].userId;
+      }
+    }
+
+    const updatedOrder = await db.update(orders)
+      .set(updates)
+      .where(eq(orders.id, id))
+      .returning();
+
+    res.json(updatedOrder[0]);
+  } catch (error) {
+    console.error('Error negotiating order:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// POST /api/orders/:id/accept-offer
+export const acceptOffer = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+
+    const existingOrder = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+    if (existingOrder.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const order = existingOrder[0];
+
+    const updatedOrder = await db.update(orders)
+      .set({
+        price: order.proposedPrice !== null ? order.proposedPrice : order.price,
+        status: 'scheduled',
+        proposedPrice: null,
+        negotiationMessage: null,
+        lastNegotiator: null
+      })
+      .where(eq(orders.id, id))
+      .returning();
+
+    // Ensure the transaction is updated with the new accepted price if needed
+    if (order.proposedPrice !== null) {
+      await db.update(transactions)
+        .set({ value: order.proposedPrice })
+        .where(and(eq(transactions.orderId, id), eq(transactions.status, 'pending')));
+    }
+
+    res.json(updatedOrder[0]);
+  } catch (error) {
+    console.error('Error accepting offer:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// POST /api/orders/:id/reject-offer
+export const rejectOffer = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { actorType } = req.body;
+
+    const existingOrder = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
+    if (existingOrder.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const order = existingOrder[0];
+
+    if (actorType === 'professional') {
+      // Professional rejected: put back to the open pool
+      const updatedOrder = await db.update(orders)
+        .set({
+          status: 'pending',
+          professionalId: null,
+          proposedPrice: null,
+          negotiationMessage: null,
+          lastNegotiator: null
+        })
+        .where(eq(orders.id, id))
+        .returning();
+
+      // Transaction is also cleaned up: we leave the orderId, but we could remove the professionalId
+      await db.update(transactions)
+        .set({ professionalId: null })
+        .where(and(eq(transactions.orderId, id), eq(transactions.status, 'pending')));
+
+      return res.json(updatedOrder[0]);
+    } else {
+      // Client rejected completely
+      const updatedOrder = await db.update(orders)
+        .set({
+          status: 'cancelled',
+          proposedPrice: null,
+          negotiationMessage: null,
+          lastNegotiator: null
+        })
+        .where(eq(orders.id, id))
+        .returning();
+
+      await db.update(transactions)
+        .set({ status: 'failed' })
+        .where(and(eq(transactions.orderId, id), eq(transactions.status, 'pending')));
+
+      return res.json(updatedOrder[0]);
+    }
+  } catch (error) {
+    console.error('Error rejecting offer:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};

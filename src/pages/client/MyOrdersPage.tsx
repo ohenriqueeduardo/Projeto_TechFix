@@ -33,6 +33,12 @@ const MyOrdersPage = () => {
 
   const [orders, setOrders] = React.useState<Order[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  
+  const [negotiatingOrderId, setNegotiatingOrderId] = React.useState<string | null>(null);
+  const [proposedPrice, setProposedPrice] = React.useState('');
+  const [negotiationMessage, setNegotiationMessage] = React.useState('');
+  
+  import { toast } from 'sonner';
 
   React.useEffect(() => {
     if (!currentUser) {
@@ -61,6 +67,72 @@ const MyOrdersPage = () => {
     fetchOrders();
   }, [currentUser, token]);
 
+  const handleNegotiate = async (orderId: string) => {
+    try {
+      if (!proposedPrice || !negotiationMessage) {
+        toast.error('Preencha o valor e a mensagem.');
+        return;
+      }
+      const response = await fetch(`/api/orders/${orderId}/negotiate`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ proposedPrice, message: negotiationMessage, actorType: 'client' })
+      });
+
+      if (!response.ok) throw new Error('Failed to negotiate');
+      const updatedOrder = await response.json();
+      setOrders(prev => prev.map(o => o.id === orderId ? updatedOrder : o));
+      setNegotiatingOrderId(null);
+      setProposedPrice('');
+      setNegotiationMessage('');
+      toast.success('Contraproposta enviada ao especialista!');
+    } catch (error) {
+      toast.error('Erro ao enviar contraproposta.');
+    }
+  };
+
+  const handleRejectOffer = async (orderId: string) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}/reject-offer`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ actorType: 'client' })
+      });
+
+      if (!response.ok) throw new Error('Failed to reject');
+      const updatedOrder = await response.json();
+      setOrders(prev => prev.map(o => o.id === orderId ? updatedOrder : o));
+      toast.success('Serviço cancelado.');
+    } catch (error) {
+      toast.error('Erro ao cancelar.');
+    }
+  };
+
+  const handleAcceptOffer = async (orderId: string) => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}/accept-offer`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Failed to accept');
+      const updatedOrder = await response.json();
+      setOrders(prev => prev.map(o => o.id === orderId ? updatedOrder : o));
+      toast.success('Oferta aceita com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao aceitar a oferta.');
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed': return <CheckCircle2 className="w-4 h-4 text-green-500" />;
@@ -74,6 +146,7 @@ const MyOrdersPage = () => {
     const labels: Record<string, string> = {
       provisional: 'Aguardando Pagamento',
       pending: 'Pendente',
+      negotiating: 'Em Negociação',
       scheduled: 'Agendado',
       in_progress: 'Em Andamento',
       completed: 'Concluído',
@@ -218,6 +291,82 @@ const MyOrdersPage = () => {
                     </Link>
                   </div>
                 </div>
+
+                {/* Negotiation UI for Client */}
+                {order.status === 'negotiating' && order.lastNegotiator === 'professional' && (
+                  <div className="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-2xl">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-primary mb-1">Contraproposta do Técnico</p>
+                    <p className="text-xl font-bold text-foreground mb-2">{formatCurrency(order.proposedPrice)}</p>
+                    <p className="text-xs text-muted-foreground italic mb-4">"{order.negotiationMessage}"</p>
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={() => handleAcceptOffer(order.id)}
+                        size="sm" 
+                        className="bg-green-600 hover:bg-green-500 text-white rounded-xl text-xs gap-1.5 h-10 px-4"
+                      >
+                        <CheckCircle2 className="w-4 h-4" /> Aceitar Oferta
+                      </Button>
+                      <Button 
+                        onClick={() => setNegotiatingOrderId(order.id)}
+                        size="sm" 
+                        variant="outline" 
+                        className="border-primary/20 text-primary hover:bg-primary/10 rounded-xl text-xs h-10 px-3"
+                      >
+                        Contraproposta
+                      </Button>
+                      <Button 
+                        onClick={() => handleRejectOffer(order.id)}
+                        size="sm" 
+                        variant="outline" 
+                        className="border-red-500/20 text-red-400 hover:bg-red-500/10 rounded-xl text-xs h-10 px-3"
+                      >
+                        <XCircle className="w-4 h-4" /> Cancelar Pedido
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {order.status === 'negotiating' && order.lastNegotiator === 'client' && (
+                  <div className="mt-4 p-4 bg-card/50 border border-white/5 rounded-2xl text-right max-w-sm ml-auto">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-1">Sua Oferta</p>
+                    <p className="text-xl font-bold text-foreground mb-2">{formatCurrency(order.proposedPrice)}</p>
+                    <p className="text-xs text-muted-foreground italic mb-2">"{order.negotiationMessage}"</p>
+                    <Badge className="bg-yellow-500/10 text-yellow-500">Aguardando Técnico...</Badge>
+                  </div>
+                )}
+
+                {/* Inline Negotiation UI */}
+                {negotiatingOrderId === order.id && (
+                  <div className="mt-4 p-4 bg-black/20 border border-primary/20 rounded-2xl animate-in fade-in slide-in-from-top-4">
+                    <h4 className="text-sm font-bold mb-4">Enviar Contraproposta</h4>
+                    <div className="flex flex-col md:flex-row gap-4">
+                      <div className="flex-1 space-y-2">
+                        <label className="text-xs font-bold text-muted-foreground uppercase">Valor Proposto (R$)</label>
+                        <input 
+                          type="number"
+                          value={proposedPrice}
+                          onChange={(e) => setProposedPrice(e.target.value)}
+                          className="w-full h-10 bg-black/40 border border-white/10 rounded-xl px-3 text-sm focus:border-primary/50 outline-none"
+                          placeholder="Ex: 350.00"
+                        />
+                      </div>
+                      <div className="flex-[2] space-y-2">
+                        <label className="text-xs font-bold text-muted-foreground uppercase">Sua Mensagem</label>
+                        <input 
+                          type="text"
+                          value={negotiationMessage}
+                          onChange={(e) => setNegotiationMessage(e.target.value)}
+                          className="w-full h-10 bg-black/40 border border-white/10 rounded-xl px-3 text-sm focus:border-primary/50 outline-none"
+                          placeholder="Ex: Poxa, faz por R$300?"
+                        />
+                      </div>
+                      <div className="flex items-end gap-2 mt-4 md:mt-0">
+                        <Button onClick={() => setNegotiatingOrderId(null)} variant="outline" className="h-10 rounded-xl border-white/10">Cancelar</Button>
+                        <Button onClick={() => handleNegotiate(order.id)} className="h-10 rounded-xl">Enviar Oferta</Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </Card>
             ))}
 

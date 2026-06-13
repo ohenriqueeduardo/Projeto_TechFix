@@ -5,7 +5,10 @@ import {
   createOrder,
   updateOrder,
   updateOrderStatus,
-  confirmPayment
+  confirmPayment,
+  negotiateOrder,
+  acceptOffer,
+  rejectOffer
 } from '../controllers/orders.controller.js';
 import { authenticateJWT } from '../middleware/auth.middleware.js';
 
@@ -20,5 +23,8 @@ router.post('/', createOrder);
 router.put('/:id', updateOrder);
 router.patch('/:id/status', updateOrderStatus);
 router.post('/:id/confirm-payment', confirmPayment);
+router.post('/:id/negotiate', negotiateOrder);
+router.post('/:id/accept-offer', acceptOffer);
+router.post('/:id/reject-offer', rejectOffer);
 
 export default router;
