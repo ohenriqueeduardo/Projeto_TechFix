@@ -40,6 +40,7 @@ export interface Service {
   badge?: string;
   tags: string[];
   image?: string;
+  isCustomOrder?: boolean;
 }
 
 export type OrderStatus = "provisional" | "pending" | "scheduled" | "in_progress" | "completed" | "cancelled" | "counter_offer" | "negotiating";
