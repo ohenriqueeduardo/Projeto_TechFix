@@ -43,6 +43,44 @@ export const getServices = async (req: Request, res: Response) => {
       })
     );
 
+    // Add dynamic fallback for s_teste_1real
+    const hasTestService = servicesWithTags.some((s) => s.id === 's_teste_1real');
+    if (!hasTestService) {
+      const profs = await db.select().from(professionals).limit(1);
+      const profId = profs.length > 0 ? profs[0].userId : 'p1';
+      
+      const testService = {
+        id: 's_teste_1real',
+        title: 'Serviço de Teste (R$ 1,00)',
+        category: 'Manutenção',
+        description: 'Serviço de teste com valor simbólico de R$ 1,00 criado para testar a integração do Mercado Pago e fluxo de pagamento.',
+        price: 1.00,
+        duration: '10 minutos',
+        rating: 5.0,
+        professionalId: profId,
+        badge: 'Teste',
+        image: 'https://images.unsplash.com/photo-1580828343064-fde4fc206bc6?w=800&q=80',
+        createdAt: new Date(),
+        tags: ['Teste', 'Pagamento'],
+      };
+
+      let matches = true;
+      if (category && category !== 'Todos' && testService.category !== category) {
+        matches = false;
+      }
+      if (professionalId && testService.professionalId !== professionalId) {
+        matches = false;
+      }
+      if (search && !testService.title.toLowerCase().includes((search as string).toLowerCase()) && 
+          !testService.description.toLowerCase().includes((search as string).toLowerCase())) {
+        matches = false;
+      }
+
+      if (matches) {
+        servicesWithTags.push(testService);
+      }
+    }
+
     res.json(servicesWithTags);
   } catch (error) {
     console.error('Error fetching services:', error);
@@ -57,6 +95,24 @@ export const getServiceById = async (req: Request, res: Response) => {
     const serviceList = await db.select().from(services).where(eq(services.id, id)).limit(1);
 
     if (serviceList.length === 0) {
+      if (id === 's_teste_1real') {
+        const profs = await db.select().from(professionals).limit(1);
+        const profId = profs.length > 0 ? profs[0].userId : 'p1';
+        return res.json({
+          id: 's_teste_1real',
+          title: 'Serviço de Teste (R$ 1,00)',
+          category: 'Manutenção',
+          description: 'Serviço de teste com valor simbólico de R$ 1,00 criado para testar a integração do Mercado Pago e fluxo de pagamento.',
+          price: 1.00,
+          duration: '10 minutos',
+          rating: 5.0,
+          professionalId: profId,
+          badge: 'Teste',
+          image: 'https://images.unsplash.com/photo-1580828343064-fde4fc206bc6?w=800&q=80',
+          createdAt: new Date(),
+          tags: ['Teste', 'Pagamento']
+        });
+      }
       return res.status(404).json({ error: 'Service not found' });
     }
 
