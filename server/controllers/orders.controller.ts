@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { db } from '../../src/db/index.js';
-import { orders, transactions, professionals } from '../../src/db/schema.js';
+import { orders, transactions, professionals, users } from '../../src/db/schema.js';
 import { eq, and, lt, or, isNull } from 'drizzle-orm';
 import crypto from 'crypto';
 import { MercadoPagoConfig, PaymentRefund } from 'mercadopago';
@@ -295,7 +295,14 @@ export const negotiateOrder = async (req: Request, res: Response) => {
     const order = existingOrder[0];
     
     // If a professional initiates negotiation on an open order, assign it to them
-    const updates = {
+    const updates: {
+      status: string;
+      proposedPrice: number;
+      negotiationMessage: string;
+      lastNegotiator: string;
+      professionalId: string | null;
+      professionalName?: string;
+    } = {
       status: 'negotiating',
       proposedPrice: Number(proposedPrice),
       negotiationMessage: message,
@@ -315,8 +322,8 @@ export const negotiateOrder = async (req: Request, res: Response) => {
       .limit(1);
 
       if (profUser.length > 0) {
-        (updates as any).professionalId = profUser[0].userId;
-        (updates as any).professionalName = profUser[0].name;
+        updates.professionalId = profUser[0].userId;
+        updates.professionalName = profUser[0].name;
       }
     }
 
