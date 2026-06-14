@@ -304,11 +304,19 @@ export const negotiateOrder = async (req: Request, res: Response) => {
     };
 
     if (actorType === 'professional' && !order.professionalId) {
-      // Get professional ID from user ID
       const reqWithUser = req as unknown as { user?: { id?: string } };
-      const profUser = await db.select().from(professionals).where(eq(professionals.userId, reqWithUser.user?.id || '')).limit(1);
+      // Join professionals with users to get the professional's name
+      const profUser = await db.select({
+        userId: professionals.userId,
+        name: users.name
+      }).from(professionals)
+      .innerJoin(users, eq(professionals.userId, users.id))
+      .where(eq(professionals.userId, reqWithUser.user?.id || ''))
+      .limit(1);
+
       if (profUser.length > 0) {
-        updates.professionalId = profUser[0].userId;
+        (updates as any).professionalId = profUser[0].userId;
+        (updates as any).professionalName = profUser[0].name;
       }
     }
 

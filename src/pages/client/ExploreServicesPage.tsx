@@ -32,10 +32,13 @@ const ExploreServicesPage = () => {
   React.useEffect(() => {
     const fetchData = async () => {
       try {
+        const token = localStorage.getItem('token');
         const [servicesRes, profsRes, ordersRes] = await Promise.all([
           fetch('/api/services'),
           fetch('/api/professionals'),
-          fetch('/api/orders?openOnly=true')
+          fetch('/api/orders?openOnly=true', {
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          })
         ]);
         
         if (servicesRes.ok) {
