@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { db } from '../../src/db/index.js';
-import { services, serviceTags } from '../../src/db/schema.js';
+import { services, serviceTags, professionals } from '../../src/db/schema.js';
 import { eq, and, like, sql } from 'drizzle-orm';
 import crypto from 'crypto';
 
@@ -46,8 +46,15 @@ export const getServices = async (req: Request, res: Response) => {
     // Add dynamic fallback for s_teste_1real
     const hasTestService = servicesWithTags.some((s) => s.id === 's_teste_1real');
     if (!hasTestService) {
-      const profs = await db.select().from(professionals).limit(1);
-      const profId = profs.length > 0 ? profs[0].userId : 'p1';
+      let profId = 'p1';
+      try {
+        const profs = await db.select().from(professionals).limit(1);
+        if (profs.length > 0) {
+          profId = profs[0].userId;
+        }
+      } catch (e) {
+        console.error('Error fetching professional for test service:', e);
+      }
       
       const testService = {
         id: 's_teste_1real',
@@ -96,8 +103,15 @@ export const getServiceById = async (req: Request, res: Response) => {
 
     if (serviceList.length === 0) {
       if (id === 's_teste_1real') {
-        const profs = await db.select().from(professionals).limit(1);
-        const profId = profs.length > 0 ? profs[0].userId : 'p1';
+        let profId = 'p1';
+        try {
+          const profs = await db.select().from(professionals).limit(1);
+          if (profs.length > 0) {
+            profId = profs[0].userId;
+          }
+        } catch (e) {
+          console.error('Error fetching professional for test service:', e);
+        }
         return res.json({
           id: 's_teste_1real',
           title: 'Serviço de Teste (R$ 1,00)',
