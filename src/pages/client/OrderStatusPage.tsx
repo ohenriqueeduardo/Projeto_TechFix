@@ -346,7 +346,7 @@ const OrderStatusPage = () => {
               <span className="text-2xl font-black text-primary">{formatCurrency(order.price + 15)}</span>
             </div>
 
-            {order.status !== 'completed' && order.status !== 'cancelled' && (
+            {order.status === 'in_progress' && (
               <div className="pt-4 flex flex-col gap-3">
                 <Button 
                   onClick={handleCompleteOrder} 
@@ -354,6 +354,11 @@ const OrderStatusPage = () => {
                 >
                   Serviço Concluído (Liberar Pagamento)
                 </Button>
+              </div>
+            )}
+            
+            {order.status !== 'completed' && order.status !== 'cancelled' && (
+              <div className="pt-4 flex flex-col gap-3">
                 <Button 
                   variant="outline"
                   onClick={() => toast.info('Solicitação de cancelamento enviada ao suporte.')} 
