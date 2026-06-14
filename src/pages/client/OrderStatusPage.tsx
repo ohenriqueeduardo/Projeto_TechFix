@@ -110,12 +110,34 @@ const OrderStatusPage = () => {
     }
   };
 
+  const handleAcceptOffer = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/orders/${order.id}/accept-offer`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Failed to accept');
+      const updatedOrder = await response.json();
+      setOrder(updatedOrder);
+      toast.success('Oferta aceita! Redirecionando para o pagamento...');
+      navigate(`/cliente/pedido/${order.id}/pagamento`);
+    } catch (error) {
+      toast.error('Erro ao aceitar a oferta.');
+    }
+  };
+
   // Professional fetched from state
 
   const getStatusStep = (status: string) => {
     switch (status) {
       case 'pending': 
-      case 'counter_offer': return 1;
+      case 'provisional':
+      case 'negotiating': return 1;
       case 'scheduled': return 2;
       case 'in_progress': return 3;
       case 'completed': return 4;
@@ -139,7 +161,7 @@ const OrderStatusPage = () => {
       </Button>
 
       {/* Counter Offer Banner */}
-      {order.status === 'counter_offer' && !showDeclineDialog && (
+      {order.status === 'negotiating' && order.lastNegotiator === 'professional' && !showDeclineDialog && (
         <div className="glass-card p-6 border-primary/45 bg-primary/5 rounded-3xl space-y-4 animate-in zoom-in-95 duration-300 relative overflow-hidden text-left">
           <div className="absolute -right-20 -top-20 w-40 h-40 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
           <div className="flex items-center gap-3">
@@ -147,22 +169,33 @@ const OrderStatusPage = () => {
             <h3 className="font-black text-lg text-primary">Contraproposta Recebida!</h3>
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed font-medium">
-            O especialista <strong className="text-foreground">{order.professionalName}</strong> analisou os detalhes do seu chamado e enviou uma contraproposta no valor de <strong className="text-primary text-sm font-black">{formatCurrency(order.price)}</strong>.
+            O especialista <strong className="text-foreground">{order.professionalName || prof.name}</strong> analisou os detalhes do seu chamado e enviou uma contraproposta no valor de <strong className="text-primary text-sm font-black">{formatCurrency(order.proposedPrice || order.price)}</strong>.
+            {order.negotiationMessage && <span><br/><br/>Mensagem do Técnico: <em>"{order.negotiationMessage}"</em></span>}
           </p>
           <div className="flex flex-wrap gap-3 pt-2">
-            <Link to={`/cliente/pedido/${order.id}/pagamento`}>
-              <Button className="btn-primary h-10 px-5 rounded-xl text-[10px] font-black uppercase shadow-lg shadow-primary/20">
-                Aceitar Proposta & Pagar
-              </Button>
-            </Link>
+            <Button 
+              onClick={handleAcceptOffer}
+              className="bg-green-600 hover:bg-green-500 text-white h-10 px-5 rounded-xl text-[10px] font-black uppercase shadow-lg shadow-green-600/20"
+            >
+              Aceitar Oferta & Pagar
+            </Button>
             <Button 
               onClick={() => setShowDeclineDialog(true)} 
               variant="outline" 
               className="border-red-500/20 text-red-400 hover:bg-red-500/10 h-10 px-5 rounded-xl text-[10px] font-black uppercase"
             >
-              Recusar Proposta
+              Recusar Oferta
             </Button>
           </div>
+        </div>
+      )}
+
+      {order.status === 'negotiating' && order.lastNegotiator === 'client' && (
+        <div className="glass-card p-6 border-yellow-500/30 bg-yellow-500/5 rounded-3xl space-y-4 animate-in slide-in-from-top-4 duration-300 text-left">
+           <h3 className="font-black text-lg text-yellow-500">Sua Oferta foi Enviada</h3>
+           <p className="text-xs text-muted-foreground leading-relaxed font-medium">
+             Aguardando resposta do técnico para a proposta de <strong className="text-yellow-500 text-sm">{formatCurrency(order.proposedPrice || order.price)}</strong>.
+           </p>
         </div>
       )}
 
