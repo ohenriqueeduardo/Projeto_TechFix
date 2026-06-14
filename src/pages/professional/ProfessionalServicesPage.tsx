@@ -12,7 +12,8 @@ import {
   MapPin, 
   Search,
   Filter,
-  AlertCircle
+  AlertCircle,
+  Play
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
