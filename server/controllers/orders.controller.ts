@@ -41,7 +41,7 @@ const cleanupExpiredProvisionalOrders = async () => {
 export const getOrders = async (req: Request, res: Response) => {
   try {
     await cleanupExpiredProvisionalOrders();
-    const { clientId, professionalId } = req.query;
+    const { clientId, professionalId, openOnly } = req.query;
 
     const query = db.select().from(orders);
 
@@ -56,6 +56,9 @@ export const getOrders = async (req: Request, res: Response) => {
           and(isNull(orders.professionalId), eq(orders.status, 'pending'))
         )
       );
+    }
+    if (openOnly === 'true') {
+      conditions.push(and(isNull(orders.professionalId), eq(orders.status, 'pending')));
     }
 
     let list;

@@ -3,7 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Star, SlidersHorizontal, Clock, ArrowRight } from 'lucide-react';
-import { Service, Professional } from '@/types';
+import { Service, Professional, Order } from '@/types';
 import { formatCurrency } from '@/utils/formatters';
 import { 
   DropdownMenu, 
@@ -25,15 +25,17 @@ const ExploreServicesPage = () => {
   const [selectedProfId, setSelectedProfId] = React.useState<string>('todos');
 
   const [servicesList, setServicesList] = React.useState<Service[]>([]);
+  const [openOrdersList, setOpenOrdersList] = React.useState<Order[]>([]);
   const [profsList, setProfsList] = React.useState<Professional[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        const [servicesRes, profsRes] = await Promise.all([
+        const [servicesRes, profsRes, ordersRes] = await Promise.all([
           fetch('/api/services'),
-          fetch('/api/professionals')
+          fetch('/api/professionals'),
+          fetch('/api/orders?openOnly=true')
         ]);
         
         if (servicesRes.ok) {
@@ -43,6 +45,10 @@ const ExploreServicesPage = () => {
         if (profsRes.ok) {
           const data = await profsRes.json();
           setProfsList(data);
+        }
+        if (ordersRes.ok) {
+          const data = await ordersRes.json();
+          setOpenOrdersList(data);
         }
       } catch (err) {
         console.error('Error fetching explore data:', err);
@@ -66,15 +72,36 @@ const ExploreServicesPage = () => {
     e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
   }, []);
 
-  // Filtering Logic
-  const filteredServices = servicesList.filter(s => {
-    const matchesSearch = s.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         s.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         s.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = category === 'Todos' || s.category.toLowerCase() === category.toLowerCase();
-    const matchesProf = selectedProfId === 'todos' || s.professionalId === selectedProfId;
-    return matchesSearch && matchesCategory && matchesProf;
-  });
+  // Memoize mapped orders and combine them with normal services
+  const combinedServices = React.useMemo(() => {
+    const mappedOrders: (Service & { isCustomOrder?: boolean })[] = openOrdersList.map(order => ({
+      id: order.id,
+      title: order.serviceTitle,
+      category: 'Customizado',
+      description: `Endereço/Detalhes: ${order.address}. Pedido customizado aberto aguardando um técnico.`,
+      price: order.price,
+      duration: 'A Combinar',
+      rating: 0,
+      professionalId: '',
+      tags: ['Chamado Aberto', 'Urgente'],
+      image: 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=800&q=80',
+      badge: 'NOVO CHAMADO',
+      isCustomOrder: true
+    }));
+    return [...servicesList, ...mappedOrders];
+  }, [servicesList, openOrdersList]);
+
+  // Filter combined data
+  const filteredServices = React.useMemo(() => {
+    return combinedServices.filter(s => {
+      const matchSearch = s.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          s.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchCategory = category === 'Todos' || s.category === category;
+      const matchProf = selectedProfId === 'todos' || s.professionalId === selectedProfId || (s as any).isCustomOrder;
+      
+      return matchSearch && matchCategory && matchProf;
+    });
+  }, [searchTerm, category, selectedProfId, combinedServices]);
 
   // Sorting Logic
   const sortedServices = [...filteredServices].sort((a, b) => {
@@ -144,9 +171,9 @@ const ExploreServicesPage = () => {
 
               <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground px-2.5 py-1.5">Categorias</DropdownMenuLabel>
               <DropdownMenuRadioGroup value={category} onValueChange={setCategory}>
-                <DropdownMenuRadioItem value="Todos" className="text-xs font-bold rounded-lg cursor-pointer">Todas Categorias</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="Manutenção" className="text-xs font-bold rounded-lg cursor-pointer">Manutenção</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="Montagem" className="text-xs font-bold rounded-lg cursor-pointer">Montagem</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="Todos" className="text-xs font-bold rounded-lg cursor-pointer">Todas</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="Hardware" className="text-xs font-bold rounded-lg cursor-pointer">Hardware</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="Customizado" className="text-xs font-bold rounded-lg cursor-pointer">Chamados (Customizado)</DropdownMenuRadioItem>
                 <DropdownMenuRadioItem value="Redes" className="text-xs font-bold rounded-lg cursor-pointer">Redes</DropdownMenuRadioItem>
                 <DropdownMenuRadioItem value="Software" className="text-xs font-bold rounded-lg cursor-pointer">Software</DropdownMenuRadioItem>
               </DropdownMenuRadioGroup>
@@ -308,12 +335,14 @@ const ExploreServicesPage = () => {
 
               <div className="pt-4 border-t border-foreground/5 flex items-center justify-between">
                 <div className="flex flex-col text-left shrink-0">
-                  <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest leading-none">Investimento</span>
+                  <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest leading-none">
+                    {(service as any).isCustomOrder ? 'A Pagar' : 'Investimento'}
+                  </span>
                   <span className="text-xl font-black text-primary mt-1">{formatCurrency(service.price)}</span>
                 </div>
-                <Link to={`/cliente/servico/${service.id}`}>
-                  <Button className="btn-primary h-10 px-5 text-xs font-black rounded-xl flex items-center gap-1.5 shadow-md shadow-primary/10 hover:shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] duration-300">
-                    Ver Detalhes <ArrowRight className="w-4 h-4 shrink-0" />
+                <Link to={(service as any).isCustomOrder ? '/profissional/servicos' : `/cliente/servico/${service.id}`}>
+                  <Button className={`h-10 px-5 text-xs font-black rounded-xl flex items-center gap-1.5 shadow-md shadow-primary/10 hover:shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] duration-300 ${(service as any).isCustomOrder ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'btn-primary'}`}>
+                    {(service as any).isCustomOrder ? 'Aceitar Chamado' : 'Ver Detalhes'} <ArrowRight className="w-4 h-4 shrink-0" />
                   </Button>
                 </Link>
               </div>
