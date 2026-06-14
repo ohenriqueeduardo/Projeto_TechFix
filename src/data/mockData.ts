@@ -102,5 +102,18 @@ export const services: Service[] = [
     badge: "Segurança",
     tags: ["Antivírus", "Segurança", "Malware"],
     image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800&auto=format&fit=crop"
+  },
+  {
+    id: "s_teste_1real",
+    title: "Serviço de Teste (R$ 1,00)",
+    category: "Manutenção",
+    description: "Serviço de teste com valor simbólico de R$ 1,00 criado para testar a integração do Mercado Pago e fluxo de pagamento.",
+    price: 1,
+    duration: "10m",
+    rating: 5.0,
+    professionalId: "p1",
+    badge: "Teste",
+    tags: ["Teste", "Pagamento"],
+    image: "https://images.unsplash.com/photo-1580828343064-fde4fc206bc6?w=800&auto=format&fit=crop"
   }
 ];

@@ -44,7 +44,8 @@ INSERT INTO services (id, title, category, description, price, duration, rating,
 ('s5', 'Otimização de S.O. & Softwares', 'Software', 'Formatação completa ou limpeza de registro, remoção de lixo digital e reinstalação de sistema operacional.', 150.00, '2h', 4.70, 'p2', NULL, 'https://images.unsplash.com/photo-1600132806370-bf17e65e942f?w=800&auto=format&fit=crop'),
 ('s6', 'Manutenção Gamer & Refrigeração', 'Manutenção', 'Troca de elastômeros, pasta térmica de alta performance e alinhamento de fans para menor ruído e temperatura.', 200.00, '2h', 5.00, 'p1', 'Destaque', 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop'),
 ('s7', 'Configuração de Impressora & Servidor', 'Redes', 'Instalação física e lógica de impressoras multifuncionais compartilhadas na rede local.', 120.00, '1h', 4.60, 'p2', NULL, 'https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=800&auto=format&fit=crop'),
-('s8', 'Remoção de Malware & Varredura', 'Software', 'Escaneamento profundo, remoção de vírus, trojans, adwares e instalação de proteção antivírus permanente.', 160.00, '1h30', 4.90, 'p2', 'Segurança', 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800&auto=format&fit=crop');
+('s8', 'Remoção de Malware & Varredura', 'Software', 'Escaneamento profundo, remoção de vírus, trojans, adwares e instalação de proteção antivírus permanente.', 160.00, '1h30', 4.90, 'p2', 'Segurança', 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800&auto=format&fit=crop'),
+('s_teste_1real', 'Serviço de Teste (R$ 1,00)', 'Manutenção', 'Serviço de teste com valor simbólico de R$ 1,00 criado para testar a integração do Mercado Pago e fluxo de pagamento.', 1.00, '10m', 5.00, 'p1', 'Teste', 'https://images.unsplash.com/photo-1580828343064-fde4fc206bc6?w=800&auto=format&fit=crop');
 
 --------------------------------------------------------------------------------
 -- 4. POPULANDO A TABELA: service_tags
@@ -73,7 +74,9 @@ INSERT INTO service_tags (service_id, tag) VALUES
 ('s7', 'Escritório'),
 ('s8', 'Antivírus'),
 ('s8', 'Segurança'),
-('s8', 'Malware');
+('s8', 'Malware'),
+('s_teste_1real', 'Teste'),
+('s_teste_1real', 'Pagamento');
 
 --------------------------------------------------------------------------------
 -- 5. POPULANDO A TABELA: orders

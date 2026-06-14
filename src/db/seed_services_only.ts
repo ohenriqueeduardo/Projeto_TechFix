@@ -109,6 +109,19 @@ async function main() {
       badge: 'Segurança',
       image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800&auto=format&fit=crop',
       createdAt: new Date()
+    },
+    {
+      id: 's_teste_1real',
+      title: 'Serviço de Teste (R$ 1,00)',
+      category: 'Manutenção',
+      description: 'Serviço de teste com valor simbólico de R$ 1,00 criado para testar a integração do Mercado Pago e fluxo de pagamento.',
+      price: 1.00,
+      duration: '10m',
+      rating: 5.00,
+      professionalId: null, // Generic
+      badge: 'Teste',
+      image: 'https://images.unsplash.com/photo-1580828343064-fde4fc206bc6?w=800&auto=format&fit=crop',
+      createdAt: new Date()
     }
   ]).onConflictDoNothing();
 
@@ -138,6 +151,8 @@ async function main() {
     { serviceId: 's8', tag: 'Antivírus' },
     { serviceId: 's8', tag: 'Segurança' },
     { serviceId: 's8', tag: 'Malware' },
+    { serviceId: 's_teste_1real', tag: 'Teste' },
+    { serviceId: 's_teste_1real', tag: 'Pagamento' },
   ]).onConflictDoNothing();
 
   console.log("Generic services seeded successfully!");

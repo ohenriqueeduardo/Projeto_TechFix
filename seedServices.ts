@@ -90,6 +90,19 @@ async function seed() {
       badge: 'Mais Vendido',
       image: 'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=800&q=80',
       tags: ['Upgrade', 'SSD', 'Performance']
+    },
+    {
+      id: 's_teste_1real',
+      title: 'Serviço de Teste (R$ 1,00)',
+      category: 'Manutenção',
+      description: 'Serviço de teste com valor simbólico de R$ 1,00 criado para testar a integração do Mercado Pago e fluxo de pagamento.',
+      price: 1.00,
+      duration: '10m',
+      rating: 5.0,
+      professionalId: profId,
+      badge: 'Teste',
+      image: 'https://images.unsplash.com/photo-1580828343064-fde4fc206bc6?w=800&q=80',
+      tags: ['Teste', 'Pagamento']
     }
   ];
 
