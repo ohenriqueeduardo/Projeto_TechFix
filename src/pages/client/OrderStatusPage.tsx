@@ -70,13 +70,6 @@ const OrderStatusPage = () => {
     );
   }
 
-      setOrder({ ...order, status: 'cancelled' as const });
-      setShowDeclineDialog(false);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   const handleCompleteOrder = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -94,6 +87,7 @@ const OrderStatusPage = () => {
     } catch (err) {
       console.error(err);
       toast.error('Erro ao comunicar com o servidor.');
+    }
   };
 
   // Professional fetched from state
