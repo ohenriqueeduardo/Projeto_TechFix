@@ -19,13 +19,12 @@ import {
   Printer
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 import { Order } from '@/types';
 import { toast } from 'sonner';
 
 const MyOrdersPage = () => {
-  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [activeTab, setActiveTab] = React.useState<'all' | 'active' | 'past'>('all');
   
@@ -127,8 +126,7 @@ const MyOrdersPage = () => {
       if (!response.ok) throw new Error('Failed to accept');
       const updatedOrder = await response.json();
       setOrders(prev => prev.map(o => o.id === orderId ? updatedOrder : o));
-      toast.success('Oferta aceita! Redirecionando para o pagamento...');
-      navigate(`/cliente/checkout-oferta/${orderId}`);
+      toast.success('Oferta aceita com sucesso!');
     } catch (error) {
       toast.error('Erro ao aceitar a oferta.');
     }
@@ -292,21 +290,6 @@ const MyOrdersPage = () => {
                     </Link>
                   </div>
                 </div>
-
-                {/* Pending Payment UI for Client */}
-                {order.status === 'provisional' && (
-                  <div className="mt-4 p-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-wider text-orange-500 mb-1">Aguardando Pagamento</p>
-                      <p className="text-sm text-muted-foreground">Complete o pagamento para que o técnico possa iniciar o preparo e o agendamento.</p>
-                    </div>
-                    <Link to={`/cliente/checkout-oferta/${order.id}`} className="w-full sm:w-auto shrink-0">
-                      <Button className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl h-10 px-6 shrink-0">
-                        Fazer Pagamento
-                      </Button>
-                    </Link>
-                  </div>
-                )}
 
                 {/* Negotiation UI for Client */}
                 {order.status === 'negotiating' && order.lastNegotiator === 'professional' && (
