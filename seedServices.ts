@@ -75,7 +75,7 @@ async function seed() {
       rating: 4.7,
       professionalId: profId,
       badge: '',
-      image: 'https://images.unsplash.com/photo-1614064641913-a526ab568910?w=800&q=80',
+      image: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=800&q=80',
       tags: ['Dados', 'Forense', 'HD/SSD']
     },
     {
