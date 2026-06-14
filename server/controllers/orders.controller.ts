@@ -301,10 +301,9 @@ export const negotiateOrder = async (req: Request, res: Response) => {
       negotiationMessage: string;
       lastNegotiator: string;
       professionalId: string | null;
-      professionalName?: string;
     } = {
       status: 'negotiating',
-      proposedPrice: Number(proposedPrice),
+      proposedPrice: Number(String(proposedPrice).replace(',', '.')),
       negotiationMessage: message,
       lastNegotiator: actorType,
       professionalId: order.professionalId
@@ -323,7 +322,6 @@ export const negotiateOrder = async (req: Request, res: Response) => {
 
       if (profUser.length > 0) {
         updates.professionalId = profUser[0].userId;
-        updates.professionalName = profUser[0].name;
       }
     }
 
