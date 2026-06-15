@@ -56,7 +56,7 @@ const AdminDashboardPage = () => {
           const data = await res.json();
           setMetrics(data.metrics);
 
-          const logs = data.recentOrders.map((o: any) => ({
+          const logs = data.recentOrders.map((o: { id: string; status: string; serviceTitle: string; price: number; createdAt: string }) => ({
             id: o.id,
             action: 'Pedido ' + o.status,
             details: `Serviço ${o.serviceTitle} no valor de ${formatCurrency(o.price)}`,
@@ -67,7 +67,9 @@ const AdminDashboardPage = () => {
           setSystemLogs(logs);
           setCandidates(data.recentUsers);
         }
-      } catch (e) {} finally {
+      } catch (e) {
+        console.warn('Backend fetch failed:', e);
+      } finally {
         setIsLoading(false);
       }
     };
@@ -108,7 +110,7 @@ const AdminDashboardPage = () => {
                 <span className="text-[10px] font-black tracking-widest text-cyan-400 uppercase">Sistema Central</span>
                 <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[9px] uppercase px-1.5 py-0">Root Access</Badge>
               </div>
-              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground bg-clip-text text-transparent bg-gradient-to-r from-foreground via-foreground to-cyan-400">
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground via-foreground to-cyan-400">
                 Olá, Administrador! 👑
               </h1>
             </div>

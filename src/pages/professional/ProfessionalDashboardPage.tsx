@@ -136,7 +136,9 @@ const ProfessionalDashboardPage = () => {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ status: 'scheduled' })
       });
-    } catch (e) {}
+    } catch (e) {
+      console.warn('Erro ao aceitar pedido:', e);
+    }
     toast.success('Pedido aceito com sucesso!');
     if (user) fetchDashboardData(user.id, token || '', user);
   };
@@ -163,7 +165,9 @@ const ProfessionalDashboardPage = () => {
           })
         });
       }
-    } catch (err) {}
+    } catch (err) {
+      console.warn('Erro ao concluir pedido:', err);
+    }
     toast.success('Serviço concluído e pagamento creditado!');
     if (user) fetchDashboardData(user.id, token || '', user);
   };
@@ -176,7 +180,9 @@ const ProfessionalDashboardPage = () => {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ status: 'cancelled' })
       });
-    } catch (e) {}
+    } catch (e) {
+      console.warn('Erro ao cancelar pedido:', e);
+    }
     toast.error('Serviço recusado/cancelado.');
     if (user) fetchDashboardData(user.id, token || '', user);
   };
@@ -194,7 +200,9 @@ const ProfessionalDashboardPage = () => {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ status: 'counter_offer', price: priceNum })
       });
-    } catch (e) {}
+    } catch (e) {
+      console.warn('Erro ao enviar contraproposta:', e);
+    }
     toast.success('Contraproposta enviada!');
     setCounterOfferOrderId(null);
     if (user) fetchDashboardData(user.id, token || '', user);
