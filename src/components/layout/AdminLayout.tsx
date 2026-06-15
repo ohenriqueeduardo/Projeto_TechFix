@@ -11,7 +11,8 @@ import {
   Database,
   Users,
   DollarSign,
-  Wrench
+  Wrench,
+  User as UserIcon
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -198,6 +199,25 @@ const AdminLayout = () => {
                 <DropdownMenuSeparator className="bg-white/5" />
                 <DropdownMenuItem onClick={() => navigate('/admin/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
                   <LayoutDashboard className="w-4 h-4 text-primary" /> Painel Geral
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/admin/usuarios')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                  <Users className="w-4 h-4 text-primary" /> Usuários & Equipe
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/admin/servicos')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                  <Wrench className="w-4 h-4 text-primary" /> Serviços
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/admin/financas')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                  <DollarSign className="w-4 h-4 text-primary" /> Tesouraria
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/admin/configuracoes')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                  <Settings className="w-4 h-4 text-primary" /> Configurações
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-white/5" />
+                <DropdownMenuItem onClick={() => navigate('/cliente/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-blue-400 focus:text-blue-400 bg-blue-500/10 focus:bg-blue-500/20 font-bold mb-2">
+                  <UserIcon className="w-4 h-4" /> Acessar Painel Cliente
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/profissional/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-orange-400 focus:text-orange-400 bg-orange-500/10 focus:bg-orange-500/20 font-bold mb-2">
+                  <Wrench className="w-4 h-4" /> Acessar Painel Técnico
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-white/5" />
                 <DropdownMenuItem onClick={() => navigate('/login')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive">

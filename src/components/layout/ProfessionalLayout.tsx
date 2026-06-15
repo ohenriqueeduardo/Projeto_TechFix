@@ -248,6 +248,18 @@ const ProfessionalLayout = () => {
                 <DropdownMenuItem onClick={() => navigate('/profissional/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
                   <LayoutDashboard className="w-4 h-4 text-primary" /> Painel Técnico
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/profissional/agenda')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                  <CalendarDays className="w-4 h-4 text-primary" /> Minha Agenda
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/profissional/servicos')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                  <Wrench className="w-4 h-4 text-primary" /> Meus Serviços
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/profissional/financeiro')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                  <DollarSign className="w-4 h-4 text-primary" /> Financeiro
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/profissional/configuracoes')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                  <Settings className="w-4 h-4 text-primary" /> Configurações
+                </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-white/5" />
                 {(currentUser?.role === 'admin' || currentUser?.role === 'both' || currentUser?.role === 'client') && (
                   <DropdownMenuItem onClick={() => navigate('/cliente/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-primary focus:text-primary bg-primary/10 focus:bg-primary/20 font-bold mb-2">

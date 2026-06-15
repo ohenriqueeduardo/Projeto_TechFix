@@ -306,7 +306,7 @@ const ProfessionalProfilePage = () => {
                     </Button>
                   </Link>
                   <a 
-                    href={`https://wa.me/5511999999999?text=Ol%C3%A1%2C%20encontrei%20seu%20perfil%20na%20TechFix%20e%20gostaria%20de%20falar%20sobre%20seus%20servi%C3%A7os!`} 
+                    href={`https://wa.me/55${(professional.phone || '11999999999').replace(/\D/g, '')}?text=Ol%C3%A1%2C%20encontrei%20seu%20perfil%20na%20TechFix%20e%20gostaria%20de%20falar%20sobre%20seus%20servi%C3%A7os!`} 
                     target="_blank" 
                     rel="noopener noreferrer" 
                     className="w-full block"

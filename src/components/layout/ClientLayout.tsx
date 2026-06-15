@@ -282,6 +282,9 @@ const ClientLayout = () => {
                 <DropdownMenuItem onClick={() => navigate('/cliente/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
                   <LayoutDashboard className="w-4 h-4 text-primary" /> Painel de Controle
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/cliente/busca')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                  <Search className="w-4 h-4 text-primary" /> Buscar Serviços
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/cliente/meus-pedidos')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
                   <ClipboardList className="w-4 h-4 text-primary" /> Meus Pedidos
                 </DropdownMenuItem>
