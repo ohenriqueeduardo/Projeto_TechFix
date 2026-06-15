@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Calendar, Clock, User, Settings as SettingsIcon } from "lucide-react";
+import { Calendar, Clock, User, Briefcase, Settings as SettingsIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Professional, User as UserType } from '@/types';
 
@@ -21,7 +20,38 @@ const ProfessionalSettingsPage = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [avatar, setAvatar] = useState('');
+  const [specialty, setSpecialty] = useState('');
+  const [city, setCity] = useState('');
+  const [bio, setBio] = useState('');
+  const [basePrice, setBasePrice] = useState('150');
+  
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = ['Geral', 'Atuação Profissional', 'Agenda & Horários', 'Perfil'];
+      let current = 'Geral';
+      
+      const scrollPosition = window.scrollY + 150;
+
+      for (const section of sections) {
+        if (section === 'Geral') continue;
+        const element = document.getElementById(section);
+        if (element && element.offsetTop <= scrollPosition) {
+          current = section;
+        }
+      }
+      
+      if (window.scrollY < 100) {
+        current = 'Geral';
+      }
+
+      setActiveMenu(current);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -40,6 +70,10 @@ const ProfessionalSettingsPage = () => {
           setProfile(data);
           setAvailableDays(data.availableDays || daysOfWeek.slice(0, 5));
           setAvailableTimes(data.availableTimes || standardTimes);
+          setSpecialty(data.specialty || '');
+          setCity(data.city || '');
+          setBio(data.bio || '');
+          setBasePrice(data.price?.toString() || '150');
         }
       } catch (err) {
         console.error('Failed to load profile', err);
@@ -76,6 +110,12 @@ const ProfessionalSettingsPage = () => {
   const handleSave = async () => {
     if (!profile || !currentUser) return;
     try {
+      const parsedPrice = parseFloat(basePrice);
+      if (isNaN(parsedPrice) || parsedPrice < 0) {
+        toast.error("O preço base deve ser um número válido e positivo.");
+        return;
+      }
+
       const res = await fetch(`/api/professionals/${profile.id}`, {
         method: 'PUT',
         headers: {
@@ -84,7 +124,11 @@ const ProfessionalSettingsPage = () => {
         },
         body: JSON.stringify({
           availableDays,
-          availableTimes
+          availableTimes,
+          specialty,
+          city,
+          bio,
+          price: parsedPrice
         })
       });
 
@@ -136,13 +180,14 @@ const ProfessionalSettingsPage = () => {
     <div className="max-w-4xl mx-auto space-y-10 animate-page-entrance pb-20">
       <div>
         <h1 className="text-3xl font-bold mb-2">Configurações do Especialista</h1>
-        <p className="text-muted-foreground">Gerencie sua agenda de atendimento e dados do perfil.</p>
+        <p className="text-muted-foreground">Gerencie sua agenda de atendimento, sua vitrine profissional e dados do perfil.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <nav className="space-y-2 sticky top-28 h-fit">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 relative items-start">
+        <nav className="space-y-2 sticky top-32 self-start h-fit w-full">
           {[
             { icon: SettingsIcon, label: "Geral" },
+            { icon: Briefcase, label: "Atuação Profissional" },
             { icon: Calendar, label: "Agenda & Horários" },
             { icon: User, label: "Perfil" },
           ].map((item, i) => (
@@ -150,7 +195,7 @@ const ProfessionalSettingsPage = () => {
               key={i}
               onClick={() => scrollToSection(item.label)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                activeMenu === item.label ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-white/5'
+                activeMenu === item.label ? 'bg-primary text-primary-foreground shadow-[0_0_15px_rgba(6,182,212,0.2)]' : 'text-muted-foreground hover:bg-white/5'
               }`}
             >
               <item.icon className="w-4 h-4" />
@@ -159,10 +204,65 @@ const ProfessionalSettingsPage = () => {
           ))}
         </nav>
 
-        <div className="lg:col-span-3 space-y-8">
+        <div className="lg:col-span-3 space-y-12">
           
+          <div id="Atuação Profissional" className="space-y-8 scroll-mt-28">
+            <h2 className="text-2xl font-bold border-b border-white/10 pb-2 flex items-center gap-2">
+              <Briefcase className="w-6 h-6 text-primary" /> Atuação Profissional
+            </h2>
+            <div className="glass-card p-8 rounded-3xl space-y-6">
+              <h3 className="text-xl font-bold mb-2">Sua Vitrine</h3>
+              <p className="text-sm text-muted-foreground mb-6">Estes dados aparecem no seu card quando os clientes buscam por profissionais.</p>
+              
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>Especialidade Principal</Label>
+                    <Input 
+                      value={specialty} 
+                      onChange={(e) => setSpecialty(e.target.value)} 
+                      placeholder="Ex: Hardware e Redes" 
+                      className="bg-background/50 border-white/10" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Taxa Base / Valor Mínimo (R$)</Label>
+                    <Input 
+                      type="number"
+                      value={basePrice} 
+                      onChange={(e) => setBasePrice(e.target.value)} 
+                      className="bg-background/50 border-white/10" 
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Cidades de Atendimento</Label>
+                  <Input 
+                    value={city} 
+                    onChange={(e) => setCity(e.target.value)} 
+                    placeholder="Ex: São Paulo, SP" 
+                    className="bg-background/50 border-white/10" 
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Resumo Profissional (Bio)</Label>
+                  <textarea 
+                    value={bio} 
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="Conte um pouco sobre sua experiência e como você resolve os problemas dos clientes." 
+                    className="flex min-h-[120px] w-full rounded-2xl border border-white/10 bg-background/50 px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div id="Agenda & Horários" className="space-y-8 scroll-mt-28">
-            <h2 className="text-2xl font-bold border-b border-white/10 pb-2">Agenda & Horários</h2>
+            <h2 className="text-2xl font-bold border-b border-white/10 pb-2 flex items-center gap-2">
+              <Calendar className="w-6 h-6 text-primary" /> Agenda & Horários
+            </h2>
             
             {/* DIAS DISPONÍVEIS */}
             <div className="glass-card p-8 rounded-3xl space-y-6">
@@ -230,8 +330,10 @@ const ProfessionalSettingsPage = () => {
           </div>
 
           <div id="Perfil" className="space-y-8 scroll-mt-28">
-            <h2 className="text-2xl font-bold border-b border-white/10 pb-2">Perfil</h2>
-            <div className="glass-card p-8 rounded-3xl space-y-6 animate-in fade-in">
+            <h2 className="text-2xl font-bold border-b border-white/10 pb-2 flex items-center gap-2">
+              <User className="w-6 h-6 text-primary" /> Perfil
+            </h2>
+            <div className="glass-card p-8 rounded-3xl space-y-6">
               <h3 className="text-xl font-bold mb-4">Informações do Perfil</h3>
               
               <div className="flex items-center gap-6 mb-6">

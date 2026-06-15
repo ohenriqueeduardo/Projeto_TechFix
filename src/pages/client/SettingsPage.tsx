@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,32 @@ import { toast } from "sonner";
 
 const SettingsPage = () => {
   const [activeMenu, setActiveMenu] = useState('Geral');
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = ['Geral', 'Perfil', 'Notificações', 'Segurança', 'Pagamentos', 'Dispositivos'];
+      let current = 'Geral';
+      
+      const scrollPosition = window.scrollY + 150;
+
+      for (const section of sections) {
+        if (section === 'Geral') continue;
+        const element = document.getElementById(section);
+        if (element && element.offsetTop <= scrollPosition) {
+          current = section;
+        }
+      }
+      
+      if (window.scrollY < 100) {
+        current = 'Geral';
+      }
+
+      setActiveMenu(current);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleSave = () => {
     toast.success("Configurações salvas com sucesso!");
@@ -34,8 +60,8 @@ const SettingsPage = () => {
         <p className="text-muted-foreground">Gerencie sua conta e preferências de uso.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <nav className="space-y-2 sticky top-28 h-fit">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 relative items-start">
+        <nav className="space-y-2 sticky top-32 self-start h-fit w-full">
           {[
             { icon: SettingsIcon, label: "Geral" },
             { icon: User, label: "Perfil" },
@@ -48,7 +74,7 @@ const SettingsPage = () => {
               key={i}
               onClick={() => scrollToSection(item.label)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                activeMenu === item.label ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-white/5'
+                activeMenu === item.label ? 'bg-primary text-primary-foreground shadow-[0_0_15px_rgba(6,182,212,0.2)]' : 'text-muted-foreground hover:bg-white/5'
               }`}
             >
               <item.icon className="w-4 h-4" />

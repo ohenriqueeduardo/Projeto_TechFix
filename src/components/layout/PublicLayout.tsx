@@ -1,12 +1,32 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, LogIn, UserPlus } from 'lucide-react';
+import { Menu, X, LogIn, UserPlus, LayoutDashboard } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import logo from '@/assets/logo.png';
+import { User } from '@/types';
 
 const PublicLayout = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error('Failed to parse user session', e);
+      }
+    }
+  }, []);
+
+  const getDashboardPath = () => {
+    if (!user) return '/login';
+    if (user.role === 'admin') return '/admin';
+    if (user.role === 'professional') return '/especialista';
+    return '/cliente';
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -19,16 +39,26 @@ const PublicLayout = () => {
 
           <div className="hidden md:flex items-center gap-4">
             <ThemeToggle />
-            <Link to="/login">
-              <Button variant="outline" className="text-sm font-bold gap-2 h-10 px-4 border-primary/20 hover:border-primary/50 text-foreground bg-foreground/5 hover:bg-foreground/10 transition-all rounded-xl">
-                <LogIn className="w-4 h-4 text-primary" /> Entrar
-              </Button>
-            </Link>
-            <Link to="/cadastro">
-              <Button className="btn-primary gap-2 h-10 px-5 text-sm">
-                <UserPlus className="w-4 h-4" /> Começar Agora
-              </Button>
-            </Link>
+            {user ? (
+              <Link to={getDashboardPath()}>
+                <Button className="btn-primary gap-2 h-10 px-5 text-sm">
+                  <LayoutDashboard className="w-4 h-4" /> Meu Painel
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="outline" className="text-sm font-bold gap-2 h-10 px-4 border-primary/20 hover:border-primary/50 text-foreground bg-foreground/5 hover:bg-foreground/10 transition-all rounded-xl">
+                    <LogIn className="w-4 h-4 text-primary" /> Entrar
+                  </Button>
+                </Link>
+                <Link to="/cadastro">
+                  <Button className="btn-primary gap-2 h-10 px-5 text-sm">
+                    <UserPlus className="w-4 h-4" /> Começar Agora
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-2 md:hidden">
@@ -42,12 +72,20 @@ const PublicLayout = () => {
         {/* Mobile Menu Compacto */}
         {isMenuOpen && (
           <div className="md:hidden absolute top-16 left-0 w-full bg-background border-b border-foreground/5 p-6 flex flex-col gap-4 animate-in slide-in-from-top duration-300 z-50">
-            <Link to="/login" className="flex items-center gap-3 text-lg font-bold py-2" onClick={() => setIsMenuOpen(false)}>
-              <LogIn className="w-5 h-5 text-primary" /> Entrar
-            </Link>
-            <Link to="/cadastro" className="flex items-center gap-3 text-lg font-bold py-2" onClick={() => setIsMenuOpen(false)}>
-              <UserPlus className="w-5 h-5 text-primary" /> Cadastrar
-            </Link>
+            {user ? (
+              <Link to={getDashboardPath()} className="flex items-center gap-3 text-lg font-bold py-2" onClick={() => setIsMenuOpen(false)}>
+                <LayoutDashboard className="w-5 h-5 text-primary" /> Meu Painel
+              </Link>
+            ) : (
+              <>
+                <Link to="/login" className="flex items-center gap-3 text-lg font-bold py-2" onClick={() => setIsMenuOpen(false)}>
+                  <LogIn className="w-5 h-5 text-primary" /> Entrar
+                </Link>
+                <Link to="/cadastro" className="flex items-center gap-3 text-lg font-bold py-2" onClick={() => setIsMenuOpen(false)}>
+                  <UserPlus className="w-5 h-5 text-primary" /> Cadastrar
+                </Link>
+              </>
+            )}
           </div>
         )}
       </header>
