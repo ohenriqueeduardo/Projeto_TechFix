@@ -18,9 +18,14 @@ const AdminSettingsPage = () => {
       });
     }, { rootMargin: '-20% 0px -60% 0px' });
 
-    const sections = ['Perfil', 'Notificações Globais', 'Segurança de Acesso', 'Zona de Perigo'];
+    const sections = [
+      { id: 'perfil', label: 'Perfil' },
+      { id: 'notificacoes', label: 'Notificações Globais' },
+      { id: 'seguranca', label: 'Segurança de Acesso' },
+      { id: 'zona-perigo', label: 'Zona de Perigo' }
+    ];
     sections.forEach(section => {
-      const element = document.getElementById(section);
+      const element = document.getElementById(section.id);
       if (element) observer.observe(element);
     });
 
@@ -49,16 +54,16 @@ const AdminSettingsPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 relative items-start">
         <nav className="space-y-2 sticky top-32 self-start h-fit w-full">
           {[
-            { icon: User, label: "Perfil" },
-            { icon: Bell, label: "Notificações Globais" },
-            { icon: Shield, label: "Segurança de Acesso" },
-            { icon: AlertTriangle, label: "Zona de Perigo" },
+            { icon: User, label: "Perfil", id: "perfil" },
+            { icon: Bell, label: "Notificações Globais", id: "notificacoes" },
+            { icon: Shield, label: "Segurança de Acesso", id: "seguranca" },
+            { icon: AlertTriangle, label: "Zona de Perigo", id: "zona-perigo" },
           ].map((item, i) => (
             <button
               key={i}
-              onClick={() => scrollToSection(item.label)}
+              onClick={() => scrollToSection(item.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                activeMenu === item.label ? 'bg-primary text-primary-foreground shadow-[0_0_15px_rgba(6,182,212,0.2)]' : 'text-muted-foreground hover:bg-white/5'
+                activeMenu === item.id ? 'bg-primary text-primary-foreground shadow-[0_0_15px_rgba(6,182,212,0.2)]' : 'text-muted-foreground hover:bg-white/5'
               }`}
             >
               <item.icon className="w-4 h-4" />
@@ -69,11 +74,24 @@ const AdminSettingsPage = () => {
 
         <div className="lg:col-span-3 space-y-12">
           
-          <div id="Perfil" className="space-y-8 scroll-mt-28">
+          <div id="perfil" className="space-y-8 scroll-mt-28">
             <h2 className="text-2xl font-bold border-b border-white/10 pb-2 flex items-center gap-2">
               <User className="w-6 h-6 text-primary" /> Perfil Admin
             </h2>
             <div className="glass-card p-8 rounded-3xl space-y-6">
+              <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-white/10">
+                <div className="w-24 h-24 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-3xl font-bold overflow-hidden">
+                  HE
+                </div>
+                <div className="space-y-2 text-center sm:text-left">
+                  <h3 className="font-bold">Foto de Perfil</h3>
+                  <p className="text-xs text-muted-foreground">Recomendado imagem quadrada, no formato PNG ou JPG.</p>
+                  <Button variant="outline" size="sm" className="mt-2 text-xs border-white/10 hover:bg-white/5">
+                    Alterar Imagem
+                  </Button>
+                </div>
+              </div>
+
               <h3 className="text-xl font-bold">Dados de Acesso</h3>
               <div className="grid grid-cols-1 gap-6">
                 <div className="space-y-2">
@@ -88,7 +106,7 @@ const AdminSettingsPage = () => {
             </div>
           </div>
 
-          <div id="Notificações Globais" className="space-y-8 scroll-mt-28">
+          <div id="notificacoes" className="space-y-8 scroll-mt-28">
             <h2 className="text-2xl font-bold border-b border-white/10 pb-2 flex items-center gap-2">
               <Bell className="w-6 h-6 text-primary" /> Notificações Globais
             </h2>
@@ -114,7 +132,7 @@ const AdminSettingsPage = () => {
             </div>
           </div>
 
-          <div id="Segurança de Acesso" className="space-y-8 scroll-mt-28">
+          <div id="seguranca" className="space-y-8 scroll-mt-28">
             <h2 className="text-2xl font-bold border-b border-white/10 pb-2 flex items-center gap-2">
               <Shield className="w-6 h-6 text-primary" /> Segurança
             </h2>
@@ -147,7 +165,7 @@ const AdminSettingsPage = () => {
             </div>
           </div>
 
-          <div id="Zona de Perigo" className="space-y-8 scroll-mt-28">
+          <div id="zona-perigo" className="space-y-8 scroll-mt-28">
             <h2 className="text-2xl font-bold border-b border-destructive/30 pb-2 flex items-center gap-2 text-destructive">
               <AlertTriangle className="w-6 h-6" /> Zona de Perigo
             </h2>

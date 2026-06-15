@@ -204,7 +204,6 @@ const ProfessionalLayout = () => {
                         key={n.id} 
                         onClick={() => {
                           markAsRead(n.id);
-                          navigate('/notificacoes');
                         }}
                         className={`flex flex-col items-start gap-1 p-4 rounded-2xl cursor-pointer hover:bg-white/5 focus:bg-white/5 mb-1 ${
                           n.unread ? 'bg-primary/5' : ''

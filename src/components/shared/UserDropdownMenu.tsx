@@ -64,9 +64,6 @@ export const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({ user, trigge
         {/* CLIENT LINKS */}
         {user.role === 'client' && (
           <>
-            <DropdownMenuItem onClick={() => navigate('/cliente/perfil')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-              <UserIcon className="w-4 h-4 text-primary" /> Perfil
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate('/cliente/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
               <LayoutDashboard className="w-4 h-4 text-primary" /> Painel de Controle
             </DropdownMenuItem>
@@ -75,9 +72,6 @@ export const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({ user, trigge
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate('/cliente/meus-pedidos')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
               <ClipboardList className="w-4 h-4 text-primary" /> Meus Pedidos
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate('/cliente/notificacoes')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-              <Bell className="w-4 h-4 text-primary" /> Notificações
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate('/cliente/configuracoes')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
               <Settings className="w-4 h-4 text-primary" /> Configurações

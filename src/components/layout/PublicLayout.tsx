@@ -109,9 +109,6 @@ const PublicLayout = () => {
                 
                 {user.role === 'client' && (
                   <>
-                    <Link to="/cliente/perfil" className="flex items-center gap-3 text-lg font-bold py-2" onClick={() => setIsMenuOpen(false)}>
-                      <UserIcon className="w-5 h-5 text-primary" /> Perfil
-                    </Link>
                     <Link to="/cliente/meus-pedidos" className="flex items-center gap-3 text-lg font-bold py-2" onClick={() => setIsMenuOpen(false)}>
                       <ClipboardList className="w-5 h-5 text-primary" /> Meus Pedidos
                     </Link>
@@ -120,9 +117,6 @@ const PublicLayout = () => {
 
                 {(user.role === 'professional' || user.role === 'both') && (
                   <>
-                    <Link to="/profissional/perfil" className="flex items-center gap-3 text-lg font-bold py-2" onClick={() => setIsMenuOpen(false)}>
-                      <UserIcon className="w-5 h-5 text-primary" /> Meu Perfil
-                    </Link>
                     <Link to="/profissional/agenda" className="flex items-center gap-3 text-lg font-bold py-2" onClick={() => setIsMenuOpen(false)}>
                       <CalendarDays className="w-5 h-5 text-primary" /> Agenda
                     </Link>

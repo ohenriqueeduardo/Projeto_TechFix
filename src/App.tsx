@@ -42,7 +42,6 @@ import MyOrdersPage from "@/pages/client/MyOrdersPage";
 import ProfilePage from "@/pages/client/ProfilePage";
 import OrderStatusPage from "@/pages/client/OrderStatusPage";
 import NewServiceRequestPage from "@/pages/client/NewServiceRequestPage";
-import NotificationsPage from "@/pages/client/NotificationsPage";
 import LevelsPage from "@/pages/client/LevelsPage";
 import BuscaPage from "@/pages/client/BuscaPage";
 import ExploreServicesPage from "@/pages/client/ExploreServicesPage";
@@ -114,29 +113,21 @@ const App = () => (
                 <Route path="servico/:id" element={<ServiceDetailsPage />} />
                 <Route path="contratar/:id/*" element={<CheckoutFlow />} />
                 <Route path="meus-pedidos" element={<MyOrdersPage />} />
-                <Route path="perfil" element={<ProfilePage />} />
                 <Route path="ajuda" element={<HelpPage />} />
                 <Route path="configuracoes" element={<SettingsPage />} />
                 <Route path="pedido/:id/status" element={<OrderStatusPage />} />
                 <Route path="pedido/:id/os" element={<OrderReceiptPage />} />
                 <Route path="novo-servico" element={<NewServiceRequestPage />} />
-                <Route path="notificacoes" element={<NotificationsPage />} />
                 <Route path="profissional/:id" element={<ProfessionalProfilePage />} />
                 <Route path="pedido/:id/pagamento" element={<CheckoutCounterOfferPage />} />
               </Route>
 
-              {/* Standalone Notificações Route using ClientLayout structure */}
-              <Route path="/notificacoes" element={<ClientLayout />}>
-                <Route index element={<NotificationsPage />} />
-              </Route>
-              
               {/* Shared Routes */}
               <Route path="/order/:id/print" element={<OrderPrintPage />} />
 
               {/* Professional Routes */}
               <Route path="/profissional" element={<ProfessionalLayout />}>
                 <Route index element={<Navigate to="dashboard" replace />} />
-                <Route path="perfil" element={<ProfilePage />} />
                 <Route path="dashboard" element={<ProfessionalDashboardPage />} />
                 <Route path="agenda" element={<ProfessionalSchedulePage />} />
                 <Route path="servicos" element={<ProfessionalServicesPage />} />
@@ -147,7 +138,6 @@ const App = () => (
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<Navigate to="dashboard" replace />} />
-                <Route path="perfil" element={<ProfilePage />} />
                 <Route path="dashboard" element={<AdminDashboardPage />} />
                 <Route path="usuarios" element={<AdminUsersPage />} />
                 <Route path="financas" element={<AdminFinancePage />} />

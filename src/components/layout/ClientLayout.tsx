@@ -189,7 +189,6 @@ const ClientLayout = () => {
               if (path.includes('/cliente/configuracoes')) return 'Configurações';
               if (path.includes('/status')) return 'Status do Chamado';
               if (path.includes('/cliente/novo-servico')) return 'Novo Pedido';
-              if (path.includes('/notificacoes') || path.includes('/cliente/notificacoes')) return 'Notificações';
               return 'TechFix';
             })()}
           </h2>
@@ -231,7 +230,6 @@ const ClientLayout = () => {
                         key={n.id} 
                         onClick={() => {
                           markAsRead(n.id);
-                          navigate('/cliente/notificacoes');
                         }}
                         className={`flex flex-col items-start gap-1 p-4 rounded-2xl cursor-pointer hover:bg-white/5 focus:bg-white/5 mb-1 ${
                           n.unread ? 'bg-primary/5' : ''
@@ -247,13 +245,6 @@ const ClientLayout = () => {
                     ))
                   )}
                 </div>
-                <DropdownMenuSeparator className="bg-white/5" />
-                <DropdownMenuItem 
-                  onClick={() => navigate('/cliente/notificacoes')}
-                  className="justify-center p-3 text-primary font-bold text-sm cursor-pointer rounded-xl"
-                >
-                  Ver todas as notificações
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 

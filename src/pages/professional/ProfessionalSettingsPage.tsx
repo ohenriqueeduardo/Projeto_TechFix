@@ -36,9 +36,14 @@ const ProfessionalSettingsPage = () => {
       });
     }, { rootMargin: '-20% 0px -60% 0px' });
 
-    const sections = ['Atuação Profissional', 'Agenda & Horários', 'Perfil', 'Zona de Perigo'];
+    const sections = [
+      { id: 'atuacao', label: 'Atuação Profissional' },
+      { id: 'agenda', label: 'Agenda & Horários' },
+      { id: 'perfil', label: 'Perfil' },
+      { id: 'zona-perigo', label: 'Zona de Perigo' }
+    ];
     sections.forEach(section => {
-      const element = document.getElementById(section);
+      const element = document.getElementById(section.id);
       if (element) observer.observe(element);
     });
 
@@ -172,16 +177,16 @@ const ProfessionalSettingsPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 relative items-start">
         <nav className="space-y-2 sticky top-32 self-start h-fit w-full">
           {[
-            { icon: Briefcase, label: "Atuação Profissional" },
-            { icon: Calendar, label: "Agenda & Horários" },
-            { icon: User, label: "Perfil" },
-            { icon: AlertTriangle, label: "Zona de Perigo" },
+            { icon: Briefcase, label: "Atuação Profissional", id: "atuacao" },
+            { icon: Calendar, label: "Agenda & Horários", id: "agenda" },
+            { icon: User, label: "Perfil", id: "perfil" },
+            { icon: AlertTriangle, label: "Zona de Perigo", id: "zona-perigo" },
           ].map((item, i) => (
             <button
               key={i}
-              onClick={() => scrollToSection(item.label)}
+              onClick={() => scrollToSection(item.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                activeMenu === item.label ? 'bg-primary text-primary-foreground shadow-[0_0_15px_rgba(6,182,212,0.2)]' : 'text-muted-foreground hover:bg-white/5'
+                activeMenu === item.id ? 'bg-primary text-primary-foreground shadow-[0_0_15px_rgba(6,182,212,0.2)]' : 'text-muted-foreground hover:bg-white/5'
               }`}
             >
               <item.icon className="w-4 h-4" />
@@ -192,7 +197,7 @@ const ProfessionalSettingsPage = () => {
 
         <div className="lg:col-span-3 space-y-12">
           
-          <div id="Atuação Profissional" className="space-y-8 scroll-mt-28">
+          <div id="atuacao" className="space-y-8 scroll-mt-28">
             <h2 className="text-2xl font-bold border-b border-white/10 pb-2 flex items-center gap-2">
               <Briefcase className="w-6 h-6 text-primary" /> Atuação Profissional
             </h2>
@@ -245,7 +250,7 @@ const ProfessionalSettingsPage = () => {
             </div>
           </div>
 
-          <div id="Agenda & Horários" className="space-y-8 scroll-mt-28">
+          <div id="agenda" className="space-y-8 scroll-mt-28">
             <h2 className="text-2xl font-bold border-b border-white/10 pb-2 flex items-center gap-2">
               <Calendar className="w-6 h-6 text-primary" /> Agenda & Horários
             </h2>
@@ -315,7 +320,7 @@ const ProfessionalSettingsPage = () => {
             </div>
           </div>
 
-          <div id="Perfil" className="space-y-8 scroll-mt-28">
+          <div id="perfil" className="space-y-8 scroll-mt-28">
             <h2 className="text-2xl font-bold border-b border-white/10 pb-2 flex items-center gap-2">
               <User className="w-6 h-6 text-primary" /> Perfil
             </h2>
@@ -361,7 +366,7 @@ const ProfessionalSettingsPage = () => {
             </div>
           </div>
 
-          <div id="Zona de Perigo" className="space-y-8 scroll-mt-28">
+          <div id="zona-perigo" className="space-y-8 scroll-mt-28">
             <h2 className="text-2xl font-bold border-b border-destructive/30 pb-2 flex items-center gap-2 text-destructive">
               <AlertTriangle className="w-6 h-6" /> Zona de Perigo
             </h2>
