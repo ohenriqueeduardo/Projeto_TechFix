@@ -3,11 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, CheckCircle2, Star, Laptop, ArrowRight, Plus, MessageSquare, Shield, FolderOpen, Sparkles } from 'lucide-react';
+import { Clock, Star, Plus, Shield, Search, ArrowRight, User as UserIcon } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
-import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
-import { toast } from 'sonner';
-
 import { calculateUserLevelInfo } from '@/utils/levels';
 import { User, Order, Service } from '@/types';
 
@@ -15,7 +12,6 @@ const ClientDashboardPage = () => {
   const navigate = useNavigate();
   const [user, setUser] = React.useState<User | null>(null);
   const [orders, setOrders] = React.useState<Order[]>([]);
-  const [services, setServices] = React.useState<Service[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
   const levelInfo = user ? calculateUserLevelInfo(user.id, orders) : { level: 'Bronze', progressPercent: 0, nextLevel: 'Silver', remainingToNext: 2, completedCount: 0 } as ReturnType<typeof calculateUserLevelInfo>;
@@ -28,25 +24,14 @@ const ClientDashboardPage = () => {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
 
-      // Fetch dynamic data for the authenticated client from the PostgreSQL backend
       const fetchData = async () => {
         try {
-          // 1. Fetch Client Orders
           const ordersResponse = await fetch(`/api/orders?clientId=${parsedUser.id}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
+            headers: { 'Authorization': `Bearer ${token}` },
           });
           if (ordersResponse.ok) {
             const ordersData = await ordersResponse.json();
             setOrders(ordersData);
-          }
-
-          // 2. Fetch Public Services for Recommendations
-          const servicesResponse = await fetch('/api/services');
-          if (servicesResponse.ok) {
-            const servicesData = await servicesResponse.json();
-            setServices(servicesData.slice(0, 2)); // Show top 2 recommended services
           }
         } catch (error) {
           console.warn('Error loading dashboard data from backend:', error);
@@ -61,8 +46,8 @@ const ClientDashboardPage = () => {
     }
   }, []);
 
-  const activeOrders = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled');
-  const completedOrders = orders.filter(o => o.status === 'completed');
+  const activeOrders = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled').slice(0, 3);
+  const completedOrdersCount = orders.filter(o => o.status === 'completed').length;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -72,6 +57,9 @@ const ClientDashboardPage = () => {
         return <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase">Agendado</Badge>;
       case 'in_progress': 
         return <Badge className="bg-purple-500/10 text-purple-500 border-purple-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase">Em Andamento</Badge>;
+      case 'counter_offer':
+      case 'negotiating':
+        return <Badge className="bg-orange-500/10 text-orange-500 border-orange-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase">Negociando</Badge>;
       case 'completed': 
         return <Badge className="bg-green-500/10 text-green-500 border-green-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase">Concluído</Badge>;
       default: 
@@ -90,220 +78,199 @@ const ClientDashboardPage = () => {
     );
   }
 
-  const stats = [
-    { 
-      label: 'Pedidos Ativos', 
-      value: activeOrders.length, 
-      icon: Clock, 
-      color: 'text-blue-500', 
-      bg: 'bg-blue-500/10',
-      isText: false,
-      renderExpanded: () => (
-        <div className="mt-6 pt-6 border-t border-white/5 space-y-4 text-left">
-          <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.25em]">Pedidos Ativos</span>
-          <h4 className="text-lg font-black tracking-tight flex items-center gap-2">
-            Chamados Abertos
-            <Clock className="w-4 h-4 text-blue-500 shrink-0 animate-pulse" />
-          </h4>
-          <div className="space-y-3 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
-            {activeOrders.length === 0 ? (
-              <div className="p-4 text-center bg-white/5 border border-dashed border-white/10 rounded-2xl text-muted-foreground text-[10px] font-bold">
-                Você não possui chamados ativos no momento.
+  const userAvatar = user?.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(user?.name || 'User')}`;
+
+  return (
+    <div className="space-y-8 animate-page-entrance max-w-7xl mx-auto pb-20">
+      
+      {/* Hero Section */}
+      <div className="relative overflow-hidden rounded-3xl p-8 md:p-10 border border-white/10 glass-card bg-gradient-to-br from-card/40 to-background">
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-primary/20 blur-[100px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-64 h-64 bg-blue-500/10 blur-[100px] rounded-full pointer-events-none" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+          <div className="flex items-center gap-6">
+            <div className="relative shrink-0">
+              <img src={userAvatar} alt="Avatar" className="w-20 h-20 md:w-24 md:h-24 rounded-2xl border-2 border-primary/30 shadow-lg object-cover" />
+              <div className="absolute -bottom-2 -right-2 p-1.5 bg-background rounded-full">
+                <div className="bg-primary/20 p-1.5 rounded-full">
+                  <Shield className="w-4 h-4 text-primary" />
+                </div>
               </div>
+            </div>
+            <div>
+              <p className="text-sm font-black tracking-widest text-primary uppercase mb-1">Nível {levelInfo.level}</p>
+              <h1 className="text-3xl md:text-4xl font-black tracking-tight text-foreground">Olá, {user?.name?.split(' ')[0] || 'Cliente'}! 👋</h1>
+              <p className="text-muted-foreground text-sm mt-1 max-w-md">Gerencie seus chamados e aproveite os benefícios da sua conta TechFix.</p>
+            </div>
+          </div>
+          
+          {/* Level Progress */}
+          <div className="w-full md:w-80 bg-background/50 p-5 rounded-2xl border border-white/5 backdrop-blur-md">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-xs font-bold text-muted-foreground">Progresso para {levelInfo.nextLevel || 'Max'}</span>
+              <span className="text-xs font-black text-primary">{Math.round(levelInfo.progressPercent)}%</span>
+            </div>
+            <div className="h-2.5 w-full bg-foreground/5 rounded-full overflow-hidden border border-foreground/5 mb-3">
+              <div 
+                className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 shadow-[0_0_10px_rgba(6,182,212,0.5)] rounded-full transition-all duration-1000"
+                style={{ width: `${levelInfo.progressPercent}%` }}
+              />
+            </div>
+            {levelInfo.nextLevel ? (
+              <p className="text-[10px] text-muted-foreground">
+                Faltam <strong className="text-foreground">{levelInfo.remainingToNext} chamados</strong> para desbloquear os benefícios de {levelInfo.nextLevel}.
+              </p>
+            ) : (
+              <p className="text-[10px] text-primary font-bold">Nível Máximo Alcançado!</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Actions Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Button onClick={() => navigate('/cliente/novo-servico')} className="h-auto py-6 flex flex-col items-center justify-center gap-3 rounded-2xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all hover:scale-[1.02]">
+          <div className="bg-primary/20 p-3 rounded-full">
+            <Plus className="w-6 h-6" />
+          </div>
+          <div className="text-center">
+            <span className="block font-black text-sm">Solicitar Novo Serviço</span>
+            <span className="text-[10px] opacity-80 mt-1">Criar um pedido personalizado</span>
+          </div>
+        </Button>
+        
+        <Button onClick={() => navigate('/cliente/servicos')} variant="outline" className="h-auto py-6 flex flex-col items-center justify-center gap-3 rounded-2xl bg-card/30 hover:bg-card/50 border-white/10 transition-all hover:scale-[1.02]">
+          <div className="bg-foreground/5 p-3 rounded-full">
+            <Search className="w-6 h-6 text-foreground" />
+          </div>
+          <div className="text-center">
+            <span className="block font-black text-sm text-foreground">Explorar Serviços</span>
+            <span className="text-[10px] text-muted-foreground mt-1">Navegar por categorias</span>
+          </div>
+        </Button>
+
+        <Button onClick={() => navigate('/cliente/configuracoes')} variant="outline" className="h-auto py-6 flex flex-col items-center justify-center gap-3 rounded-2xl bg-card/30 hover:bg-card/50 border-white/10 transition-all hover:scale-[1.02]">
+          <div className="bg-foreground/5 p-3 rounded-full">
+            <UserIcon className="w-6 h-6 text-foreground" />
+          </div>
+          <div className="text-center">
+            <span className="block font-black text-sm text-foreground">Gerenciar Perfil</span>
+            <span className="text-[10px] text-muted-foreground mt-1">Endereços e pagamentos</span>
+          </div>
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Active Orders List */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between px-2">
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              <Clock className="w-5 h-5 text-primary" /> Chamados Ativos
+            </h2>
+            {orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled').length > 3 && (
+              <Button variant="link" onClick={() => navigate('/cliente/meus-pedidos')} className="text-xs text-primary font-bold pr-0">
+                Ver Todos <ArrowRight className="w-3 h-3 ml-1" />
+              </Button>
+            )}
+          </div>
+          
+          <div className="space-y-4">
+            {activeOrders.length === 0 ? (
+              <Card className="p-8 text-center bg-card/30 border-dashed border-white/10 flex flex-col items-center justify-center gap-4 rounded-3xl min-h-[250px]">
+                <div className="bg-white/5 p-4 rounded-full">
+                  <Clock className="w-8 h-8 text-muted-foreground opacity-50" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg mb-1">Nenhum chamado ativo</h3>
+                  <p className="text-xs text-muted-foreground max-w-[250px] mx-auto">Você não possui pedidos em andamento no momento.</p>
+                </div>
+                <Button onClick={() => navigate('/cliente/novo-servico')} className="btn-primary mt-2 h-10 px-6 rounded-xl text-xs">
+                  Solicitar Agora
+                </Button>
+              </Card>
             ) : (
               activeOrders.map(order => (
-                <div key={order.id} className="p-3 rounded-xl bg-white/5 border border-white/5 hover:border-blue-500/35 transition-all space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[8px] font-mono font-bold text-blue-500 bg-blue-500/10 px-1.5 py-0.5 rounded uppercase">
-                      {order.code}
-                    </span>
-                    {getStatusBadge(order.status)}
+                <Card key={order.id} className="p-5 bg-card/40 border-white/5 hover:border-primary/30 transition-all rounded-3xl flex flex-col sm:flex-row gap-5 items-start sm:items-center group">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-[10px] font-mono font-bold text-primary bg-primary/10 px-2 py-1 rounded-md uppercase">
+                        {order.code}
+                      </span>
+                      {getStatusBadge(order.status)}
+                    </div>
+                    <h4 className="font-bold text-base truncate pr-4">{order.serviceTitle}</h4>
+                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+                      <UserIcon className="w-3.5 h-3.5" /> Técnico: <span className="text-foreground font-medium">{order.professionalName}</span>
+                    </p>
                   </div>
-                  <div>
-                    <h5 className="font-bold text-xs text-foreground truncate">{order.serviceTitle}</h5>
-                    <p className="text-[9px] text-muted-foreground mt-0.5">Técnico: <strong className="text-foreground">{order.professionalName}</strong></p>
+                  <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-4 mt-4 sm:mt-0 pt-4 sm:pt-0 border-t border-white/5 sm:border-0 shrink-0">
+                    <div className="text-left sm:text-right">
+                      <p className="text-xs text-muted-foreground">{order.date} • {order.time}</p>
+                      <p className="font-black text-lg text-foreground mt-0.5">{formatCurrency(order.price)}</p>
+                    </div>
+                    <Button onClick={() => navigate(`/status/${order.id}`)} variant="outline" className="h-9 px-4 rounded-xl border-primary/20 text-primary hover:bg-primary hover:text-white transition-all text-xs font-bold w-full sm:w-auto">
+                      Detalhes
+                    </Button>
                   </div>
-                  <div className="pt-1.5 border-t border-white/5 flex justify-between items-center text-[9px] text-muted-foreground">
-                    <span>{order.date} às {order.time}</span>
-                    <span className="font-black text-foreground">{formatCurrency(order.price)}</span>
-                  </div>
-                </div>
+                </Card>
               ))
             )}
           </div>
-          <Button 
-            onClick={() => navigate('/cliente/meus-pedidos')}
-            className="btn-action w-full btn-primary h-10 text-xs font-black flex items-center justify-center gap-2 mt-2"
-          >
-            Gerenciar Todos os Pedidos <ArrowRight className="w-4 h-4" />
-          </Button>
         </div>
-      )
-    },
-    ...(user?.role !== 'professional' ? [{ 
-      label: 'Solicitar Serviço', 
-      value: 'Criar', 
-      icon: Plus, 
-      color: 'text-green-500', 
-      bg: 'bg-green-500/10',
-      isText: true,
-      renderExpanded: () => (
-        <div className="mt-6 pt-6 border-t border-white/5 space-y-4 text-left">
-          <span className="text-[10px] font-black text-green-500 uppercase tracking-[0.25em]">Ação Rápida</span>
-          <h4 className="text-lg font-black tracking-tight flex items-center gap-2">
-            Solicitar Suporte
-            <Plus className="w-4 h-4 text-green-500 shrink-0" />
-          </h4>
-          <p className="text-[11px] text-muted-foreground leading-relaxed font-medium">
-            Precisa de um reparo personalizado, upgrade de hardware ou formatação? Crie uma solicitação personalizada agora.
-          </p>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-[10px] font-semibold text-muted-foreground bg-white/5 p-2 rounded-xl border border-white/5">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full shrink-0" />
-              <span className="truncate">Orçamentos rápidos com técnicos</span>
-            </div>
-            <div className="flex items-center gap-2 text-[10px] font-semibold text-muted-foreground bg-white/5 p-2 rounded-xl border border-white/5">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full shrink-0" />
-              <span className="truncate">Atendimento residencial ou remoto</span>
-            </div>
-          </div>
-          <Button 
-            onClick={() => navigate('/cliente/novo-servico')}
-            className="btn-action w-full btn-primary h-10 text-xs font-black flex items-center justify-center gap-2 mt-2"
-          >
-            Solicitar Novo Serviço <ArrowRight className="w-4 h-4" />
-          </Button>
-        </div>
-      )
-    }] : []),
-    { 
-      label: 'Nível de Cliente', 
-      value: levelInfo.level, 
-      icon: Shield, 
-      color: 'text-primary', 
-      bg: 'bg-primary/10', 
-      isText: true,
-      renderExpanded: () => (
-        <div className="mt-6 pt-6 border-t border-white/5 space-y-4 text-left">
-          <span className="text-[10px] font-black text-primary uppercase tracking-[0.25em]">Progresso de Conta</span>
-          <h4 className="text-lg font-black tracking-tight flex items-center gap-2">
-            <Badge variant="outline" className="border-primary/20 text-primary hover:bg-primary hover:text-white cursor-pointer transition-colors shadow-sm" onClick={() => navigate('/cliente/niveis')}>
-              Nível {levelInfo.level}
-            </Badge>
-            <Shield className="w-4 h-4 text-primary shrink-0 animate-pulse" />
-          </h4>
-          <div className="space-y-3">
-            {levelInfo.nextLevel ? (
-              <>
-                <div className="flex justify-between text-[11px] font-bold">
-                  <span className="text-muted-foreground">Progresso para {levelInfo.nextLevel}</span>
-                  <span className="text-primary">{Math.round(levelInfo.progressPercent)}%</span>
-                </div>
-                <div className="h-2 w-full bg-foreground/5 rounded-full overflow-hidden border border-foreground/5 relative">
-                  <div 
-                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 shadow-[0_0_10px_rgba(6,182,212,0.5)] rounded-full transition-all duration-1000"
-                    style={{ width: `${levelInfo.progressPercent}%` }}
-                  />
-                </div>
-                <p className="text-[10px] text-muted-foreground leading-relaxed font-medium">
-                  Faltam apenas **{levelInfo.remainingToNext} chamados** para o nível **{levelInfo.nextLevel}** e liberar mais benefícios!
-                </p>
-              </>
-            ) : (
-              <div className="text-[11px] font-bold text-primary mt-2 text-center p-3 bg-primary/5 rounded-xl border border-primary/20">
-                Parabéns! Você alcançou o nível máximo e possui todos os benefícios exclusivos desbloqueados.
+
+        {/* Side Panel: Account Summary */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold flex items-center gap-2 px-2">
+            <Star className="w-5 h-5 text-yellow-500" /> Resumo da Conta
+          </h2>
+          
+          <Card className="p-6 bg-card/30 border-white/5 rounded-3xl space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-background/50 p-4 rounded-2xl border border-white/5 text-center">
+                <span className="block text-[10px] font-black text-muted-foreground uppercase tracking-wider mb-1">Concluídos</span>
+                <span className="text-2xl font-black text-green-500">{completedOrdersCount}</span>
               </div>
-            )}
-          </div>
-          <Button 
-            onClick={() => navigate('/cliente/niveis')}
-            className="btn-action w-full btn-primary h-10 text-xs font-black flex items-center justify-center gap-2 mt-2"
-          >
-            Acessar Níveis <ArrowRight className="w-4 h-4" />
-          </Button>
-        </div>
-      )
-    },
-    { 
-      label: 'Acessar Meu Perfil', 
-      value: user?.name ? user.name.split(' ')[0] : 'Sofia', 
-      icon: Star, 
-      color: 'text-yellow-500', 
-      bg: 'bg-yellow-500/10', 
-      isText: true,
-      renderExpanded: () => (
-        <div className="mt-6 pt-6 border-t border-white/5 space-y-4 text-left">
-          <span className="text-[10px] font-black text-yellow-500 uppercase tracking-[0.25em]">Minha Conta</span>
-          <h4 className="text-lg font-black tracking-tight flex items-center gap-2">
-            Meu Perfil
-            <Star className="w-4 h-4 text-yellow-500 shrink-0 fill-yellow-500 animate-pulse" />
-          </h4>
-          <div className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5">
-            <img 
-              src={user?.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(user?.name || 'Sofia')}`} 
-              className="w-10 h-10 rounded-xl object-cover border border-yellow-500/20 shadow-md shrink-0" 
-              alt="" 
-            />
-            <div className="min-w-0 flex-1">
-              <h5 className="font-bold text-xs text-foreground truncate">{user?.name || 'Sofia Spencer'}</h5>
-              <p className="text-[9px] text-muted-foreground truncate">{user?.email || 'sofia@example.com'}</p>
+              <div className="bg-background/50 p-4 rounded-2xl border border-white/5 text-center">
+                <span className="block text-[10px] font-black text-muted-foreground uppercase tracking-wider mb-1">Membro Desde</span>
+                <span className="text-sm font-bold text-foreground mt-2 block">2026</span>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center justify-between text-[9px] text-muted-foreground bg-white/5 p-2.5 rounded-xl border border-white/5">
-            <span>Nível: <strong className="text-foreground uppercase">{levelInfo.level}</strong></span>
-            <span>Status: <strong className="text-green-500 uppercase">Ativa</strong></span>
-          </div>
-          <Button 
-            onClick={() => navigate('/cliente/perfil')}
-            className="btn-action w-full btn-primary h-10 text-xs font-black flex items-center justify-center gap-2 mt-2"
-          >
-            Acessar Meu Perfil <ArrowRight className="w-4 h-4" />
-          </Button>
-        </div>
-      )
-    },
-  ];
 
-  return (
-    <div className="space-y-10 animate-page-entrance">
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
-        <div>
-          <h1 className="text-4xl font-black tracking-tight">Olá, {user?.name || 'Cliente'}! 👋</h1>
-          <p className="text-muted-foreground text-lg">Seu setup está em boas mãos hoje.</p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-        </div>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
-        {stats.map((stat, i) => (
-          <Card 
-            key={i} 
-            className="p-8 bg-card/30 border-white/5 rounded-3xl hover:border-primary/30 hover:bg-card/45 hover:scale-[1.01] transition-all duration-300 relative overflow-hidden select-none min-h-[410px] flex flex-col justify-between shadow-lg h-full"
-          >
-            {/* Glow backdrop effect on hover */}
-            <div className={`absolute -right-10 -bottom-10 w-24 h-24 rounded-full blur-2xl opacity-0 hover:opacity-20 transition-opacity ${stat.color === 'text-primary' ? 'bg-primary' : stat.color === 'text-blue-500' ? 'bg-blue-500' : stat.color === 'text-green-500' ? 'bg-green-500' : 'bg-yellow-500'}`} />
+            <div className="space-y-3 pt-4 border-t border-white/5">
+              <h4 className="text-sm font-bold flex items-center gap-2"><Shield className="w-4 h-4 text-primary"/> Benefícios do Nível</h4>
+              <ul className="space-y-2 text-xs text-muted-foreground font-medium">
+                <li className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary" /> Suporte Prioritário
+                </li>
+                {levelInfo.level === 'Silver' || levelInfo.level === 'Gold' ? (
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary" /> Descontos em Taxas
+                  </li>
+                ) : (
+                  <li className="flex items-center gap-2 opacity-50">
+                    <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground" /> Descontos em Taxas (Requer Silver)
+                  </li>
+                )}
+                {levelInfo.level === 'Gold' ? (
+                  <li className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary" /> Garantia Estendida
+                  </li>
+                ) : (
+                  <li className="flex items-center gap-2 opacity-50">
+                    <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground" /> Garantia Estendida (Requer Gold)
+                  </li>
+                )}
+              </ul>
+            </div>
             
-            <div className="flex justify-between items-start relative z-10">
-              <div>
-                <p className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-2">{stat.label}</p>
-                <h3 className="text-3xl font-black">
-                  {stat.isText ? stat.value : <AnimatedCounter value={stat.value as number} />}
-                </h3>
-              </div>
-              <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color} hover:scale-110 transition-transform`}>
-                <stat.icon className="w-6 h-6" />
-              </div>
-            </div>
-
-            {/* Fixed / Permanent Details space */}
-            <div className="relative z-10 mt-auto">
-              {stat.renderExpanded()}
-            </div>
+            <Button onClick={() => navigate('/cliente/niveis')} variant="ghost" className="w-full text-xs font-bold text-primary hover:bg-primary/10">
+              Ver Todos os Níveis <ArrowRight className="w-3 h-3 ml-2" />
+            </Button>
           </Card>
-        ))}
+        </div>
       </div>
+
     </div>
   );
 };

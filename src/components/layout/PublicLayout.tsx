@@ -104,7 +104,7 @@ const PublicLayout = () => {
                   </DropdownMenuItem>
                   
                   <DropdownMenuSeparator className="bg-white/5" />
-                  {user.role?.includes('professional') && (
+                  {(user.role === 'admin' || user.role === 'both' || user.role === 'professional') && (
                     <DropdownMenuItem onClick={() => navigate('/profissional/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-blue-400 focus:text-blue-400 bg-blue-500/10 focus:bg-blue-500/20 font-bold mb-2">
                       <Briefcase className="w-4 h-4" /> Acessar Painel Técnico
                     </DropdownMenuItem>
