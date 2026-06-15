@@ -4,6 +4,13 @@ O **TechFix** é uma plataforma SaaS que conecta clientes que precisam de suport
 
 ---
 
+## 👥 Colaboradores
+
+- **[Henrique Eduardo](https://github.com/ohenriqueeduardo)** (Matrícula: UC24201758) — *Frontend e UI/UX*
+- **[Guilherme Vaz](https://github.com/guilhermev4z)** (Matrícula: UC24100768) — *Backend*
+
+---
+
 ## 🚀 Tecnologias
 
 ### Frontend
@@ -91,10 +98,3 @@ Para rodar todo o ecossistema isolado em contêineres:
 ```bash
 docker compose up --build
 ```
-
----
-
-## 👥 Colaboradores
-
-- **Henrique Eduardo** (Matrícula: UC24201758) — *Frontend e UI/UX*
-- **Guilherme Vaz** (Matrícula: UC24100768) — *Backend*
