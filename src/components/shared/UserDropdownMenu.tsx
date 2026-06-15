@@ -62,7 +62,7 @@ export const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({ user, trigge
         <DropdownMenuSeparator className="bg-white/5" />
         
         {/* CLIENT LINKS */}
-        {user.role.includes('client') && (
+        {user.role.includes('client') && !user.role.includes('professional') && !user.role.includes('admin') && (
           <>
             <DropdownMenuItem onClick={() => navigate('/cliente/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
               <LayoutDashboard className="w-4 h-4 text-primary" /> Painel de Controle
