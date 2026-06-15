@@ -5,10 +5,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { User, Bell, Shield, Settings as SettingsIcon, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { User as UserType } from '@/types';
 
 const AdminSettingsPage = () => {
   const [activeMenu, setActiveMenu] = useState('perfil');
-  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [avatar, setAvatar] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
