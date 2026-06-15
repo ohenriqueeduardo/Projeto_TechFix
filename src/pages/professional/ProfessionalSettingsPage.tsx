@@ -15,7 +15,7 @@ const ProfessionalSettingsPage = () => {
   const [availableDays, setAvailableDays] = useState<string[]>([]);
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   
-  const [activeMenu, setActiveMenu] = useState('Geral');
+  const [activeMenu, setActiveMenu] = useState('Atuação Profissional');
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -36,7 +36,7 @@ const ProfessionalSettingsPage = () => {
       });
     }, { rootMargin: '-20% 0px -60% 0px' });
 
-    const sections = ['Geral', 'Atuação Profissional', 'Agenda & Horários', 'Perfil', 'Zona de Perigo'];
+    const sections = ['Atuação Profissional', 'Agenda & Horários', 'Perfil', 'Zona de Perigo'];
     sections.forEach(section => {
       const element = document.getElementById(section);
       if (element) observer.observe(element);
@@ -172,7 +172,6 @@ const ProfessionalSettingsPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 relative items-start">
         <nav className="space-y-2 sticky top-32 self-start h-fit w-full">
           {[
-            { icon: SettingsIcon, label: "Geral" },
             { icon: Briefcase, label: "Atuação Profissional" },
             { icon: Calendar, label: "Agenda & Horários" },
             { icon: User, label: "Perfil" },

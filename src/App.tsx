@@ -134,6 +134,7 @@ const App = () => (
 
               {/* Professional Routes */}
               <Route path="/profissional" element={<ProfessionalLayout />}>
+                <Route path="perfil" element={<ProfilePage />} />
                 <Route path="dashboard" element={<ProfessionalDashboardPage />} />
                 <Route path="agenda" element={<ProfessionalSchedulePage />} />
                 <Route path="servicos" element={<ProfessionalServicesPage />} />
@@ -143,6 +144,7 @@ const App = () => (
 
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
+                <Route path="perfil" element={<ProfilePage />} />
                 <Route path="dashboard" element={<AdminDashboardPage />} />
                 <Route path="usuarios" element={<AdminUsersPage />} />
                 <Route path="financas" element={<AdminFinancePage />} />

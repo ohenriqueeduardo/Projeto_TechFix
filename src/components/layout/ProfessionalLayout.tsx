@@ -242,8 +242,8 @@ const ProfessionalLayout = () => {
                   <p className="text-xs text-muted-foreground font-normal">{currentUser?.email || 'carlos@example.com'}</p>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-white/5" />
-                <DropdownMenuItem onClick={() => navigate('/cliente/perfil')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                  <UserIcon className="w-4 h-4 text-primary" /> Perfil
+                <DropdownMenuItem onClick={() => navigate('/profissional/perfil')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                  <UserIcon className="w-4 h-4 text-primary" /> Meu Perfil
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/profissional/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
                   <LayoutDashboard className="w-4 h-4 text-primary" /> Painel Técnico

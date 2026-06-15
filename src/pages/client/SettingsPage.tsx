@@ -7,7 +7,7 @@ import { User, Bell, Shield, CreditCard, Smartphone, Settings as SettingsIcon, A
 import { toast } from "sonner";
 
 const SettingsPage = () => {
-  const [activeMenu, setActiveMenu] = useState('Geral');
+  const [activeMenu, setActiveMenu] = useState('Perfil');
 
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
@@ -18,7 +18,7 @@ const SettingsPage = () => {
       });
     }, { rootMargin: '-20% 0px -60% 0px' });
 
-    const sections = ['Geral', 'Perfil', 'Notificações', 'Segurança', 'Pagamentos', 'Dispositivos', 'Zona de Perigo'];
+    const sections = ['Perfil', 'Notificações', 'Segurança', 'Pagamentos', 'Dispositivos', 'Zona de Perigo'];
     sections.forEach(section => {
       const element = document.getElementById(section);
       if (element) observer.observe(element);
@@ -49,7 +49,6 @@ const SettingsPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 relative items-start">
         <nav className="space-y-2 sticky top-32 self-start h-fit w-full">
           {[
-            { icon: SettingsIcon, label: "Geral" },
             { icon: User, label: "Perfil" },
             { icon: Bell, label: "Notificações" },
             { icon: Shield, label: "Segurança" },

@@ -197,6 +197,9 @@ const AdminLayout = () => {
                   <p className="text-xs text-muted-foreground font-normal">admin@techfix.com</p>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-white/5" />
+                <DropdownMenuItem onClick={() => navigate('/admin/perfil')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                  <UserIcon className="w-4 h-4 text-primary" /> Perfil Administrativo
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/admin/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
                   <LayoutDashboard className="w-4 h-4 text-primary" /> Painel Geral
                 </DropdownMenuItem>

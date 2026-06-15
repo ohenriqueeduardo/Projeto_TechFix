@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-const INACTIVITY_LIMIT_MS = 30 * 60 * 1000; // 30 minutes in milliseconds
+const INACTIVITY_LIMIT_MS = 20 * 60 * 1000; // 20 minutes in milliseconds
 
 export const useAutoLogout = () => {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
