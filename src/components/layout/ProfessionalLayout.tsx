@@ -26,6 +26,7 @@ import { useNotifications } from '@/context/NotificationsContext';
 import { User } from '@/types';
 import logo from '@/assets/logo.png';
 import logoImg from '@/assets/logo_img.png';
+import { UserDropdownMenu } from '@/components/shared/UserDropdownMenu';
 
 const ProfessionalLayout = () => {
   const location = useLocation();
@@ -223,54 +224,7 @@ const ProfessionalLayout = () => {
             </DropdownMenu>
 
             {/* Profile Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <div className="flex items-center gap-4 pl-6 border-l border-foreground/5 cursor-pointer group">
-                  <div className="text-right hidden sm:block">
-                    <p className="text-sm font-bold group-hover:text-primary transition-colors">{currentUser?.name || 'Carlos Mendes'}</p>
-                    <p className="text-[10px] text-primary font-black uppercase tracking-widest">{currentUser?.specialty || 'Técnico Especialista'}</p>
-                  </div>
-                  <div className="relative">
-                    <img src={userAvatar} className="w-14 h-14 rounded-2xl border-2 border-primary/20 group-hover:border-primary transition-all object-cover" alt="Avatar" />
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-background rounded-full"></div>
-                  </div>
-                </div>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 p-2 rounded-3xl glass-card border-white/10 z-50">
-                <DropdownMenuLabel className="px-4 py-3">
-                  <p className="font-bold">Minha Conta Técnico</p>
-                  <p className="text-xs text-muted-foreground font-normal">{currentUser?.email || 'carlos@example.com'}</p>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-white/5" />
-                <DropdownMenuItem onClick={() => navigate('/profissional/perfil')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                  <UserIcon className="w-4 h-4 text-primary" /> Meu Perfil
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/profissional/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                  <LayoutDashboard className="w-4 h-4 text-primary" /> Painel Técnico
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/profissional/agenda')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                  <CalendarDays className="w-4 h-4 text-primary" /> Minha Agenda
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/profissional/servicos')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                  <Wrench className="w-4 h-4 text-primary" /> Meus Serviços
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/profissional/financeiro')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                  <DollarSign className="w-4 h-4 text-primary" /> Financeiro
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/profissional/configuracoes')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                  <Settings className="w-4 h-4 text-primary" /> Configurações
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-white/5" />
-                {(currentUser?.role === 'admin' || currentUser?.role === 'both' || currentUser?.role === 'client') && (
-                  <DropdownMenuItem onClick={() => navigate('/cliente/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-primary focus:text-primary bg-primary/10 focus:bg-primary/20 font-bold mb-2">
-                    <UserIcon className="w-4 h-4" /> Acessar Painel Cliente
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive">
-                  <LogOut className="w-4 h-4" /> Sair da Conta
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {currentUser && <UserDropdownMenu user={currentUser} />}
           </div>
         </header>
 

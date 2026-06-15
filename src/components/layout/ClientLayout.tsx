@@ -30,6 +30,7 @@ import { useNotifications } from '@/context/NotificationsContext';
 import { User } from '@/types';
 import logo from '@/assets/logo.png';
 import logoImg from '@/assets/logo_img.png';
+import { UserDropdownMenu } from '@/components/shared/UserDropdownMenu';
 
 const ClientLayout = () => {
   const location = useLocation();
@@ -257,54 +258,7 @@ const ClientLayout = () => {
             </DropdownMenu>
 
             {/* Profile Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <div className="flex items-center gap-4 pl-6 border-l border-foreground/5 cursor-pointer group">
-                  <div className="text-right hidden sm:block">
-                    <p className="text-sm font-bold group-hover:text-primary transition-colors">{currentUser?.name || 'Sofia Spencer'}</p>
-                    <p className="text-[10px] text-primary font-black uppercase tracking-widest">{currentUser?.level ? `Nível ${currentUser.level}` : 'Nível Bronze'}</p>
-                  </div>
-                  <div className="relative">
-                    <img src={userAvatar} className="w-14 h-14 rounded-2xl border-2 border-primary/20 group-hover:border-primary transition-all object-cover" alt="Avatar" />
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-background rounded-full"></div>
-                  </div>
-                </div>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 p-2 rounded-3xl glass-card border-white/10 z-50">
-                <DropdownMenuLabel className="px-4 py-3">
-                  <p className="font-bold">Minha Conta</p>
-                  <p className="text-xs text-muted-foreground font-normal">{currentUser?.email || 'sofia@example.com'}</p>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-white/5" />
-                <DropdownMenuItem onClick={() => navigate('/cliente/perfil')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                  <UserIcon className="w-4 h-4 text-primary" /> Perfil
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/cliente/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                  <LayoutDashboard className="w-4 h-4 text-primary" /> Painel de Controle
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/cliente/busca')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                  <Search className="w-4 h-4 text-primary" /> Buscar Serviços
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/cliente/meus-pedidos')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                  <ClipboardList className="w-4 h-4 text-primary" /> Meus Pedidos
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/cliente/notificacoes')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                  <Bell className="w-4 h-4 text-primary" /> Notificações
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/cliente/configuracoes')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
-                  <Settings className="w-4 h-4 text-primary" /> Configurações
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-white/5" />
-                {(currentUser?.role === 'admin' || currentUser?.role === 'both' || currentUser?.role === 'professional') && (
-                  <DropdownMenuItem onClick={() => navigate('/profissional/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-blue-400 focus:text-blue-400 bg-blue-500/10 focus:bg-blue-500/20 font-bold mb-2">
-                    <Briefcase className="w-4 h-4" /> Acessar Painel Técnico
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive">
-                  <LogOut className="w-4 h-4" /> Sair da Conta
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {currentUser && <UserDropdownMenu user={currentUser} />}
           </div>
         </header>
  

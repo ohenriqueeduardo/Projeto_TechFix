@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { NotificationsProvider } from "@/context/NotificationsContext";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -106,6 +106,7 @@ const App = () => (
               </Route>
 
               <Route path="/cliente" element={<ClientLayout />}>
+                <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<ClientDashboardPage />} />
                 <Route path="busca" element={<BuscaPage />} />
                 <Route path="servicos" element={<ExploreServicesPage />} />
@@ -134,6 +135,7 @@ const App = () => (
 
               {/* Professional Routes */}
               <Route path="/profissional" element={<ProfessionalLayout />}>
+                <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="perfil" element={<ProfilePage />} />
                 <Route path="dashboard" element={<ProfessionalDashboardPage />} />
                 <Route path="agenda" element={<ProfessionalSchedulePage />} />
@@ -144,6 +146,7 @@ const App = () => (
 
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="perfil" element={<ProfilePage />} />
                 <Route path="dashboard" element={<AdminDashboardPage />} />
                 <Route path="usuarios" element={<AdminUsersPage />} />
