@@ -2,24 +2,21 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { PageHeader } from '@/components/ui/PageHeader';
 import { 
   DollarSign, 
   Users, 
   ShieldCheck, 
-  HelpCircle, 
   Check, 
   X, 
   TrendingUp, 
-  Bell, 
   Database,
-  Search,
-  Sparkles,
-  UserPlus
+  UserPlus,
+  ShieldAlert,
+  ServerCrash
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 interface LogItem {
   id: string | number;
@@ -33,9 +30,13 @@ interface CandidateItem {
   id: string;
   name: string;
   status: 'pending' | 'approved' | 'rejected';
+  role: string;
+  email: string;
+  createdAt: string;
 }
 
 const AdminDashboardPage = () => {
+  const navigate = useNavigate();
   const [metrics, setMetrics] = React.useState({
     totalUsers: 0,
     totalServices: 0,
@@ -53,15 +54,9 @@ const AdminDashboardPage = () => {
         const res = await fetch('/api/admin/dashboard');
         if (res.ok) {
           const data = await res.json();
-          setMetrics({
-            totalUsers: data.metrics.totalUsers,
-            totalServices: data.metrics.totalServices,
-            totalRevenue: data.metrics.totalRevenue,
-            openOrders: data.metrics.openOrders
-          });
+          setMetrics(data.metrics);
 
-          // System logs from recent orders
-          const logs = data.recentOrders.map((o: { id: string; status: string; serviceTitle: string; price: number; createdAt: string }) => ({
+          const logs = data.recentOrders.map((o: any) => ({
             id: o.id,
             action: 'Pedido ' + o.status,
             details: `Serviço ${o.serviceTitle} no valor de ${formatCurrency(o.price)}`,
@@ -70,198 +65,160 @@ const AdminDashboardPage = () => {
           }));
           
           setSystemLogs(logs);
-          setCandidates(data.recentUsers); // Used just to show recently joined users
+          setCandidates(data.recentUsers);
         }
-      } catch (e) {
-        console.error('Error fetching admin dashboard:', e);
-      } finally {
+      } catch (e) {} finally {
         setIsLoading(false);
       }
     };
     fetchDashboard();
   }, []);
 
-  if (isLoading) return <div className="p-12 text-center">Carregando painel...</div>;
+  if (isLoading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <span className="h-10 w-10 rounded-full border-4 border-t-cyan-500 border-white/5 animate-spin"></span>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-500 p-6 md:p-12 max-w-7xl mx-auto">
+    <div className="flex flex-col lg:h-[calc(100vh-130px)] gap-5 animate-page-entrance max-w-7xl mx-auto overflow-y-auto lg:overflow-hidden pb-10 lg:pb-0 px-4 md:px-8 pt-4 md:pt-8">
       
-      {/* Admin header with details */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/5 pb-8">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse"></span>
-            <span className="text-xs font-black uppercase tracking-widest text-primary">Painel de Administração Geral</span>
-            <Badge className="bg-red-500/25 text-red-400 border-red-500/35 rounded-md text-[9px] font-black uppercase ml-2">Root Access</Badge>
+      {/* Hero Section Premium Admin */}
+      <div className="shrink-0 relative overflow-hidden rounded-3xl p-6 md:p-8 border border-red-500/10 glass-card bg-gradient-to-br from-card/60 to-background">
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-cyan-500/10 blur-[80px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-64 h-64 bg-red-500/10 blur-[80px] rounded-full pointer-events-none" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="relative shrink-0">
+              <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-red-500/20 to-red-900/50 border-2 border-red-500/30 flex items-center justify-center shadow-lg">
+                <ShieldAlert className="w-8 h-8 text-red-500" />
+              </div>
+              <div className="absolute -bottom-2 -right-2 p-1 bg-background rounded-full">
+                <div className="bg-red-500/20 p-1 rounded-full">
+                  <ShieldCheck className="w-3 h-3 text-red-500" />
+                </div>
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                <span className="text-[10px] font-black tracking-widest text-cyan-400 uppercase">Sistema Central</span>
+                <Badge className="bg-red-500/20 text-red-400 border-red-500/30 text-[9px] uppercase px-1.5 py-0">Root Access</Badge>
+              </div>
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground bg-clip-text text-transparent bg-gradient-to-r from-foreground via-foreground to-cyan-400">
+                Olá, Administrador! 👑
+              </h1>
+            </div>
           </div>
-          <h1 className="text-4xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground via-foreground to-cyan-400">Olá, Henrique Eduardo! 👑</h1>
-          <p className="text-muted-foreground text-sm mt-1">Métricas de faturamento, credenciamentos e logs do sistema atualizados em tempo real.</p>
+          
+          {/* Financial Integration */}
+          <div className="w-full md:w-64 bg-background/50 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
+            <div className="flex justify-between items-start mb-1">
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Faturamento Plataforma</span>
+              <TrendingUp className="w-3.5 h-3.5 text-cyan-500" />
+            </div>
+            <h3 className="text-2xl font-black text-cyan-400">{formatCurrency(metrics.totalRevenue)}</h3>
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+              <span className="text-[10px] text-muted-foreground font-semibold">Usuários: <strong className="text-foreground">{metrics.totalUsers}</strong></span>
+              <span className="text-[10px] text-muted-foreground font-semibold">Serviços: <strong className="text-foreground">{metrics.totalServices}</strong></span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Admin Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Total Platform Revenue with SVG Sparkline */}
-        <Card className="p-6 bg-gradient-to-br from-cyan-950/20 via-primary/5 to-transparent border-white/5 rounded-2xl relative overflow-hidden group">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Faturamento Total</p>
-              <h3 className="text-2xl font-black text-primary">{formatCurrency(metrics.totalRevenue)}</h3>
-              <p className="text-[10px] text-green-500 font-bold flex items-center gap-1 mt-1.5">
-                <TrendingUp className="w-3.5 h-3.5" /> +18.7% de crescimento
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-primary/10 text-primary">
-              <DollarSign className="w-5 h-5" />
-            </div>
-          </div>
-          {/* Sparkline line graph in pure SVG */}
-          <div className="absolute bottom-0 left-0 w-full h-12 overflow-hidden opacity-40 group-hover:opacity-75 transition-opacity">
-            <svg viewBox="0 0 100 20" className="w-full h-full" preserveAspectRatio="none">
-              <path 
-                d="M 0 19 Q 20 15 40 8 T 70 12 L 100 2 L 100 20 L 0 20 Z" 
-                fill="url(#adminGradient)" 
-                stroke="none"
-              />
-              <path 
-                d="M 0 19 Q 20 15 40 8 T 70 12 L 100 2" 
-                fill="none" 
-                stroke="rgb(6, 182, 212)" 
-                strokeWidth="1.5"
-              />
-              <defs>
-                <linearGradient id="adminGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="rgba(6, 182, 212, 0.4)" />
-                  <stop offset="100%" stopColor="rgba(6, 182, 212, 0)" />
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-        </Card>
-
-        {[
-          { label: 'Usuários Totais', value: metrics.totalUsers, icon: Users, color: 'text-blue-400', bg: 'bg-blue-400/10', desc: 'Cadastrados na base' },
-          { label: 'Serviços Ofertados', value: metrics.totalServices, icon: ShieldCheck, color: 'text-green-400', bg: 'bg-green-400/10', desc: 'Ativos na plataforma' },
-          { label: 'Chamados Abertos', value: metrics.openOrders, icon: HelpCircle, color: 'text-yellow-500', bg: 'bg-yellow-500/10', desc: 'Pedidos não finalizados' },
-        ].map((stat, i) => (
-          <Card key={i} className="p-6 bg-card/30 border-white/5 rounded-2xl hover:border-primary/20 transition-all">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">{stat.label}</p>
-                <h3 className="text-2xl font-black">{stat.value}</h3>
-                <p className="text-[10px] text-muted-foreground font-semibold mt-1">{stat.desc}</p>
-              </div>
-              <div className={`p-3 rounded-xl ${stat.bg} ${stat.color}`}>
-                <stat.icon className="w-5 h-5" />
-              </div>
-            </div>
-          </Card>
-        ))}
+      {/* Quick Actions (Horizontal) */}
+      <div className="shrink-0 grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Button onClick={() => navigate('/admin/users')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-card/30 hover:bg-card/50 border-white/10 text-xs font-bold">
+          <Users className="w-4 h-4 text-cyan-500" /> Auditoria Usuários
+        </Button>
+        <Button onClick={() => navigate('/admin/services')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-card/30 hover:bg-card/50 border-white/10 text-xs font-bold">
+          <ShieldCheck className="w-4 h-4 text-green-500" /> Aprovar Técnicos
+        </Button>
+        <Button onClick={() => navigate('/admin/finance')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-card/30 hover:bg-card/50 border-white/10 text-xs font-bold">
+          <DollarSign className="w-4 h-4 text-yellow-500" /> Tesouraria
+        </Button>
+        <Button onClick={() => toast.success('Rotina de Backup iniciada. Os dados serão salvos no Bucket.')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-red-950/20 hover:bg-red-900/40 border-red-500/20 text-red-400 text-xs font-bold">
+          <ServerCrash className="w-4 h-4 text-red-500" /> Forçar Backup
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Main Single Page Grid */}
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-6 pb-4">
         
-        {/* LEFT COLUMN: Technical Specialists Approval Queue (2/3 width) */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-primary" /> Cadastros Recentes
+        {/* Left Col: Candidates Queue */}
+        <div className="lg:col-span-2 flex flex-col min-h-0 space-y-3">
+          <div className="shrink-0 flex justify-between items-center px-1">
+            <h2 className="text-base font-bold flex items-center gap-2">
+              <UserPlus className="w-4 h-4 text-cyan-400" /> Credenciamentos Recentes
+            </h2>
+            <Badge className="bg-cyan-500/10 text-cyan-400 rounded-md text-[9px] font-black uppercase">
+              {candidates.length} Novos
+            </Badge>
+          </div>
+
+          <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+            {candidates.length === 0 ? (
+              <div className="glass-card p-8 rounded-2xl border border-dashed border-white/10 flex flex-col items-center justify-center text-center h-40">
+                <Users className="w-8 h-8 text-muted-foreground opacity-50 mb-2" />
+                <h4 className="text-sm font-bold">Nenhum cadastro recente</h4>
+              </div>
+            ) : (
+              candidates.map((tech) => (
+                <Card key={tech.id} className="p-4 bg-card/30 border-white/5 hover:border-cyan-500/20 transition-all rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-sm">{tech.name}</h4>
+                      <Badge className="bg-primary/10 text-primary text-[9px] uppercase px-1.5 py-0">
+                        {tech.role?.includes('professional') ? 'Técnico' : 'Cliente'}
+                      </Badge>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">{tech.email} • Registrado em {new Date(tech.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  <Button onClick={() => navigate('/admin/users')} size="sm" variant="outline" className="border-white/10 text-[10px] h-8">
+                    Analisar
+                  </Button>
+                </Card>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Right Col: Audit Logs */}
+        <div className="flex flex-col min-h-0 space-y-3">
+          <div className="shrink-0 flex items-center justify-between px-1">
+            <h2 className="text-base font-bold flex items-center gap-2">
+              <Database className="w-4 h-4 text-cyan-500" /> Logs do Sistema
             </h2>
           </div>
-
-          <div className="space-y-4">
-            {candidates.map((tech) => (
-              <Card key={tech.id} className="p-5 bg-card/30 border-white/5 rounded-2xl hover:border-primary/20 transition-all group">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2.5">
-                      <h4 className="font-bold text-base group-hover:text-primary transition-colors">{tech.name}</h4>
-                      <Badge className="bg-primary/10 text-primary text-[9px] font-bold">{tech.role.includes('professional') ? 'Especialista' : 'Cliente'}</Badge>
-                    </div>
-                    <p className="text-xs text-primary font-semibold">{tech.email}</p>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground font-semibold pt-1">
-                      <span>Criado em: <span className="text-foreground">{new Date(tech.createdAt).toLocaleDateString()}</span></span>
-                    </div>
-                  </div>
-                  <Link to="/admin/users">
-                    <Button size="sm" variant="outline" className="border-white/10 text-xs h-9">
-                      Ver Usuários
-                    </Button>
-                  </Link>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* RIGHT COLUMN: Live System Audit Logs & Growth (1/3 width) */}
-        <div className="space-y-6">
           
-          {/* Audit Logs Feed */}
-          <Card className="p-6 bg-card/30 border-white/5 rounded-3xl">
-            <h3 className="text-base font-bold mb-4 flex items-center gap-2">
-              <Database className="w-4 h-4 text-primary" /> Atividades do Sistema
-            </h3>
-            
-            <div className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
-              {systemLogs.map((log) => (
-                <div key={log.id} className="relative border-l border-white/10 pl-4 pb-1 space-y-1">
-                  {/* Indicator bullet */}
-                  <span className={`absolute -left-1 top-1.5 h-2 w-2 rounded-full ${
-                    log.type === 'success' ? 'bg-green-500' :
-                    log.type === 'warning' ? 'bg-yellow-500' :
-                    log.type === 'error' ? 'bg-red-500' : 'bg-primary'
-                  }`}></span>
-                  <div className="flex justify-between items-center">
-                    <h4 className="text-[11px] font-black text-foreground uppercase tracking-wide leading-tight">{log.action}</h4>
-                    <span className="text-[9px] text-muted-foreground font-semibold shrink-0">{log.time}</span>
+          <Card className="flex-1 overflow-y-auto custom-scrollbar p-5 bg-card/30 border-white/5 rounded-2xl">
+            <div className="space-y-3">
+              {systemLogs.length === 0 ? (
+                <p className="text-[10px] text-muted-foreground text-center py-4">Sistema silencioso.</p>
+              ) : (
+                systemLogs.map((log) => (
+                  <div key={log.id} className="relative border-l border-white/10 pl-3 pb-1">
+                    <span className={`absolute -left-1 top-1.5 h-2 w-2 rounded-full ${
+                      log.type === 'success' ? 'bg-green-500' :
+                      log.type === 'warning' ? 'bg-yellow-500' :
+                      log.type === 'error' ? 'bg-red-500' : 'bg-cyan-500'
+                    }`}></span>
+                    <div className="flex justify-between items-center mb-0.5">
+                      <h4 className="text-[10px] font-black text-foreground uppercase tracking-wide">{log.action}</h4>
+                      <span className="text-[8px] text-muted-foreground shrink-0">{log.time}</span>
+                    </div>
+                    <p className="text-[9px] text-muted-foreground leading-relaxed">{log.details}</p>
                   </div>
-                  <p className="text-[10px] text-muted-foreground leading-relaxed font-semibold">{log.details}</p>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </Card>
-
-          {/* Platform Platform Growth Chart (SVG Bar) */}
-          <Card className="p-6 bg-card/30 border-white/5 rounded-3xl">
-            <h3 className="text-base font-bold mb-4 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-primary" /> Volume de Serviços Anual
-            </h3>
-            
-            <div className="h-32 w-full flex items-end justify-between px-1.5 relative border-b border-white/5 pb-2">
-              {[
-                { label: 'Q1', val: 50 },
-                { label: 'Q2', val: 75 },
-                { label: 'Q3', val: 90 },
-                { label: 'Q4', val: 110 }
-              ].map((q, idx) => (
-                <div key={idx} className="flex flex-col items-center gap-1.5 w-12 group cursor-pointer">
-                  <div className="w-4.5 bg-gradient-to-t from-primary/30 to-primary rounded-t-sm group-hover:scale-y-105 transition-all duration-300" style={{ height: `${q.val * 0.7}px` }}></div>
-                  <span className="text-[9px] text-muted-foreground font-black uppercase">{q.label}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Quick System Action */}
-          <Card className="p-5 bg-gradient-to-br from-red-950/20 via-orange-950/10 to-transparent border-red-500/20 rounded-3xl relative overflow-hidden group">
-            <h3 className="text-sm font-black mb-1 text-red-400">Zona de Manutenção</h3>
-            <p className="text-[11px] text-muted-foreground leading-relaxed mb-4">
-              Acesso rápido a auditorias profundas de segurança e backup forçado de banco de dados.
-            </p>
-            <Button 
-              variant="outline" 
-              onClick={() => toast.success('Backup do banco de dados iniciado no servidor principal...')}
-              className="w-full h-10 rounded-xl text-xs gap-1.5 border-red-500/25 text-red-400 hover:bg-red-500 hover:text-white transition-all bg-transparent"
-            >
-              Forçar Backup Completo
-            </Button>
-          </Card>
-
         </div>
 
       </div>
-
     </div>
   );
 };

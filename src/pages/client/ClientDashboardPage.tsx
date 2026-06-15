@@ -81,10 +81,10 @@ const ClientDashboardPage = () => {
   const userAvatar = user?.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(user?.name || 'User')}`;
 
   return (
-    <div className="space-y-8 animate-page-entrance max-w-7xl mx-auto pb-20">
+    <div className="flex flex-col lg:h-[calc(100vh-130px)] gap-6 animate-page-entrance max-w-7xl mx-auto pb-10 lg:pb-0">
       
       {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-3xl p-8 md:p-10 border border-white/10 glass-card bg-gradient-to-br from-card/40 to-background">
+      <div className="shrink-0 relative overflow-hidden rounded-3xl p-8 md:p-10 border border-white/10 glass-card bg-gradient-to-br from-card/40 to-background">
         <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-primary/20 blur-[100px] rounded-full pointer-events-none" />
         <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-64 h-64 bg-blue-500/10 blur-[100px] rounded-full pointer-events-none" />
         
@@ -129,7 +129,7 @@ const ClientDashboardPage = () => {
       </div>
 
       {/* Quick Actions Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="shrink-0 grid grid-cols-1 md:grid-cols-3 gap-4">
         <Button onClick={() => navigate('/cliente/novo-servico')} className="h-auto py-6 flex flex-col items-center justify-center gap-3 rounded-2xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-all hover:scale-[1.02]">
           <div className="bg-primary/20 p-3 rounded-full">
             <Plus className="w-6 h-6" />
@@ -161,10 +161,10 @@ const ClientDashboardPage = () => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Active Orders List */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between px-2">
+        <div className="lg:col-span-2 flex flex-col min-h-0 space-y-4">
+          <div className="shrink-0 flex items-center justify-between px-2">
             <h2 className="text-xl font-bold flex items-center gap-2">
               <Clock className="w-5 h-5 text-primary" /> Chamados Ativos
             </h2>
@@ -175,7 +175,7 @@ const ClientDashboardPage = () => {
             )}
           </div>
           
-          <div className="space-y-4">
+          <div className="flex-1 overflow-y-auto pr-2 space-y-4 custom-scrollbar">
             {activeOrders.length === 0 ? (
               <Card className="p-8 text-center bg-card/30 border-dashed border-white/10 flex flex-col items-center justify-center gap-4 rounded-3xl min-h-[250px]">
                 <div className="bg-white/5 p-4 rounded-full">
@@ -220,12 +220,12 @@ const ClientDashboardPage = () => {
         </div>
 
         {/* Side Panel: Account Summary */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold flex items-center gap-2 px-2">
+        <div className="flex flex-col min-h-0 space-y-4">
+          <h2 className="shrink-0 text-xl font-bold flex items-center gap-2 px-2">
             <Star className="w-5 h-5 text-yellow-500" /> Resumo da Conta
           </h2>
           
-          <Card className="p-6 bg-card/30 border-white/5 rounded-3xl space-y-6">
+          <Card className="flex-1 overflow-y-auto custom-scrollbar p-6 bg-card/30 border-white/5 rounded-3xl space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-background/50 p-4 rounded-2xl border border-white/5 text-center">
                 <span className="block text-[10px] font-black text-muted-foreground uppercase tracking-wider mb-1">Concluídos</span>

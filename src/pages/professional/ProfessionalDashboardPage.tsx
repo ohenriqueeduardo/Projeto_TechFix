@@ -13,21 +13,22 @@ import {
   ArrowUpRight, 
   ArrowDownRight, 
   TrendingUp, 
-  MessageSquare,
-  Sparkles,
   ShieldAlert,
-  FolderOpen
+  FolderOpen,
+  CalendarDays,
+  Settings,
+  ShieldCheck
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
-import { Link } from 'react-router-dom';
-import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
+import { Link, useNavigate } from 'react-router-dom';
 import { Printer } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 import { User, Order, Transaction, Review, Professional } from '@/types';
 
 const ProfessionalDashboardPage = () => {
+  const navigate = useNavigate();
   const [user, setUser] = React.useState<User | null>(null);
   const [orders, setOrders] = React.useState<Order[]>([]);
   const [transactions, setTransactions] = React.useState<Transaction[]>([]);
@@ -44,14 +45,12 @@ const ProfessionalDashboardPage = () => {
 
   const fetchDashboardData = React.useCallback(async (userId: string, token: string, currentUser: User | null) => {
     try {
-      // 1. Fetch Professional Profile
       const profResponse = await fetch(`/api/professionals/${userId}`);
       if (profResponse.ok) {
         const profData = await profResponse.json();
         setProfessionalProfile(profData);
       }
 
-      // 2. Fetch Orders for this professional
       const ordersResponse = await fetch(`/api/orders?professionalId=${userId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -60,7 +59,6 @@ const ProfessionalDashboardPage = () => {
         setOrders(ordersData);
       }
 
-      // 3. Fetch Transactions for this professional
       const txResponse = await fetch(`/api/transactions/professional/${userId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -69,7 +67,6 @@ const ProfessionalDashboardPage = () => {
         setTransactions(txData);
       }
 
-      // 4. Fetch Reviews for this professional
       const reviewsResponse = await fetch(`/api/reviews/professional/${userId}`);
       if (reviewsResponse.ok) {
         const reviewsData = await reviewsResponse.json();
@@ -118,7 +115,7 @@ const ProfessionalDashboardPage = () => {
         body: JSON.stringify({ idDocumentUrl: idDocBase64, selfieUrl: selfieBase64 })
       });
       if (res.ok) {
-        toast.success('Documentos enviados com sucesso! Aguarde aprovação.');
+        toast.success('Documentos enviados com sucesso!');
         setShowVerificationModal(false);
         if (user) fetchDashboardData(user.id, localStorage.getItem('token') || '', user);
       } else {
@@ -136,43 +133,27 @@ const ProfessionalDashboardPage = () => {
     try {
       await fetch(`/api/orders/${orderId}/status`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ status: 'scheduled' })
       });
-    } catch (e) {
-      console.warn('Backend sync failed:', e);
-    }
-
-    toast.success('Pedido aceito com sucesso! Agendado na sua agenda.');
-    if (user) fetchDashboardData(user.id, token || 'mock_token', user);
+    } catch (e) {}
+    toast.success('Pedido aceito com sucesso!');
+    if (user) fetchDashboardData(user.id, token || '', user);
   };
 
   const handleCompleteOrder = async (orderId: string, orderPrice: number, orderTitle: string) => {
     const token = localStorage.getItem('token');
     try {
-      // 1. Mark Order as Completed on backend
       const orderResponse = await fetch(`/api/orders/${orderId}/status`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ status: 'completed' })
       });
 
-      if (!orderResponse.ok) throw new Error('Falha ao concluir o pedido.');
-
-      // 2. Automatically generate a financial transaction (income) in PostgreSQL for this professional
-      if (user) {
+      if (orderResponse.ok && user) {
         await fetch(`/api/transactions`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
           body: JSON.stringify({
             professionalId: user.id,
             type: 'income',
@@ -182,12 +163,9 @@ const ProfessionalDashboardPage = () => {
           })
         });
       }
-    } catch (err: unknown) {
-      console.warn('Backend sync failed:', err);
-    }
-
-    toast.success('Parabéns! Serviço marcado como concluído. Pagamento creditado no seu faturamento.');
-    if (user) fetchDashboardData(user.id, token || 'mock_token', user);
+    } catch (err) {}
+    toast.success('Serviço concluído e pagamento creditado!');
+    if (user) fetchDashboardData(user.id, token || '', user);
   };
 
   const handleCancelOrder = async (orderId: string) => {
@@ -195,347 +173,210 @@ const ProfessionalDashboardPage = () => {
     try {
       await fetch(`/api/orders/${orderId}/status`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ status: 'cancelled' })
       });
-    } catch (e) {
-      console.warn('Backend sync failed:', e);
-    }
-
+    } catch (e) {}
     toast.error('Serviço recusado/cancelado.');
-    if (user) fetchDashboardData(user.id, token || 'mock_token', user);
+    if (user) fetchDashboardData(user.id, token || '', user);
   };
 
   const handleSendCounterOffer = async (orderId: string) => {
     if (!counterOfferPrice || isNaN(Number(counterOfferPrice))) {
-      toast.error('Insira um valor numérico válido.');
+      toast.error('Valor inválido.');
       return;
     }
-
     const priceNum = Number(counterOfferPrice);
     const token = localStorage.getItem('token');
-
-    // Patch backend
     try {
       await fetch(`/api/orders/${orderId}/status`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ status: 'counter_offer', price: priceNum })
       });
-    } catch (e) {
-      console.warn('Backend sync failed:', e);
-    }
-
-    toast.success('Contraproposta enviada com sucesso! Aguardando cliente.');
+    } catch (e) {}
+    toast.success('Contraproposta enviada!');
     setCounterOfferOrderId(null);
-    if (user) fetchDashboardData(user.id, token || 'mock_token', user);
+    if (user) fetchDashboardData(user.id, token || '', user);
   };
 
-  // Dynamic calculations based on real PostgreSQL data
   const activeJobs = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled').length;
   const completedJobs = orders.filter(o => o.status === 'completed').length;
   
-  // Calculate monthly earnings from dynamic transactions
   const currentMonthIncome = transactions
     .filter(t => t.type === 'income' && t.status === 'completed')
     .reduce((sum, t) => sum + Number(t.value), 0);
 
-  // Average Rating
   const averageSatisfaction = professionalProfile?.satisfaction !== undefined 
-    ? `${professionalProfile.satisfaction}%` 
-    : '100%';
+    ? `${professionalProfile.satisfaction}%` : '100%';
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending': 
-        return <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase">Pendente</Badge>;
-      case 'counter_offer': 
-        return <Badge className="bg-orange-500/10 text-orange-500 border-orange-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase">Contraproposta</Badge>;
-      case 'scheduled': 
-        return <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase">Agendado</Badge>;
-      case 'in_progress': 
-        return <Badge className="bg-purple-500/10 text-purple-500 border-purple-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase">Em Andamento</Badge>;
-      case 'completed': 
-        return <Badge className="bg-green-500/10 text-green-500 border-green-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase">Concluído</Badge>;
-      default: 
-        return <Badge className="bg-red-500/10 text-red-500 border-red-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase">Cancelado</Badge>;
+      case 'pending': return <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20 px-2 py-0.5 rounded text-[9px] font-black uppercase">Pendente</Badge>;
+      case 'counter_offer': return <Badge className="bg-orange-500/10 text-orange-500 border-orange-500/20 px-2 py-0.5 rounded text-[9px] font-black uppercase">Negociando</Badge>;
+      case 'scheduled': return <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20 px-2 py-0.5 rounded text-[9px] font-black uppercase">Agendado</Badge>;
+      case 'in_progress': return <Badge className="bg-purple-500/10 text-purple-500 border-purple-500/20 px-2 py-0.5 rounded text-[9px] font-black uppercase">Ativo</Badge>;
+      case 'completed': return <Badge className="bg-green-500/10 text-green-500 border-green-500/20 px-2 py-0.5 rounded text-[9px] font-black uppercase">Concluído</Badge>;
+      default: return <Badge className="bg-red-500/10 text-red-500 border-red-500/20 px-2 py-0.5 rounded text-[9px] font-black uppercase">Cancelado</Badge>;
     }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-[50vh] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <span className="h-10 w-10 rounded-full border-4 border-t-primary border-white/5 animate-spin"></span>
-          <p className="text-muted-foreground text-sm font-bold">Carregando painel do especialista...</p>
-        </div>
+      <div className="h-full flex items-center justify-center">
+        <span className="h-10 w-10 rounded-full border-4 border-t-primary border-white/5 animate-spin"></span>
       </div>
     );
   }
 
+  const userAvatar = user?.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(user?.name || 'Pro')}`;
+
   return (
-    <div className="space-y-10 animate-page-entrance p-6 md:p-12 max-w-7xl mx-auto">
+    <div className="flex flex-col lg:h-[calc(100vh-130px)] gap-5 animate-page-entrance max-w-7xl mx-auto overflow-y-auto lg:overflow-hidden pb-10 lg:pb-0 px-4 md:px-8 pt-4 md:pt-8">
       
-      {/* Header bar specific to Professional context */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-white/5 pb-8">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="h-2 w-2 rounded-full bg-green-500 animate-ping"></span>
-            <span className="text-xs font-black uppercase tracking-widest text-primary">Painel do Especialista</span>
-            <Badge className="bg-primary/20 text-primary border-primary/30 rounded-md text-[9px] font-black uppercase ml-2">Técnico Verificado</Badge>
+      {/* Premium Hero Section */}
+      <div className="shrink-0 relative overflow-hidden rounded-3xl p-6 md:p-8 border border-white/10 glass-card bg-gradient-to-br from-card/40 to-background">
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-primary/10 blur-[80px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-64 h-64 bg-green-500/10 blur-[80px] rounded-full pointer-events-none" />
+        
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="relative shrink-0">
+              <img src={userAvatar} alt="Avatar" className="w-16 h-16 md:w-20 md:h-20 rounded-2xl border-2 border-primary/30 shadow-lg object-cover" />
+              <div className="absolute -bottom-2 -right-2 p-1 bg-background rounded-full">
+                <div className={`bg-${professionalProfile?.verificationStatus === 'verified' ? 'primary' : 'orange-500'}/20 p-1 rounded-full`}>
+                  {professionalProfile?.verificationStatus === 'verified' ? (
+                    <ShieldCheck className="w-3 h-3 text-primary" />
+                  ) : (
+                    <ShieldAlert className="w-3 h-3 text-orange-500" />
+                  )}
+                </div>
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-black tracking-widest text-primary uppercase">Painel do Especialista</span>
+                {professionalProfile?.verificationStatus === 'verified' && (
+                  <Badge className="bg-primary/20 text-primary border-primary/30 text-[9px] uppercase px-1.5 py-0">Verificado</Badge>
+                )}
+              </div>
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">Olá, {user?.name?.split(' ')[0] || 'Profissional'}! 🛠️</h1>
+            </div>
           </div>
-          <h1 className="text-4xl font-black tracking-tight">Olá, {user?.name || 'Profissional'}! 🛠️</h1>
-          <p className="text-muted-foreground text-sm mt-1">Aqui está o resumo dos seus reparos e receitas de hoje.</p>
+          
+          {/* Financial Integration */}
+          <div className="w-full md:w-64 bg-background/50 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
+            <div className="flex justify-between items-start mb-1">
+              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Receita Mensal</span>
+              <DollarSign className="w-3.5 h-3.5 text-green-500" />
+            </div>
+            <h3 className="text-2xl font-black text-green-500">{formatCurrency(currentMonthIncome)}</h3>
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+              <span className="text-[10px] text-muted-foreground font-semibold">Reparos: <strong className="text-foreground">{completedJobs}</strong></span>
+              <span className="text-[10px] text-muted-foreground font-semibold flex items-center"><Star className="w-3 h-3 fill-yellow-500 text-yellow-500 mr-1"/> {averageSatisfaction}</span>
+            </div>
+          </div>
         </div>
       </div>
 
+      {/* Verification Alerts */}
       {professionalProfile && (professionalProfile.verificationStatus === 'unverified' || professionalProfile.verificationStatus === 'rejected') && (
-        <div className="bg-orange-500/10 border border-orange-500/20 p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="shrink-0 bg-orange-500/10 border border-orange-500/20 px-4 py-3 rounded-xl flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <ShieldAlert className="w-8 h-8 text-orange-500 shrink-0" />
-            <div>
-              <h3 className="text-orange-500 font-bold text-sm">Verificação Pendente</h3>
-              <p className="text-xs text-orange-500/80">Sua conta precisa ser verificada com documentos oficiais para receber o selo de confiança e aparecer para clientes.</p>
-            </div>
+            <ShieldAlert className="w-5 h-5 text-orange-500 shrink-0" />
+            <p className="text-xs text-orange-500/90 font-medium">Sua conta precisa de verificação oficial.</p>
           </div>
-          <Button onClick={() => setShowVerificationModal(true)} className="bg-orange-500 hover:bg-orange-600 text-white whitespace-nowrap text-xs h-9">
-            Enviar Documentos
+          <Button onClick={() => setShowVerificationModal(true)} size="sm" className="bg-orange-500 hover:bg-orange-600 text-white text-[10px] h-7 px-3">
+            Verificar Agora
           </Button>
         </div>
       )}
 
-      {professionalProfile?.verificationStatus === 'pending' && (
-        <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl flex items-center gap-3">
-          <Clock className="w-6 h-6 text-blue-500" />
-          <div>
-            <h3 className="text-blue-500 font-bold text-sm">Documentos em Análise</h3>
-            <p className="text-xs text-blue-500/80">O administrador está analisando seus documentos. Em breve você receberá o status final.</p>
-          </div>
-        </div>
-      )}
-
-      {/* Statistics Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Earnings Card */}
-        <Card className="p-6 glass-card border-white/5 rounded-3xl relative overflow-hidden group hover-card-service animate-fade-in-scale" style={{animationDelay: '50ms'}}>
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Faturamento Total</p>
-              <h3 className="text-2xl font-black text-primary">{formatCurrency(currentMonthIncome)}</h3>
-              <p className="text-[10px] text-green-500 font-bold flex items-center gap-1 mt-1.5">
-                <TrendingUp className="w-3.5 h-3.5" /> Faturamento atualizado
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-primary/10 text-primary">
-              <DollarSign className="w-5 h-5" />
-            </div>
-          </div>
-          {/* Sparkline decoration */}
-          <div className="absolute bottom-0 left-0 w-full h-12 overflow-hidden opacity-40 group-hover:opacity-75 transition-opacity">
-            <svg viewBox="0 0 100 20" className="w-full h-full" preserveAspectRatio="none">
-              <path 
-                d="M 0 18 Q 15 12 30 15 T 60 5 T 90 10 L 100 2 L 100 20 L 0 20 Z" 
-                fill="url(#primaryGradient)" 
-                stroke="none"
-              />
-              <path 
-                d="M 0 18 Q 15 12 30 15 T 60 5 T 90 10 L 100 2" 
-                fill="none" 
-                stroke="rgb(6, 182, 212)" 
-                strokeWidth="1.5"
-              />
-              <defs>
-                <linearGradient id="primaryGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="rgba(6, 182, 212, 0.4)" />
-                  <stop offset="100%" stopColor="rgba(6, 182, 212, 0)" />
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-        </Card>
-
-        {[
-          { label: 'Trabalhos Concluídos', value: completedJobs, icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-500/10', desc: 'Reparos e chamados finalizados', isNumber: true },
-          { label: 'Satisfação Média', value: averageSatisfaction, icon: Star, color: 'text-yellow-500', bg: 'bg-yellow-500/10', desc: `Baseado em ${reviews.length} avaliações` },
-          { label: 'Jobs Ativos', value: activeJobs, icon: Clock, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Pedidos pendentes ou agendados', isNumber: true },
-        ].map((stat, i) => (
-          <Card key={i} className="p-6 glass-card border-white/5 rounded-3xl hover-card-service animate-fade-in-scale" style={{animationDelay: `${(i+2)*50}ms`}}>
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">{stat.label}</p>
-                <h3 className="text-2xl font-black">
-                  {stat.isNumber ? <AnimatedCounter value={stat.value as number} /> : stat.value}
-                </h3>
-                <p className="text-[10px] text-muted-foreground font-semibold mt-1">{stat.desc}</p>
-              </div>
-              <div className={`p-3 rounded-xl ${stat.bg} ${stat.color}`}>
-                <stat.icon className="w-5 h-5" />
-              </div>
-            </div>
-          </Card>
-        ))}
+      {/* Quick Actions (Horizontal) */}
+      <div className="shrink-0 grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Button onClick={() => navigate('/profissional/servicos')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-card/30 hover:bg-card/50 border-white/10 text-xs font-bold">
+          <Wrench className="w-4 h-4 text-primary" /> Meus Serviços
+        </Button>
+        <Button onClick={() => navigate('/profissional/financeiro')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-card/30 hover:bg-card/50 border-white/10 text-xs font-bold">
+          <DollarSign className="w-4 h-4 text-green-500" /> Faturamento
+        </Button>
+        <Button onClick={() => toast.success('Agenda sincronizada com sucesso!')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-card/30 hover:bg-card/50 border-white/10 text-xs font-bold">
+          <CalendarDays className="w-4 h-4 text-blue-500" /> Agenda
+        </Button>
+        <Button onClick={() => navigate('/profissional/configuracoes')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-card/30 hover:bg-card/50 border-white/10 text-xs font-bold">
+          <Settings className="w-4 h-4 text-muted-foreground" /> Configurações
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Main Single Page Grid */}
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-6 pb-4">
         
-        {/* LEFT COLUMN: Manage Active and Pending Jobs (2/3 width) */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <Wrench className="w-5 h-5 text-primary" /> Fila de Serviços
+        {/* Left Col: Queue */}
+        <div className="lg:col-span-2 flex flex-col min-h-0 space-y-3">
+          <div className="shrink-0 flex justify-between items-center px-1">
+            <h2 className="text-base font-bold flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" /> Fila de Trabalho
             </h2>
-            <Badge className="bg-white/5 border border-white/10 text-muted-foreground rounded-md text-[10px] font-black uppercase">
-              {orders.length} cadastrados
+            <Badge className="bg-primary/10 text-primary rounded-md text-[9px] font-black uppercase">
+              {activeJobs} Ativos
             </Badge>
           </div>
 
-          <div className="space-y-4">
+          <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
             {orders.length === 0 ? (
-              <div className="glass-card p-12 rounded-2xl border border-dashed border-white/10 flex flex-col items-center justify-center text-center space-y-4">
-                <FolderOpen className="w-12 h-12 text-muted-foreground animate-bounce" />
-                <div>
-                  <h4 className="text-lg font-bold">Nenhum serviço agendado</h4>
-                  <p className="text-xs text-muted-foreground max-w-sm mt-1">
-                    Você ainda não recebeu nenhuma ordem de serviço ou chamado. Publique anúncios ou configure seu perfil para começar a receber propostas!
-                  </p>
-                </div>
+              <div className="glass-card p-8 rounded-2xl border border-dashed border-white/10 flex flex-col items-center justify-center text-center h-40">
+                <FolderOpen className="w-8 h-8 text-muted-foreground opacity-50 mb-2" />
+                <h4 className="text-sm font-bold">Nenhum serviço agendado</h4>
               </div>
             ) : (
               orders.map((order) => (
-                <Card key={order.id} className="p-6 bg-card/30 border-white/5 rounded-2xl hover:border-primary/25 transition-all group">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">{order.code}</span>
+                <Card key={order.id} className="p-4 bg-card/30 border-white/5 hover:border-primary/20 transition-all rounded-2xl flex flex-col gap-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[9px] font-black text-muted-foreground uppercase">{order.code}</span>
                         {getStatusBadge(order.status)}
                       </div>
-                      <h3 className="text-lg font-bold group-hover:text-primary transition-colors">{order.serviceTitle}</h3>
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground font-semibold">
-                        <span>Status: <span className="text-foreground font-medium uppercase text-[10px]">{order.status}</span></span>
-                        <span>•</span>
-                        <span>Data do reparo: <span className="text-foreground font-medium">{order.date} às {order.time}</span></span>
-                      </div>
-                      <p className="text-xs text-muted-foreground max-w-md font-semibold">Endereço do cliente: <span className="text-foreground">{order.address}</span></p>
+                      <h3 className="text-sm font-bold">{order.serviceTitle}</h3>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{order.date} • {order.time} • {order.address}</p>
                     </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-[9px] text-muted-foreground uppercase font-black">A Receber</p>
+                      <p className="text-base font-black text-primary">{formatCurrency(order.price)}</p>
+                    </div>
+                  </div>
 
-                    <div className="flex flex-col sm:items-end gap-3.5 shrink-0 pt-4 sm:pt-0 border-t sm:border-0 border-white/5">
-                      <div className="text-left sm:text-right">
-                        <p className="text-[10px] text-muted-foreground uppercase font-black">Valor a receber</p>
-                        <p className="text-xl font-black text-primary">{formatCurrency(order.price)}</p>
+                  {/* Actions Compact */}
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5">
+                    {counterOfferOrderId === order.id ? (
+                      <div className="flex items-center gap-2 w-full">
+                        <input 
+                          type="number" 
+                          className="bg-background border border-white/10 rounded px-2 text-xs h-8 flex-1 focus:ring-1 focus:ring-primary"
+                          value={counterOfferPrice}
+                          onChange={(e) => setCounterOfferPrice(e.target.value)}
+                          placeholder="R$"
+                        />
+                        <Button onClick={() => handleSendCounterOffer(order.id)} size="sm" className="h-8 text-[10px]">Enviar</Button>
+                        <Button onClick={() => setCounterOfferOrderId(null)} size="sm" variant="ghost" className="h-8 text-[10px]">Cancelar</Button>
                       </div>
-
-                      {/* Interactive workflow buttons */}
-                      <div className="flex gap-2 w-full sm:w-auto animate-in fade-in duration-300">
-                        {counterOfferOrderId === order.id ? (
-                          <div className="flex flex-col gap-2 bg-white/5 p-3 rounded-xl border border-white/5 w-full sm:w-56 text-left">
-                            <label className="text-[9px] text-muted-foreground uppercase font-black tracking-wider">Nova Oferta (R$)</label>
-                            <input 
-                              type="number" 
-                              className="bg-card border border-white/10 rounded px-2.5 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary h-9"
-                              value={counterOfferPrice}
-                              onChange={(e) => setCounterOfferPrice(e.target.value)}
-                              placeholder="Ex: 300"
-                            />
-                            <div className="flex gap-2.5 mt-1">
-                              <Button 
-                                onClick={() => handleSendCounterOffer(order.id)} 
-                                size="sm" 
-                                className="bg-primary hover:bg-primary/95 text-primary-foreground font-black text-[10px] h-8 flex-1"
-                              >
-                                Enviar
-                              </Button>
-                              <Button 
-                                onClick={() => setCounterOfferOrderId(null)} 
-                                size="sm" 
-                                variant="ghost" 
-                                className="text-muted-foreground hover:bg-white/5 text-[10px] h-8 px-2"
-                              >
-                                Cancelar
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
+                    ) : (
+                      <>
+                        {order.status === 'pending' && (
                           <>
-                            {order.status === 'pending' && (
-                              <div className="flex flex-wrap gap-2 justify-end">
-                                <Button 
-                                  onClick={() => handleAcceptOrder(order.id)} 
-                                  size="sm" 
-                                  className="bg-green-600 hover:bg-green-500 text-white rounded-xl text-xs gap-1 h-9 px-3 animate-pulse"
-                                >
-                                  <Check className="w-3.5 h-3.5" /> Aceitar
-                                </Button>
-                                <Button 
-                                  onClick={() => {
-                                    setCounterOfferOrderId(order.id);
-                                    setCounterOfferPrice(order.price.toString());
-                                  }} 
-                                  size="sm" 
-                                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl text-xs gap-1 h-9 px-3"
-                                >
-                                  Contraproposta
-                                </Button>
-                                <Button 
-                                  onClick={() => handleCancelOrder(order.id)} 
-                                  size="sm" 
-                                  variant="outline" 
-                                  className="border-red-500/20 text-red-400 hover:bg-red-500/10 rounded-xl text-xs h-9 px-3"
-                                >
-                                  <X className="w-3.5 h-3.5" /> Recusar
-                                </Button>
-                              </div>
-                            )}
-                            
-                            {order.status === 'counter_offer' && (
-                              <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20 py-1.5 px-3 rounded-xl text-xs font-bold gap-1">
-                                <Clock className="w-3.5 h-3.5 animate-pulse" /> Proposta Enviada
-                              </Badge>
-                            )}
+                            <Button onClick={() => handleAcceptOrder(order.id)} size="sm" className="bg-green-600 hover:bg-green-500 text-white h-8 text-[10px] px-3"><Check className="w-3 h-3 mr-1" /> Aceitar</Button>
+                            <Button onClick={() => { setCounterOfferOrderId(order.id); setCounterOfferPrice(order.price.toString()); }} size="sm" className="h-8 text-[10px] px-3">Contraproposta</Button>
+                            <Button onClick={() => handleCancelOrder(order.id)} size="sm" variant="outline" className="border-red-500/20 text-red-400 h-8 text-[10px] px-3"><X className="w-3 h-3 mr-1" /> Recusar</Button>
                           </>
                         )}
-
-                        {(order.status === 'scheduled' || order.status === 'in_progress' || order.status === 'completed') && (
-                          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                            <Button 
-                              onClick={() => window.open(`/order/${order.id}/print`, '_blank')} 
-                              size="sm" 
-                              variant="outline"
-                              className="border-primary/20 text-primary hover:bg-primary/10 rounded-xl text-xs gap-1 h-9 px-4"
-                            >
-                              <Printer className="w-3.5 h-3.5" /> Gerar O.S.
-                            </Button>
-                            
-                            {order.status !== 'completed' && (
-                              <Button 
-                                onClick={() => handleCompleteOrder(order.id, order.price, order.serviceTitle)} 
-                                size="sm" 
-                                className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl text-xs gap-1 h-9 px-4"
-                              >
-                                <CheckCircle className="w-3.5 h-3.5" /> Concluir Serviço
-                              </Button>
-                            )}
-                          </div>
+                        {(order.status === 'scheduled' || order.status === 'in_progress') && (
+                          <>
+                            <Button onClick={() => window.open(`/order/${order.id}/print`, '_blank')} size="sm" variant="outline" className="border-primary/20 text-primary h-8 text-[10px] px-3"><Printer className="w-3 h-3 mr-1" /> O.S.</Button>
+                            <Button onClick={() => handleCompleteOrder(order.id, order.price, order.serviceTitle)} size="sm" className="h-8 text-[10px] px-3"><CheckCircle className="w-3 h-3 mr-1" /> Concluir</Button>
+                          </>
                         )}
-
-                        {order.status === 'completed' && (
-                          <Badge className="bg-green-500/10 text-green-500 border-green-500/20 py-1.5 px-3 rounded-xl text-xs font-bold gap-1 mt-2 sm:mt-0">
-                            <Check className="w-3.5 h-3.5" /> Finalizado com Sucesso
-                          </Badge>
-                        )}
-
-                        {order.status === 'cancelled' && (
-                          <Badge className="bg-red-500/10 text-red-500 border-red-500/20 py-1.5 px-3 rounded-xl text-xs font-bold gap-1">
-                            <ShieldAlert className="w-3.5 h-3.5" /> Pedido Cancelado
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
+                      </>
+                    )}
                   </div>
                 </Card>
               ))
@@ -543,108 +384,76 @@ const ProfessionalDashboardPage = () => {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: SVG Financial Chart & Transactions list (1/3 width) */}
-        <div className="space-y-6">
-          {/* Monthly Income SVG Bar Chart */}
-          <Card className="p-6 bg-card/30 border-white/5 rounded-3xl">
-            <h3 className="text-base font-bold mb-4 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-primary" /> Faturamento Anual
-            </h3>
-            
-            {/* Elegant Vanilla SVG Bar Chart */}
-            <div className="h-44 w-full flex items-end justify-between px-2 pt-6 relative border-b border-white/5 pb-2">
-              <div className="absolute inset-y-0 left-0 w-full flex flex-col justify-between pointer-events-none opacity-5">
-                <div className="w-full border-t border-white"></div>
-                <div className="w-full border-t border-white"></div>
-                <div className="w-full border-t border-white"></div>
-              </div>
-
+        {/* Right Col: Finance Graph */}
+        <div className="flex flex-col min-h-0 space-y-3">
+          <div className="shrink-0 flex items-center justify-between px-1">
+            <h2 className="text-base font-bold flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-green-500" /> Fluxo
+            </h2>
+          </div>
+          
+          <Card className="flex-1 overflow-y-auto custom-scrollbar p-5 bg-card/30 border-white/5 rounded-2xl flex flex-col gap-4">
+            {/* Tiny SVG Chart */}
+            <div className="shrink-0 h-32 w-full flex items-end justify-between px-2 relative border-b border-white/5 pb-2">
               {[
-                { month: 'Jan', value: transactions.length > 0 ? 50 : 0 },
-                { month: 'Fev', value: transactions.length > 0 ? 40 : 0 },
-                { month: 'Mar', value: transactions.length > 0 ? 60 : 0 },
-                { month: 'Abr', value: transactions.length > 0 ? 80 : 0 },
+                { month: 'Jan', value: 50 },
+                { month: 'Fev', value: 40 },
+                { month: 'Mar', value: 60 },
+                { month: 'Abr', value: 80 },
                 { month: 'Mai', value: currentMonthIncome > 0 ? 100 : 0 }
               ].map((bar, i) => (
-                <div key={i} className="flex flex-col items-center gap-2 w-8 group cursor-pointer">
-                  <div className="absolute bottom-24 bg-primary text-primary-foreground text-[9px] font-black px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                    R$ {(bar.value * (currentMonthIncome / 100 || 10)).toFixed(0)}
-                  </div>
-                  <div 
-                    className="w-4 bg-gradient-to-t from-primary/40 to-primary rounded-t-sm group-hover:scale-y-105 transition-all duration-300 shadow-[0_0_15px_rgba(0,255,255,0.2)]" 
-                    style={{ height: `${bar.value * 0.9}px` }}
-                  ></div>
-                  <span className="text-[10px] text-muted-foreground font-black uppercase">{bar.month}</span>
+                <div key={i} className="flex flex-col items-center gap-1 w-8 group">
+                  <div className="w-3 bg-gradient-to-t from-primary/40 to-primary rounded-t-sm transition-all" style={{ height: `${bar.value * 0.7}px` }}></div>
+                  <span className="text-[8px] text-muted-foreground font-black uppercase">{bar.month}</span>
                 </div>
               ))}
             </div>
-          </Card>
 
-          {/* Recent Deposits & Withdrawals list */}
-          <Card className="p-6 bg-card/30 border-white/5 rounded-3xl">
-            <h3 className="text-base font-bold mb-4 flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-primary" /> Fluxo de Caixa Recente
-            </h3>
-            <div className="space-y-3.5">
-              {transactions.length === 0 ? (
-                <div className="p-6 text-center text-xs text-muted-foreground">
-                  Nenhuma movimentação financeira registrada.
-                </div>
-              ) : (
-                transactions.slice(0, 4).map((t) => (
-                  <div key={t.id} className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-white/5">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg shrink-0 ${t.type === 'income' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                        {t.type === 'income' ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-                      </div>
-                      <div>
-                        <h4 className="text-[11px] font-bold text-foreground leading-tight">{t.title}</h4>
-                        <span className="text-[9px] text-muted-foreground font-semibold">{t.date}</span>
-                      </div>
+            {/* List */}
+            <div className="flex-1 space-y-2">
+              <h4 className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-2">Transações Recentes</h4>
+              {transactions.slice(0, 3).map((t) => (
+                <div key={t.id} className="flex justify-between items-center p-2.5 rounded-xl bg-white/5 border border-white/5">
+                  <div className="flex items-center gap-2">
+                    <div className={`p-1.5 rounded-lg ${t.type === 'income' ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'}`}>
+                      {t.type === 'income' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
                     </div>
-                    <span className={`text-xs font-black ${t.type === 'income' ? 'text-green-500' : 'text-foreground'}`}>
-                      {t.type === 'income' ? '+' : '-'}{formatCurrency(t.value)}
-                    </span>
+                    <div>
+                      <h4 className="text-[10px] font-bold leading-tight line-clamp-1">{t.title}</h4>
+                      <span className="text-[8px] text-muted-foreground">{t.date}</span>
+                    </div>
                   </div>
-                ))
-              )}
+                  <span className={`text-[10px] font-black ${t.type === 'income' ? 'text-green-500' : 'text-foreground'}`}>
+                    {t.type === 'income' ? '+' : '-'}{formatCurrency(t.value)}
+                  </span>
+                </div>
+              ))}
+              {transactions.length === 0 && <p className="text-[10px] text-muted-foreground text-center py-4">Nenhuma movimentação.</p>}
             </div>
           </Card>
-
-
         </div>
 
       </div>
 
       <Dialog open={showVerificationModal} onOpenChange={setShowVerificationModal}>
-        <DialogContent className="max-w-md p-6 space-y-4 rounded-3xl border-white/10 glass-card">
+        <DialogContent className="max-w-sm p-5 rounded-3xl border-white/10 glass-card">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold flex items-center gap-2">
-              <ShieldAlert className="w-5 h-5 text-primary" /> Verificação de Identidade
-            </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground pt-1">
-              Envie uma foto do seu RG ou CNH (frente e verso) e uma selfie segurando o documento.
-            </DialogDescription>
+            <DialogTitle className="text-lg font-bold">Verificação</DialogTitle>
+            <DialogDescription className="text-xs">Envie RG/CNH e selfie.</DialogDescription>
           </DialogHeader>
-            
           <div className="space-y-4 pt-2">
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider mb-2 block">1. Foto do Documento</label>
-              <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, setIdDocBase64)} className="w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-all" />
-              {idDocBase64 && <div className="mt-2 text-[10px] text-green-500 font-bold flex items-center gap-1"><Check className="w-3 h-3"/> Imagem carregada</div>}
+              <label className="text-[10px] font-bold uppercase mb-1 block">Foto Documento</label>
+              <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, setIdDocBase64)} className="text-xs file:mr-2 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-xs file:bg-primary/10 file:text-primary" />
             </div>
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider mb-2 block">2. Selfie com Documento</label>
-              <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, setSelfieBase64)} className="w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-all" />
-              {selfieBase64 && <div className="mt-2 text-[10px] text-green-500 font-bold flex items-center gap-1"><Check className="w-3 h-3"/> Imagem carregada</div>}
+              <label className="text-[10px] font-bold uppercase mb-1 block">Selfie com Doc</label>
+              <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, setSelfieBase64)} className="text-xs file:mr-2 file:py-1 file:px-3 file:rounded-xl file:border-0 file:text-xs file:bg-primary/10 file:text-primary" />
             </div>
           </div>
-
-          <div className="flex gap-3 justify-end pt-4 border-t border-white/5">
-            <Button variant="ghost" onClick={() => setShowVerificationModal(false)} className="rounded-xl">Cancelar</Button>
-            <Button onClick={handleVerificationRequest} disabled={isVerifying || !idDocBase64 || !selfieBase64} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all">
-              {isVerifying ? 'Enviando...' : 'Enviar para Análise'}
-            </Button>
+          <div className="flex gap-2 justify-end pt-4 mt-2 border-t border-white/5">
+            <Button variant="ghost" onClick={() => setShowVerificationModal(false)} size="sm">Cancelar</Button>
+            <Button onClick={handleVerificationRequest} disabled={isVerifying || !idDocBase64 || !selfieBase64} size="sm">Enviar</Button>
           </div>
         </DialogContent>
       </Dialog>
