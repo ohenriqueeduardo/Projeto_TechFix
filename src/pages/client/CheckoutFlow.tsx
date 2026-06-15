@@ -24,6 +24,7 @@ import { formatCurrency } from '@/utils/formatters';
 import type { Professional, Service } from '@/types';
 import { toast } from 'sonner';
 import { useNotifications } from '@/context/NotificationsContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Cards from 'react-credit-cards-2';
 import 'react-credit-cards-2/dist/es/styles-compiled.css';
 import { loadMercadoPago } from '@mercadopago/sdk-js';
@@ -478,56 +479,58 @@ const CheckoutFlow = () => {
         } />
       </Routes>
 
-      {showSuccessPopup && finishedOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in zoom-in duration-300">
-          <div className="bg-card border border-foreground/10 shadow-2xl rounded-3xl p-8 max-w-md w-full mx-4 text-center space-y-6">
-            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="text-primary w-10 h-10" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-black mb-2">Pedido Realizado!</h2>
-              <p className="text-muted-foreground text-sm">
-                Seu chamado para <strong>{service.title}</strong> foi agendado com sucesso.
-              </p>
-            </div>
-            
-            <div className="bg-foreground/5 rounded-2xl p-4 text-left space-y-3">
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Código</span>
-                <span className="font-mono font-bold text-primary">{finishedOrder.code}</span>
+      <Dialog open={showSuccessPopup && !!finishedOrder} onOpenChange={(open) => { if(!open) setShowSuccessPopup(false); }}>
+        <DialogContent className="max-w-md p-8 text-center space-y-6 rounded-3xl border-foreground/10 glass-card" showCloseButton={false}>
+          {finishedOrder && (
+            <>
+              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                <CheckCircle2 className="text-primary w-10 h-10" />
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Técnico</span>
-                <span className="font-bold text-primary">{selectedProf.name}</span>
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-black mb-2 text-center">Pedido Realizado!</DialogTitle>
+                <DialogDescription className="text-muted-foreground text-sm text-center">
+                  Seu chamado para <strong className="text-foreground">{service.title}</strong> foi agendado com sucesso.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="bg-foreground/5 rounded-2xl p-4 text-left space-y-3">
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Código</span>
+                  <span className="font-mono font-bold text-primary">{finishedOrder.code}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Técnico</span>
+                  <span className="font-bold text-primary">{selectedProf?.name}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Data/Hora</span>
+                  <span className="font-bold">{selectedDate} às {selectedTime}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">Total Pago</span>
+                  <span className="font-bold">{formatCurrency(finishedOrder.price)}</span>
+                </div>
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Data/Hora</span>
-                <span className="font-bold">{selectedDate} às {selectedTime}</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Total Pago</span>
-                <span className="font-bold">{formatCurrency(finishedOrder.price)}</span>
-              </div>
-            </div>
 
-            <div className="space-y-3 mt-6">
-              <Button 
-                onClick={() => navigate('/cliente/meus-pedidos')} 
-                className="w-full btn-primary h-12 text-sm font-black"
-              >
-                Ver Minhas Solicitações
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={() => navigate('/cliente/dashboard')} 
-                className="w-full h-12 rounded-xl text-sm font-bold border-foreground/10"
-              >
-                Voltar para o Início
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+              <div className="space-y-3 mt-6">
+                <Button 
+                  onClick={() => navigate('/cliente/meus-pedidos')} 
+                  className="w-full btn-primary h-12 text-sm font-black rounded-xl shadow-lg shadow-primary/20"
+                >
+                  Ver Minhas Solicitações
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => navigate('/cliente/dashboard')} 
+                  className="w-full h-12 rounded-xl text-sm font-bold border-foreground/10 hover:bg-foreground/5"
+                >
+                  Voltar para o Início
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

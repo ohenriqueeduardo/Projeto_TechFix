@@ -109,6 +109,11 @@ export const createOrder = async (req: Request, res: Response) => {
       return res.status(400).json({ error: `Missing required fields: ${missing.join(', ')}` });
     }
 
+    const numericPrice = Number(price);
+    if (isNaN(numericPrice) || numericPrice < 0) {
+      return res.status(400).json({ error: 'Invalid price value' });
+    }
+
     const orderId = `o_${crypto.randomBytes(4).toString('hex')}`;
     const code = `TF-${Math.floor(100000 + Math.random() * 900000)}`;
 
@@ -122,7 +127,7 @@ export const createOrder = async (req: Request, res: Response) => {
       date,
       time,
       status: serviceId === 's_custom' ? 'pending' : 'provisional',
-      price: Number(price),
+      price: numericPrice,
       paymentMethod,
       paymentId: req.body.paymentId || null,
       address,
@@ -137,7 +142,7 @@ export const createOrder = async (req: Request, res: Response) => {
       orderId,
       type: 'income',
       title: `Pagamento Retido: ${serviceTitle}`,
-      value: Number(price),
+      value: numericPrice,
       date: date,
       status: 'pending',
       createdAt: new Date()
@@ -160,6 +165,13 @@ export const updateOrder = async (req: Request, res: Response) => {
     const existingOrder = await db.select().from(orders).where(eq(orders.id, id)).limit(1);
     if (existingOrder.length === 0) {
       return res.status(404).json({ error: 'Order not found' });
+    }
+
+    if (price !== undefined) {
+      const numericPrice = Number(price);
+      if (isNaN(numericPrice) || numericPrice < 0) {
+        return res.status(400).json({ error: 'Invalid price value' });
+      }
     }
 
     const updatedOrder = await db.update(orders)

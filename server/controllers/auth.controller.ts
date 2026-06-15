@@ -61,7 +61,8 @@ export const register = async (req: Request, res: Response) => {
       }
 
       // Upgrade Account
-      const newRoleString = `${existingUser.role},${userRole}`;
+      const roleSet = new Set([...currentRoles, ...userRole.split(',')]);
+      const newRoleString = Array.from(roleSet).join(',');
       const updatedUser = await db.update(users)
         .set({ role: newRoleString })
         .where(eq(users.id, existingUser.id))
@@ -331,7 +332,8 @@ export const googleLogin = async (req: Request, res: Response) => {
       // Account Upgrade
       const currentRoles = user.role.split(',');
       if (!currentRoles.includes(userRole)) {
-        const newRoleString = `${user.role},${userRole}`;
+        const roleSet = new Set([...currentRoles, ...userRole.split(',')]);
+        const newRoleString = Array.from(roleSet).join(',');
         const updatedUser = await db.update(users)
           .set({ role: newRoleString })
           .where(eq(users.id, user.id))

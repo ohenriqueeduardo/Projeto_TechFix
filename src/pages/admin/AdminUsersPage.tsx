@@ -15,6 +15,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface ProfessionalData {
   verificationStatus: 'unverified' | 'pending' | 'verified' | 'rejected';
@@ -152,19 +153,19 @@ const AdminUsersPage = () => {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <Card className="p-6 bg-card/30 border-white/5 rounded-3xl">
+        <Card className="p-6 glass-card rounded-3xl hover-card-service animate-fade-in-scale" style={{animationDelay: '50ms'}}>
           <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Clientes Registrados</p>
           <h3 className="text-2xl font-black text-primary">
             {users.filter(u => !u.role.includes('professional') && !u.role.includes('admin')).length}
           </h3>
         </Card>
-        <Card className="p-6 bg-card/30 border-white/5 rounded-3xl">
+        <Card className="p-6 glass-card rounded-3xl hover-card-service animate-fade-in-scale" style={{animationDelay: '150ms'}}>
           <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Especialistas</p>
           <h3 className="text-2xl font-black text-green-500">
             {users.filter(u => u.role.includes('professional')).length}
           </h3>
         </Card>
-        <Card className="p-6 bg-card/30 border-white/5 rounded-3xl">
+        <Card className="p-6 glass-card rounded-3xl hover-card-service animate-fade-in-scale" style={{animationDelay: '250ms'}}>
           <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Aguardando Avaliação</p>
           <h3 className="text-2xl font-black text-orange-500">
             {users.filter(u => u.professionalData?.verificationStatus === 'pending').length}
@@ -278,64 +279,65 @@ const AdminUsersPage = () => {
       </div>
 
       {/* Identity Verification Modal */}
-      {verificationModalOpen && selectedUserForVerification && selectedUserForVerification.professionalData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-card w-full max-w-2xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="p-6 border-b border-white/5 flex justify-between items-center bg-muted/30">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-full">
-                  <ShieldCheck className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-black text-lg">Revisão de Identidade</h3>
-                  <p className="text-xs text-muted-foreground">Especialista: {selectedUserForVerification.name}</p>
-                </div>
-              </div>
-              <button onClick={closeVerificationModal} className="text-muted-foreground hover:text-foreground">✕</button>
-            </div>
-            
-            <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Documento</span>
-                  <div className="w-full bg-slate-800 rounded-2xl border border-white/5 overflow-hidden relative flex items-center justify-center min-h-48">
-                    {selectedUserForVerification.professionalData.idDocumentUrl ? (
-                      <img src={selectedUserForVerification.professionalData.idDocumentUrl} alt="Document" className="w-full h-auto object-contain max-h-[300px]" />
-                    ) : (
-                      <p className="text-xs text-muted-foreground">Nenhuma imagem</p>
-                    )}
+      <Dialog open={verificationModalOpen} onOpenChange={(open) => { if(!open) closeVerificationModal(); }}>
+        <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden rounded-3xl border-white/10 glass-card">
+          {selectedUserForVerification && selectedUserForVerification.professionalData && (
+            <>
+              <div className="p-6 border-b border-white/5 flex justify-between items-center bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-full">
+                    <ShieldCheck className="w-5 h-5 text-primary" />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Selfie de Validação</span>
-                  <div className="w-full bg-slate-800 rounded-2xl border border-white/5 overflow-hidden relative flex items-center justify-center min-h-48">
-                    {selectedUserForVerification.professionalData.selfieUrl ? (
-                      <img src={selectedUserForVerification.professionalData.selfieUrl} alt="Selfie" className="w-full h-auto object-contain max-h-[300px]" />
-                    ) : (
-                      <p className="text-xs text-muted-foreground">Nenhuma imagem</p>
-                    )}
+                  <div>
+                    <DialogTitle className="font-black text-lg">Revisão de Identidade</DialogTitle>
+                    <DialogDescription className="text-xs text-muted-foreground pt-1">Especialista: {selectedUserForVerification.name}</DialogDescription>
                   </div>
                 </div>
               </div>
-              <div className="bg-orange-500/10 border border-orange-500/20 p-4 rounded-xl flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-orange-200/80 leading-relaxed font-medium">
-                  Verifique se o rosto na selfie corresponde à foto do documento e se os dados estão legíveis. A aprovação desta conta liberará o selo oficial de Especialista Verificado na plataforma.
-                </p>
+              
+              <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Documento</span>
+                    <div className="w-full bg-slate-800 rounded-2xl border border-white/5 overflow-hidden relative flex items-center justify-center min-h-48">
+                      {selectedUserForVerification.professionalData.idDocumentUrl ? (
+                        <img src={selectedUserForVerification.professionalData.idDocumentUrl} alt="Document" className="w-full h-auto object-contain max-h-[300px]" />
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Nenhuma imagem</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Selfie de Validação</span>
+                    <div className="w-full bg-slate-800 rounded-2xl border border-white/5 overflow-hidden relative flex items-center justify-center min-h-48">
+                      {selectedUserForVerification.professionalData.selfieUrl ? (
+                        <img src={selectedUserForVerification.professionalData.selfieUrl} alt="Selfie" className="w-full h-auto object-contain max-h-[300px]" />
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Nenhuma imagem</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-orange-500/10 border border-orange-500/20 p-4 rounded-xl flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+                  <p className="text-xs text-orange-600 dark:text-orange-200/80 leading-relaxed font-medium">
+                    Verifique se o rosto na selfie corresponde à foto do documento e se os dados estão legíveis. A aprovação desta conta liberará o selo oficial de Especialista Verificado na plataforma.
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <div className="p-6 border-t border-white/5 bg-muted/30 flex justify-end gap-3">
-              <Button onClick={handleRejectVerification} variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-500/10 font-bold">
-                Rejeitar Documentos
-              </Button>
-              <Button onClick={handleApproveVerification} className="btn-primary font-black gap-2">
-                <CheckCircle className="w-4 h-4" /> Aprovar e Verificar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+              <div className="p-6 border-t border-white/5 bg-muted/30 flex justify-end gap-3">
+                <Button onClick={handleRejectVerification} variant="ghost" className="text-red-500 hover:text-red-400 hover:bg-red-500/10 font-bold rounded-xl">
+                  Rejeitar Documentos
+                </Button>
+                <Button onClick={handleApproveVerification} className="btn-primary font-black gap-2 rounded-xl">
+                  <CheckCircle className="w-4 h-4" /> Aprovar e Verificar
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

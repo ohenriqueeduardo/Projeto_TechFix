@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 import { Printer } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 import { User, Order, Transaction, Review, Professional } from '@/types';
 
@@ -322,7 +323,7 @@ const ProfessionalDashboardPage = () => {
       {/* Statistics Cards Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Earnings Card */}
-        <Card className="p-6 bg-gradient-to-br from-primary/10 to-transparent border-white/5 rounded-2xl relative overflow-hidden group">
+        <Card className="p-6 glass-card border-white/5 rounded-3xl relative overflow-hidden group hover-card-service animate-fade-in-scale" style={{animationDelay: '50ms'}}>
           <div className="flex justify-between items-start">
             <div>
               <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">Faturamento Total</p>
@@ -364,7 +365,7 @@ const ProfessionalDashboardPage = () => {
           { label: 'Satisfação Média', value: averageSatisfaction, icon: Star, color: 'text-yellow-500', bg: 'bg-yellow-500/10', desc: `Baseado em ${reviews.length} avaliações` },
           { label: 'Jobs Ativos', value: activeJobs, icon: Clock, color: 'text-blue-500', bg: 'bg-blue-500/10', desc: 'Pedidos pendentes ou agendados', isNumber: true },
         ].map((stat, i) => (
-          <Card key={i} className="p-6 bg-card/30 border-white/5 rounded-2xl hover:border-primary/20 transition-all">
+          <Card key={i} className="p-6 glass-card border-white/5 rounded-3xl hover-card-service animate-fade-in-scale" style={{animationDelay: `${(i+2)*50}ms`}}>
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1.5">{stat.label}</p>
@@ -615,34 +616,38 @@ const ProfessionalDashboardPage = () => {
 
       </div>
 
-      {showVerificationModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <Card className="max-w-md w-full p-6 space-y-6">
-            <h2 className="text-xl font-bold flex items-center gap-2"><ShieldAlert className="w-5 h-5 text-primary" /> Verificação de Identidade</h2>
-            <p className="text-sm text-muted-foreground">Envie uma foto do seu RG ou CNH (frente e verso) e uma selfie segurando o documento.</p>
+      <Dialog open={showVerificationModal} onOpenChange={setShowVerificationModal}>
+        <DialogContent className="max-w-md p-6 space-y-4 rounded-3xl border-white/10 glass-card">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5 text-primary" /> Verificação de Identidade
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground pt-1">
+              Envie uma foto do seu RG ou CNH (frente e verso) e uma selfie segurando o documento.
+            </DialogDescription>
+          </DialogHeader>
             
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider mb-2 block">1. Foto do Documento</label>
-                <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, setIdDocBase64)} className="w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20" />
-                {idDocBase64 && <div className="mt-2 text-[10px] text-green-500 font-bold">✓ Imagem carregada</div>}
-              </div>
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider mb-2 block">2. Selfie com Documento</label>
-                <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, setSelfieBase64)} className="w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20" />
-                {selfieBase64 && <div className="mt-2 text-[10px] text-green-500 font-bold">✓ Imagem carregada</div>}
-              </div>
+          <div className="space-y-4 pt-2">
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider mb-2 block">1. Foto do Documento</label>
+              <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, setIdDocBase64)} className="w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-all" />
+              {idDocBase64 && <div className="mt-2 text-[10px] text-green-500 font-bold flex items-center gap-1"><Check className="w-3 h-3"/> Imagem carregada</div>}
             </div>
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider mb-2 block">2. Selfie com Documento</label>
+              <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, setSelfieBase64)} className="w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-all" />
+              {selfieBase64 && <div className="mt-2 text-[10px] text-green-500 font-bold flex items-center gap-1"><Check className="w-3 h-3"/> Imagem carregada</div>}
+            </div>
+          </div>
 
-            <div className="flex gap-3 justify-end pt-4">
-              <Button variant="ghost" onClick={() => setShowVerificationModal(false)}>Cancelar</Button>
-              <Button onClick={handleVerificationRequest} disabled={isVerifying || !idDocBase64 || !selfieBase64} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
-                {isVerifying ? 'Enviando...' : 'Enviar para Análise'}
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
+          <div className="flex gap-3 justify-end pt-4 border-t border-white/5">
+            <Button variant="ghost" onClick={() => setShowVerificationModal(false)} className="rounded-xl">Cancelar</Button>
+            <Button onClick={handleVerificationRequest} disabled={isVerifying || !idDocBase64 || !selfieBase64} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all">
+              {isVerifying ? 'Enviando...' : 'Enviar para Análise'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

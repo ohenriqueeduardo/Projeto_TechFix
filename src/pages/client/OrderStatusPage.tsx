@@ -140,7 +140,7 @@ const OrderStatusPage = () => {
           <Card className="p-8 bg-card/30 border-foreground/5 rounded-3xl space-y-8">
             <h3 className="font-bold text-lg">Acompanhamento de Status</h3>
             
-            <div className="relative pl-8 border-l border-foreground/5 space-y-8">
+            <div className="relative pl-8 border-l border-foreground/5 space-y-8 animate-fade-in-scale" style={{animationDelay: '100ms'}}>
               {steps.map((step) => {
                 const isCompleted = step.number < currentStep;
                 const isActive = step.number === currentStep;
@@ -172,7 +172,7 @@ const OrderStatusPage = () => {
           </Card>
 
           {/* Service Details */}
-          <Card className="p-8 bg-card/30 border-foreground/5 rounded-3xl space-y-6">
+          <Card className="p-8 glass-card border-foreground/5 rounded-3xl space-y-6 hover-card-service animate-fade-in-scale" style={{animationDelay: '200ms'}}>
             <h3 className="font-bold text-lg">Informações do Chamado</h3>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs leading-relaxed font-semibold">

@@ -155,6 +155,11 @@ export const createService = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    const numericPrice = Number(price);
+    if (isNaN(numericPrice) || numericPrice < 0) {
+      return res.status(400).json({ error: 'Invalid price value' });
+    }
+
     const serviceId = `s_${crypto.randomBytes(4).toString('hex')}`;
 
     const newService = await db.insert(services).values({
@@ -162,7 +167,7 @@ export const createService = async (req: Request, res: Response) => {
       title,
       category,
       description,
-      price: Number(price),
+      price: numericPrice,
       duration,
       professionalId,
       badge: badge || null,
@@ -198,6 +203,13 @@ export const updateService = async (req: Request, res: Response) => {
     const existingService = await db.select().from(services).where(eq(services.id, id)).limit(1);
     if (existingService.length === 0) {
       return res.status(404).json({ error: 'Service not found' });
+    }
+
+    if (price !== undefined) {
+      const numericPrice = Number(price);
+      if (isNaN(numericPrice) || numericPrice < 0) {
+        return res.status(400).json({ error: 'Invalid price value' });
+      }
     }
 
     const updatedService = await db.update(services)

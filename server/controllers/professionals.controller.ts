@@ -196,8 +196,13 @@ export const deleteProfessional = async (req: Request, res: Response) => {
     // Remove from professional table (cascade will remove portfolio items if defined, but not user)
     await db.delete(professionals).where(eq(professionals.userId, id));
     
-    // Downgrade user's role back to client
-    await db.update(users).set({ role: 'client' }).where(eq(users.id, id));
+    // Downgrade user's role safely (remove only 'professional')
+    const userRecord = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    if (userRecord.length > 0) {
+      const userRoles = userRecord[0].role.split(',').map(r => r.trim()).filter(r => r !== 'professional');
+      const newRole = userRoles.length > 0 ? userRoles.join(',') : 'client';
+      await db.update(users).set({ role: newRole }).where(eq(users.id, id));
+    }
 
     res.json({ message: 'Professional profile removed and user role reverted to client' });
   } catch (error) {
