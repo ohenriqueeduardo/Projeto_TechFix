@@ -16,7 +16,8 @@ import {
   CheckCircle2,
   Sparkles,
   ChevronRight,
-  TrendingUp
+  TrendingUp,
+  MessageCircle
 } from 'lucide-react';
 import { Service, Professional } from '@/types';
 import { formatCurrency } from '@/utils/formatters';
@@ -298,11 +299,23 @@ const ProfessionalProfilePage = () => {
 
             <div className="space-y-3">
               {!isProfessional && (
-                <Link to={`/cliente/novo-servico?prof=${professional.id}`}>
-                  <Button variant="outline" className="w-full h-12 rounded-xl text-xs font-black uppercase border-white/10 hover:border-primary/50 hover:bg-primary/5 transition-all gap-1.5">
-                    <TrendingUp className="w-4 h-4 text-primary shrink-0" /> Solicitar Orçamento Customizado
-                  </Button>
-                </Link>
+                <>
+                  <Link to={`/cliente/novo-servico?prof=${professional.id}`}>
+                    <Button variant="outline" className="w-full h-12 rounded-xl text-xs font-black uppercase border-white/10 hover:border-primary/50 hover:bg-primary/5 transition-all gap-1.5">
+                      <TrendingUp className="w-4 h-4 text-primary shrink-0" /> Solicitar Orçamento Customizado
+                    </Button>
+                  </Link>
+                  <a 
+                    href={`https://wa.me/5511999999999?text=Ol%C3%A1%2C%20encontrei%20seu%20perfil%20na%20TechFix%20e%20gostaria%20de%20falar%20sobre%20seus%20servi%C3%A7os!`} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="w-full block"
+                  >
+                    <Button className="w-full h-12 rounded-xl text-xs font-black uppercase bg-[#25D366] hover:bg-[#1DA851] text-white transition-all gap-1.5 shadow-lg shadow-[#25D366]/20 border-none">
+                      <MessageCircle className="w-4 h-4 shrink-0" /> Chamar no WhatsApp
+                    </Button>
+                  </a>
+                </>
               )}
             </div>
 

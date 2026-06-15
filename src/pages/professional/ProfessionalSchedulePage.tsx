@@ -134,7 +134,12 @@ const ProfessionalSchedulePage = () => {
             className="rounded-2xl"
             modifiers={{ booked: bookedDays }}
             modifiersStyles={{
-              booked: { fontWeight: 'bold', borderBottom: '2px solid rgb(6, 182, 212)' }
+              booked: { 
+                fontWeight: '900', 
+                backgroundColor: 'rgba(6, 182, 212, 0.15)',
+                color: 'rgb(6, 182, 212)',
+                border: '1px solid rgba(6, 182, 212, 0.3)'
+              }
             }}
           />
         </Card>

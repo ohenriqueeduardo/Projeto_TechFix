@@ -133,7 +133,7 @@ const AdminDashboardPage = () => {
 
       {/* Quick Actions (Horizontal) */}
       <div className="shrink-0 grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Button onClick={() => navigate('/admin/services')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-card/30 hover:bg-card/50 border-white/10 text-xs font-bold">
+        <Button onClick={() => navigate('/admin/servicos')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-card/30 hover:bg-card/50 border-white/10 text-xs font-bold">
           <Database className="w-4 h-4 text-cyan-500" /> Gerenciar Serviços
         </Button>
         <Button onClick={() => navigate('/admin/usuarios')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-card/30 hover:bg-card/50 border-white/10 text-xs font-bold">

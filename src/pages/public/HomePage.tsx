@@ -626,11 +626,7 @@ const HomePage = () => {
 
                   {/* CTA Action Buttons */}
                   <div className="flex flex-row gap-3 w-full pt-4 border-t border-foreground/5">
-                    <Link to={`/cliente/chat/${prof.id}`} className="flex-1">
-                      <Button variant="outline" className="w-full h-11 text-xs rounded-2xl font-black flex items-center justify-center gap-1.5 border-foreground/10 hover:bg-foreground/5 transition-all active:scale-[0.98] duration-300">
-                        <MessageSquare className="w-4 h-4 text-primary shrink-0" /> Conversar
-                      </Button>
-                    </Link>
+
                     <Link to={`/cliente/busca?prof=${prof.id}`} className="flex-1">
                       <Button className="w-full btn-primary h-11 text-xs rounded-2xl font-black flex items-center justify-center gap-1.5 transition-all shadow-md shadow-primary/10 hover:shadow-primary/25 hover:scale-[1.02] active:scale-[0.98] duration-300">
                         <UserCheck className="w-4 h-4 shrink-0" /> Contratar Agora
