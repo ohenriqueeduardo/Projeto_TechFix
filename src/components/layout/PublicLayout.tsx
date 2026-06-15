@@ -1,7 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, LogIn, UserPlus, LayoutDashboard } from 'lucide-react';
+import { 
+  Menu, X, LogIn, UserPlus, LayoutDashboard, User as UserIcon, 
+  ClipboardList, Bell, Settings, LogOut, Briefcase 
+} from 'lucide-react';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from '@/components/ThemeToggle';
 import logo from '@/assets/logo.png';
 import { User } from '@/types';
@@ -9,6 +20,7 @@ import { User } from '@/types';
 const PublicLayout = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -21,12 +33,21 @@ const PublicLayout = () => {
     }
   }, []);
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    navigate('/');
+  };
+
   const getDashboardPath = () => {
     if (!user) return '/login';
     if (user.role === 'admin') return '/admin';
     if (user.role === 'professional') return '/especialista';
-    return '/cliente';
+    return '/cliente/dashboard';
   };
+
+  const userAvatar = user?.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(user?.name || 'User')}`;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -40,11 +61,59 @@ const PublicLayout = () => {
           <div className="hidden md:flex items-center gap-4">
             <ThemeToggle />
             {user ? (
-              <Link to={getDashboardPath()}>
-                <Button className="btn-primary gap-2 h-10 px-5 text-sm">
-                  <LayoutDashboard className="w-4 h-4" /> Meu Painel
-                </Button>
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <div className="flex items-center gap-4 pl-6 border-l border-foreground/5 cursor-pointer group">
+                    <div className="text-right hidden sm:block">
+                      <p className="text-sm font-bold group-hover:text-primary transition-colors">{user.name || 'Usuário'}</p>
+                      <p className="text-[10px] text-primary font-black uppercase tracking-widest">
+                        {user.level ? `Nível ${user.level}` : (user.role === 'admin' ? 'Root' : 'Bronze')}
+                      </p>
+                    </div>
+                    <div className="relative">
+                      <img src={userAvatar} className="w-12 h-12 rounded-2xl border-2 border-primary/20 group-hover:border-primary transition-all object-cover" alt="Avatar" />
+                      <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 border-2 border-background rounded-full"></div>
+                    </div>
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 p-2 rounded-3xl glass-card border-white/10 z-50">
+                  <DropdownMenuLabel className="px-4 py-3">
+                    <p className="font-bold">Minha Conta</p>
+                    <p className="text-xs text-muted-foreground font-normal">{user.email}</p>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-white/5" />
+                  
+                  <DropdownMenuItem onClick={() => navigate(getDashboardPath())} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                    <LayoutDashboard className="w-4 h-4 text-primary" /> Meu Painel
+                  </DropdownMenuItem>
+                  
+                  {user.role !== 'admin' && (
+                    <DropdownMenuItem onClick={() => navigate('/cliente/perfil')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                      <UserIcon className="w-4 h-4 text-primary" /> Perfil
+                    </DropdownMenuItem>
+                  )}
+                  
+                  {user.role === 'client' && (
+                    <DropdownMenuItem onClick={() => navigate('/cliente/meus-pedidos')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                      <ClipboardList className="w-4 h-4 text-primary" /> Meus Pedidos
+                    </DropdownMenuItem>
+                  )}
+                  
+                  <DropdownMenuItem onClick={() => navigate(user.role === 'admin' ? '/admin/configuracoes' : '/cliente/configuracoes')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
+                    <Settings className="w-4 h-4 text-primary" /> Configurações
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuSeparator className="bg-white/5" />
+                  {user.role?.includes('professional') && (
+                    <DropdownMenuItem onClick={() => navigate('/profissional/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-blue-400 focus:text-blue-400 bg-blue-500/10 focus:bg-blue-500/20 font-bold mb-2">
+                      <Briefcase className="w-4 h-4" /> Acessar Painel Técnico
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-destructive focus:text-destructive">
+                    <LogOut className="w-4 h-4" /> Sair da Conta
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : (
               <>
                 <Link to="/login">
@@ -73,9 +142,21 @@ const PublicLayout = () => {
         {isMenuOpen && (
           <div className="md:hidden absolute top-16 left-0 w-full bg-background border-b border-foreground/5 p-6 flex flex-col gap-4 animate-in slide-in-from-top duration-300 z-50">
             {user ? (
-              <Link to={getDashboardPath()} className="flex items-center gap-3 text-lg font-bold py-2" onClick={() => setIsMenuOpen(false)}>
-                <LayoutDashboard className="w-5 h-5 text-primary" /> Meu Painel
-              </Link>
+              <>
+                <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/5">
+                  <img src={userAvatar} className="w-10 h-10 rounded-xl" alt="Avatar" />
+                  <div>
+                    <p className="font-bold">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                  </div>
+                </div>
+                <Link to={getDashboardPath()} className="flex items-center gap-3 text-lg font-bold py-2" onClick={() => setIsMenuOpen(false)}>
+                  <LayoutDashboard className="w-5 h-5 text-primary" /> Meu Painel
+                </Link>
+                <button onClick={() => { handleLogout(); setIsMenuOpen(false); }} className="flex items-center gap-3 text-lg font-bold py-2 text-destructive">
+                  <LogOut className="w-5 h-5" /> Sair
+                </button>
+              </>
             ) : (
               <>
                 <Link to="/login" className="flex items-center gap-3 text-lg font-bold py-2" onClick={() => setIsMenuOpen(false)}>

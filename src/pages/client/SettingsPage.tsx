@@ -14,13 +14,14 @@ const SettingsPage = () => {
       const sections = ['Geral', 'Perfil', 'Notificações', 'Segurança', 'Pagamentos', 'Dispositivos'];
       let current = 'Geral';
       
-      const scrollPosition = window.scrollY + 150;
-
       for (const section of sections) {
         if (section === 'Geral') continue;
         const element = document.getElementById(section);
-        if (element && element.offsetTop <= scrollPosition) {
-          current = section;
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          if (rect.top <= window.innerHeight / 2) {
+            current = section;
+          }
         }
       }
       

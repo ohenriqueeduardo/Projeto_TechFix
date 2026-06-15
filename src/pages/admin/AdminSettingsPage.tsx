@@ -14,13 +14,14 @@ const AdminSettingsPage = () => {
       const sections = ['Geral', 'Perfil', 'Notificações Globais', 'Segurança de Acesso'];
       let current = 'Geral';
       
-      const scrollPosition = window.scrollY + 150; // offset to trigger earlier
-
       for (const section of sections) {
         if (section === 'Geral') continue;
         const element = document.getElementById(section);
-        if (element && element.offsetTop <= scrollPosition) {
-          current = section;
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          if (rect.top <= window.innerHeight / 2) {
+            current = section;
+          }
         }
       }
       
