@@ -15,7 +15,7 @@ const ProfessionalSettingsPage = () => {
   const [availableDays, setAvailableDays] = useState<string[]>([]);
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   
-  const [activeMenu, setActiveMenu] = useState('Atuação Profissional');
+  const [activeMenu, setActiveMenu] = useState('perfil');
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -37,9 +37,9 @@ const ProfessionalSettingsPage = () => {
     }, { rootMargin: '-20% 0px -60% 0px' });
 
     const sections = [
+      { id: 'perfil', label: 'Perfil' },
       { id: 'atuacao', label: 'Atuação Profissional' },
       { id: 'agenda', label: 'Agenda & Horários' },
-      { id: 'perfil', label: 'Perfil' },
       { id: 'zona-perigo', label: 'Zona de Perigo' }
     ];
     sections.forEach(section => {
@@ -184,9 +184,9 @@ const ProfessionalSettingsPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 relative items-start">
         <nav className="space-y-2 sticky top-32 self-start h-fit w-full">
           {[
+            { icon: User, label: "Perfil", id: "perfil" },
             { icon: Briefcase, label: "Atuação Profissional", id: "atuacao" },
             { icon: Calendar, label: "Agenda & Horários", id: "agenda" },
-            { icon: User, label: "Perfil", id: "perfil" },
             { icon: AlertTriangle, label: "Zona de Perigo", id: "zona-perigo" },
           ].map((item, i) => (
             <button
@@ -204,6 +204,51 @@ const ProfessionalSettingsPage = () => {
 
         <div className="lg:col-span-3 space-y-12">
           
+          <div id="perfil" className="space-y-8 scroll-mt-28">
+            <h2 className="text-2xl font-bold border-b border-white/10 pb-2 flex items-center gap-2">
+              <User className="w-6 h-6 text-primary" /> Perfil
+            </h2>
+            <div className="glass-card p-8 rounded-3xl space-y-6">
+              <h3 className="text-xl font-bold mb-4">Informações do Perfil</h3>
+              
+              <div className="flex items-center gap-6 mb-6">
+                <div className="relative group shrink-0">
+                  <img 
+                    src={avatar || currentUser?.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(name)}`} 
+                    className="w-24 h-24 rounded-3xl border-4 border-background shadow-lg object-cover" 
+                    alt="Avatar" 
+                  />
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*" 
+                    onChange={handleFileChange} 
+                  />
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="absolute -bottom-2 -right-2 p-2 bg-primary text-primary-foreground rounded-xl shadow-lg hover:scale-110 transition-transform">
+                    <User className="w-4 h-4" />
+                  </button>
+                </div>
+                <div>
+                  <h4 className="font-bold">{name || 'Seu Nome'}</h4>
+                  <p className="text-sm text-muted-foreground">Atualize sua foto de perfil</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Nome Completo</Label>
+                  <Input value={name} onChange={(e) => setName(e.target.value)} className="bg-background/50 border-white/10" />
+                </div>
+                <div className="space-y-2">
+                  <Label>E-mail</Label>
+                  <Input value={email} onChange={(e) => setEmail(e.target.value)} className="bg-background/50 border-white/10" />
+                </div>
+              </div>
+            </div>
+          </div>
           <div id="atuacao" className="space-y-8 scroll-mt-28">
             <h2 className="text-2xl font-bold border-b border-white/10 pb-2 flex items-center gap-2">
               <Briefcase className="w-6 h-6 text-primary" /> Atuação Profissional
@@ -327,51 +372,7 @@ const ProfessionalSettingsPage = () => {
             </div>
           </div>
 
-          <div id="perfil" className="space-y-8 scroll-mt-28">
-            <h2 className="text-2xl font-bold border-b border-white/10 pb-2 flex items-center gap-2">
-              <User className="w-6 h-6 text-primary" /> Perfil
-            </h2>
-            <div className="glass-card p-8 rounded-3xl space-y-6">
-              <h3 className="text-xl font-bold mb-4">Informações do Perfil</h3>
-              
-              <div className="flex items-center gap-6 mb-6">
-                <div className="relative group shrink-0">
-                  <img 
-                    src={avatar || currentUser?.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(name)}`} 
-                    className="w-24 h-24 rounded-3xl border-4 border-background shadow-lg object-cover" 
-                    alt="Avatar" 
-                  />
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    className="hidden" 
-                    accept="image/*" 
-                    onChange={handleFileChange} 
-                  />
-                  <button 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="absolute -bottom-2 -right-2 p-2 bg-primary text-primary-foreground rounded-xl shadow-lg hover:scale-110 transition-transform">
-                    <User className="w-4 h-4" />
-                  </button>
-                </div>
-                <div>
-                  <h4 className="font-bold">{name || 'Seu Nome'}</h4>
-                  <p className="text-sm text-muted-foreground">Atualize sua foto de perfil</p>
-                </div>
-              </div>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Nome Completo</Label>
-                  <Input value={name} onChange={(e) => setName(e.target.value)} className="bg-background/50 border-white/10" />
-                </div>
-                <div className="space-y-2">
-                  <Label>E-mail</Label>
-                  <Input value={email} onChange={(e) => setEmail(e.target.value)} className="bg-background/50 border-white/10" />
-                </div>
-              </div>
-            </div>
-          </div>
 
           <div id="zona-perigo" className="space-y-8 scroll-mt-28">
             <h2 className="text-2xl font-bold border-b border-destructive/30 pb-2 flex items-center gap-2 text-destructive">
