@@ -12,6 +12,7 @@ export interface User {
   city?: string;
   isVerified?: boolean;
   verificationStatus?: "unverified" | "pending" | "verified" | "rejected";
+  phone?: string;
 }
 
 export interface Professional extends User {
