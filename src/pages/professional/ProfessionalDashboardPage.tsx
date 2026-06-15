@@ -308,7 +308,7 @@ const ProfessionalDashboardPage = () => {
         <Button onClick={() => navigate('/profissional/financeiro')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-card/30 hover:bg-card/50 border-white/10 text-xs font-bold">
           <DollarSign className="w-4 h-4 text-green-500" /> Faturamento
         </Button>
-        <Button onClick={() => toast.success('Agenda sincronizada com sucesso!')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-card/30 hover:bg-card/50 border-white/10 text-xs font-bold">
+        <Button onClick={() => navigate('/profissional/agenda')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-card/30 hover:bg-card/50 border-white/10 text-xs font-bold">
           <CalendarDays className="w-4 h-4 text-blue-500" /> Agenda
         </Button>
         <Button onClick={() => navigate('/profissional/configuracoes')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-card/30 hover:bg-card/50 border-white/10 text-xs font-bold">

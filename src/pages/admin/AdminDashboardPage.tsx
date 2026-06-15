@@ -133,13 +133,13 @@ const AdminDashboardPage = () => {
 
       {/* Quick Actions (Horizontal) */}
       <div className="shrink-0 grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Button onClick={() => navigate('/admin/users')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-card/30 hover:bg-card/50 border-white/10 text-xs font-bold">
-          <Users className="w-4 h-4 text-cyan-500" /> Auditoria Usuários
-        </Button>
         <Button onClick={() => navigate('/admin/services')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-card/30 hover:bg-card/50 border-white/10 text-xs font-bold">
-          <ShieldCheck className="w-4 h-4 text-green-500" /> Aprovar Técnicos
+          <Database className="w-4 h-4 text-cyan-500" /> Gerenciar Serviços
         </Button>
-        <Button onClick={() => navigate('/admin/finance')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-card/30 hover:bg-card/50 border-white/10 text-xs font-bold">
+        <Button onClick={() => navigate('/admin/usuarios')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-card/30 hover:bg-card/50 border-white/10 text-xs font-bold">
+          <Users className="w-4 h-4 text-green-500" /> Aprovar Técnicos
+        </Button>
+        <Button onClick={() => navigate('/admin/financas')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-card/30 hover:bg-card/50 border-white/10 text-xs font-bold">
           <DollarSign className="w-4 h-4 text-yellow-500" /> Tesouraria
         </Button>
         <Button onClick={() => toast.success('Rotina de Backup iniciada. Os dados serão salvos no Bucket.')} variant="outline" className="h-12 flex items-center justify-center gap-2 rounded-xl bg-red-950/20 hover:bg-red-900/40 border-red-500/20 text-red-400 text-xs font-bold">
@@ -179,7 +179,7 @@ const AdminDashboardPage = () => {
                     </div>
                     <p className="text-[10px] text-muted-foreground">{tech.email} • Registrado em {new Date(tech.createdAt).toLocaleDateString()}</p>
                   </div>
-                  <Button onClick={() => navigate('/admin/users')} size="sm" variant="outline" className="border-white/10 text-[10px] h-8">
+                  <Button onClick={() => navigate('/admin/usuarios')} size="sm" variant="outline" className="border-white/10 text-[10px] h-8">
                     Analisar
                   </Button>
                 </Card>

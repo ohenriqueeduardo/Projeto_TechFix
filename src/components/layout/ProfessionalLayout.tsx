@@ -10,7 +10,8 @@ import {
   HelpCircle,
   Wrench,
   User as UserIcon,
-  DollarSign
+  DollarSign,
+  CalendarDays
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -43,6 +44,7 @@ const ProfessionalLayout = () => {
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/profissional/dashboard' },
+    { icon: CalendarDays, label: 'Agenda', path: '/profissional/agenda' },
     { icon: Wrench, label: 'Serviços', path: '/profissional/servicos' },
     { icon: DollarSign, label: 'Financeiro', path: '/profissional/financeiro' },
   ];
@@ -157,6 +159,7 @@ const ProfessionalLayout = () => {
             {(() => {
               const path = location.pathname;
               if (path.includes('/profissional/dashboard')) return 'Painel do Especialista';
+              if (path.includes('/profissional/agenda')) return 'Minha Agenda';
               if (path.includes('/profissional/servicos')) return 'Meus Serviços';
               if (path.includes('/profissional/financeiro')) return 'Gestão Financeira';
               return 'Painel do Especialista';

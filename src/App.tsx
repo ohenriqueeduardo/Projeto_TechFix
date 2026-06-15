@@ -52,6 +52,7 @@ import OrderReceiptPage from "@/pages/client/OrderReceiptPage";
 
 // Professional Pages
 import ProfessionalDashboardPage from "@/pages/professional/ProfessionalDashboardPage";
+import ProfessionalSchedulePage from "@/pages/professional/ProfessionalSchedulePage";
 import ProfessionalServicesPage from "@/pages/professional/ProfessionalServicesPage";
 import ProfessionalFinancePage from "@/pages/professional/ProfessionalFinancePage";
 import ProfessionalSettingsPage from "@/pages/professional/ProfessionalSettingsPage";
@@ -59,7 +60,7 @@ import ProfessionalSettingsPage from "@/pages/professional/ProfessionalSettingsP
 // Admin Pages
 import AdminDashboardPage from "@/pages/admin/AdminDashboardPage";
 import AdminUsersPage from "@/pages/admin/AdminUsersPage";
-import AdminWithdrawalsPage from "@/pages/admin/AdminWithdrawalsPage";
+import AdminFinancePage from "@/pages/admin/AdminFinancePage";
 import AdminServicesPage from "@/pages/admin/AdminServicesPage";
 import AdminSettingsPage from "@/pages/admin/AdminSettingsPage";
 import OrderPrintPage from "@/pages/shared/OrderPrintPage";
@@ -134,6 +135,7 @@ const App = () => (
               {/* Professional Routes */}
               <Route path="/profissional" element={<ProfessionalLayout />}>
                 <Route path="dashboard" element={<ProfessionalDashboardPage />} />
+                <Route path="agenda" element={<ProfessionalSchedulePage />} />
                 <Route path="servicos" element={<ProfessionalServicesPage />} />
                 <Route path="financeiro" element={<ProfessionalFinancePage />} />
                 <Route path="configuracoes" element={<ProfessionalSettingsPage />} />
@@ -143,7 +145,7 @@ const App = () => (
               <Route path="/admin" element={<AdminLayout />}>
                 <Route path="dashboard" element={<AdminDashboardPage />} />
                 <Route path="usuarios" element={<AdminUsersPage />} />
-                <Route path="saques" element={<AdminWithdrawalsPage />} />
+                <Route path="financas" element={<AdminFinancePage />} />
                 <Route path="servicos" element={<AdminServicesPage />} />
                 <Route path="configuracoes" element={<AdminSettingsPage />} />
               </Route>

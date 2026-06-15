@@ -39,7 +39,7 @@ const AdminLayout = () => {
   const menuItems = [
     { icon: LayoutDashboard, label: 'Painel Geral', path: '/admin/dashboard' },
     { icon: Users, label: 'Usuários', path: '/admin/usuarios' },
-    { icon: DollarSign, label: 'Saques', path: '/admin/saques' },
+    { icon: DollarSign, label: 'Finanças', path: '/admin/financas' },
     { icon: Wrench, label: 'Serviços', path: '/admin/servicos' },
   ];
 
@@ -142,7 +142,7 @@ const AdminLayout = () => {
               const path = location.pathname;
               if (path.includes('/admin/dashboard')) return 'Painel Administrativo';
               if (path.includes('/admin/usuarios')) return 'Gestão de Usuários';
-              if (path.includes('/admin/saques')) return 'Controle de Saques';
+              if (path.includes('/admin/financas')) return 'Gestão Financeira';
               if (path.includes('/admin/servicos')) return 'Controle de Serviços';
               return 'Painel Administrativo';
             })()}
