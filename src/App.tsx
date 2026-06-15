@@ -61,6 +61,7 @@ import AdminDashboardPage from "@/pages/admin/AdminDashboardPage";
 import AdminUsersPage from "@/pages/admin/AdminUsersPage";
 import AdminWithdrawalsPage from "@/pages/admin/AdminWithdrawalsPage";
 import AdminServicesPage from "@/pages/admin/AdminServicesPage";
+import AdminSettingsPage from "@/pages/admin/AdminSettingsPage";
 import OrderPrintPage from "@/pages/shared/OrderPrintPage";
 import NotFound from "@/pages/NotFound";
 import { useAutoLogout } from "@/hooks/useAutoLogout";
@@ -144,6 +145,7 @@ const App = () => (
                 <Route path="usuarios" element={<AdminUsersPage />} />
                 <Route path="saques" element={<AdminWithdrawalsPage />} />
                 <Route path="servicos" element={<AdminServicesPage />} />
+                <Route path="configuracoes" element={<AdminSettingsPage />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />

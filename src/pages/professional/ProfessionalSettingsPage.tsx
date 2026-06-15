@@ -16,7 +16,7 @@ const ProfessionalSettingsPage = () => {
   const [availableDays, setAvailableDays] = useState<string[]>([]);
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   
-  const [activeTab, setActiveTab] = useState('Agenda & Horários');
+  const [activeMenu, setActiveMenu] = useState('Geral');
   const [currentUser, setCurrentUser] = useState<UserType | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -110,6 +110,20 @@ const ProfessionalSettingsPage = () => {
     }
   };
 
+  const scrollToSection = (id: string) => {
+    setActiveMenu(id);
+    if (id === 'Geral') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      const element = document.getElementById(id);
+      if (element) {
+        const yOffset = -100; 
+        const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[50vh]">
@@ -119,24 +133,24 @@ const ProfessionalSettingsPage = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-10 animate-page-entrance">
+    <div className="max-w-4xl mx-auto space-y-10 animate-page-entrance pb-20">
       <div>
         <h1 className="text-3xl font-bold mb-2">Configurações do Especialista</h1>
         <p className="text-muted-foreground">Gerencie sua agenda de atendimento e dados do perfil.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <nav className="space-y-2">
+        <nav className="space-y-2 sticky top-28 h-fit">
           {[
+            { icon: SettingsIcon, label: "Geral" },
             { icon: Calendar, label: "Agenda & Horários" },
             { icon: User, label: "Perfil" },
-            { icon: SettingsIcon, label: "Geral" },
           ].map((item, i) => (
             <button
               key={i}
-              onClick={() => setActiveTab(item.label)}
+              onClick={() => scrollToSection(item.label)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                activeTab === item.label ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-white/5'
+                activeMenu === item.label ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-white/5'
               }`}
             >
               <item.icon className="w-4 h-4" />
@@ -147,75 +161,76 @@ const ProfessionalSettingsPage = () => {
 
         <div className="lg:col-span-3 space-y-8">
           
-          {activeTab === 'Agenda & Horários' && (
-            <>
-              {/* DIAS DISPONÍVEIS */}
-              <div className="glass-card p-8 rounded-3xl space-y-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
-                <Calendar className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold">Dias de Atendimento</h3>
-                <p className="text-xs text-muted-foreground">Selecione os dias da semana que você trabalha.</p>
-              </div>
-            </div>
+          <div id="Agenda & Horários" className="space-y-8 scroll-mt-28">
+            <h2 className="text-2xl font-bold border-b border-white/10 pb-2">Agenda & Horários</h2>
             
-            <div className="flex flex-wrap gap-3 mt-4">
-              {daysOfWeek.map(day => {
-                const isActive = availableDays.includes(day);
-                return (
-                  <button
-                    key={day}
-                    onClick={() => handleDayToggle(day)}
-                    className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${
-                      isActive 
-                      ? 'bg-primary border-primary text-primary-foreground shadow-[0_0_15px_rgba(6,182,212,0.3)] scale-105' 
-                      : 'bg-background/50 border-white/10 text-muted-foreground hover:border-white/20'
-                    }`}
-                  >
-                    {day}
-                  </button>
-                );
-              })}
+            {/* DIAS DISPONÍVEIS */}
+            <div className="glass-card p-8 rounded-3xl space-y-6">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">Dias de Atendimento</h3>
+                  <p className="text-xs text-muted-foreground">Selecione os dias da semana que você trabalha.</p>
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap gap-3 mt-4">
+                {daysOfWeek.map(day => {
+                  const isActive = availableDays.includes(day);
+                  return (
+                    <button
+                      key={day}
+                      onClick={() => handleDayToggle(day)}
+                      className={`px-4 py-2 rounded-xl text-sm font-bold border transition-all ${
+                        isActive 
+                        ? 'bg-primary border-primary text-primary-foreground shadow-[0_0_15px_rgba(6,182,212,0.3)] scale-105' 
+                        : 'bg-background/50 border-white/10 text-muted-foreground hover:border-white/20'
+                      }`}
+                    >
+                      {day}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* HORÁRIOS DISPONÍVEIS */}
+            <div className="glass-card p-8 rounded-3xl space-y-6">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">Horários de Atendimento</h3>
+                  <p className="text-xs text-muted-foreground">Defina os horários em que os clientes podem agendar com você.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 mt-4">
+                {standardTimes.map(time => {
+                  const isActive = availableTimes.includes(time);
+                  return (
+                    <button
+                      key={time}
+                      onClick={() => handleTimeToggle(time)}
+                      className={`py-2.5 rounded-xl text-sm font-bold border transition-all flex items-center justify-center ${
+                        isActive 
+                        ? 'bg-primary border-primary text-primary-foreground shadow-[0_0_10px_rgba(6,182,212,0.2)]' 
+                        : 'bg-background/50 border-white/10 text-muted-foreground hover:border-white/20 hover:bg-white/5'
+                      }`}
+                    >
+                      {time}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
-          {/* HORÁRIOS DISPONÍVEIS */}
-          <div className="glass-card p-8 rounded-3xl space-y-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
-                <Clock className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold">Horários de Atendimento</h3>
-                <p className="text-xs text-muted-foreground">Defina os horários em que os clientes podem agendar com você.</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 mt-4">
-              {standardTimes.map(time => {
-                const isActive = availableTimes.includes(time);
-                return (
-                  <button
-                    key={time}
-                    onClick={() => handleTimeToggle(time)}
-                    className={`py-2.5 rounded-xl text-sm font-bold border transition-all flex items-center justify-center ${
-                      isActive 
-                      ? 'bg-primary border-primary text-primary-foreground shadow-[0_0_10px_rgba(6,182,212,0.2)]' 
-                      : 'bg-background/50 border-white/10 text-muted-foreground hover:border-white/20 hover:bg-white/5'
-                    }`}
-                  >
-                    {time}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-            </>
-          )}
-
-          {activeTab === 'Perfil' && (
+          <div id="Perfil" className="space-y-8 scroll-mt-28">
+            <h2 className="text-2xl font-bold border-b border-white/10 pb-2">Perfil</h2>
             <div className="glass-card p-8 rounded-3xl space-y-6 animate-in fade-in">
               <h3 className="text-xl font-bold mb-4">Informações do Perfil</h3>
               
@@ -256,9 +271,9 @@ const ProfessionalSettingsPage = () => {
                 </div>
               </div>
             </div>
-          )}
+          </div>
 
-          <div className="flex justify-end gap-4">
+          <div className="flex justify-end gap-4 mt-8 pt-4 border-t border-white/5">
             <Button variant="outline" className="rounded-xl px-8 border-white/10">Cancelar</Button>
             <Button onClick={handleSave} className="btn-primary rounded-xl px-8">Salvar Configurações</Button>
           </div>

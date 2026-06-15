@@ -103,9 +103,9 @@ const AdminLayout = () => {
               <span className="inline group-hover/sidebar:hidden">• • •</span>
             </p>
             <Link 
-              to="/cliente/configuracoes" 
+              to="/admin/configuracoes" 
               className={`flex items-center gap-0 group-hover/sidebar:gap-4 w-14 group-hover/sidebar:w-full h-14 rounded-2xl transition-all duration-300 justify-center group-hover/sidebar:justify-start px-0 group-hover/sidebar:px-5 shrink-0 ${
-                location.pathname === '/cliente/configuracoes' 
+                location.pathname === '/admin/configuracoes' 
                 ? 'bg-primary/10 text-primary font-bold' 
                 : 'text-muted-foreground hover:bg-foreground/5'
               }`}
