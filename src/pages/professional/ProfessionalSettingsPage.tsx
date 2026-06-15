@@ -48,7 +48,7 @@ const ProfessionalSettingsPage = () => {
     });
 
     return () => observer.disconnect();
-  }, []);
+  }, [isLoading]);
 
   useEffect(() => {
     const fetchProfile = async () => {
