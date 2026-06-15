@@ -149,35 +149,18 @@ const ProfilePage = () => {
       />
 
       {/* Premium Graphic Banner */}
-      <div className={`relative h-72 rounded-[2rem] bg-gradient-to-r ${currentRoleStyle.gradient} overflow-hidden border border-white/5 flex items-center justify-between p-8 md:p-12 shadow-2xl`}>
+      <div className={`relative h-auto md:h-72 rounded-[2rem] bg-gradient-to-r ${currentRoleStyle.gradient} overflow-hidden border border-white/5 flex flex-col md:flex-row items-center justify-between p-8 md:p-12 shadow-2xl gap-8`}>
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
         <div className="absolute -left-20 -top-20 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
         <div className="absolute right-0 bottom-0 w-96 h-96 bg-black/40 rounded-full blur-3xl"></div>
 
-        {/* Floating Role Card Overlay */}
-        <div className="hidden md:flex ml-auto glass-card p-6 rounded-2xl bg-card/60 backdrop-blur-2xl border-white/10 max-w-sm w-80 shadow-[0_0_40px_rgba(0,0,0,0.5)] items-center gap-5 transition-all hover:scale-105 group relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className={`p-4 bg-white/5 rounded-2xl ${currentRoleStyle.accent} shadow-inner`}>
-            <currentRoleStyle.icon className="w-8 h-8" />
-          </div>
-          <div className="flex-1 space-y-1 z-10">
-            <div className="flex items-center gap-1.5">
-              <span className={`text-[10px] font-black uppercase tracking-widest ${currentRoleStyle.accent}`}>Nível de Acesso</span>
-            </div>
-            <h4 className="font-black text-lg text-foreground leading-tight">{currentRoleStyle.title}</h4>
-            <p className="text-xs text-muted-foreground font-medium">{currentRoleStyle.subtitle}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Profile Avatar and Details Card */}
-      <div className="px-6 md:px-12 -mt-28 relative z-10">
-        <div className="flex flex-col md:flex-row items-end gap-8 mb-10">
+        {/* Left Side: Avatar and Name */}
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-8 z-10 w-full md:w-auto text-center md:text-left mt-4 md:mt-0">
           <div className="relative group shrink-0">
             <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
             <img 
               src={avatar || currentUser?.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(displayName)}`} 
-              className="w-40 h-40 md:w-48 md:h-48 rounded-full border-[6px] border-background shadow-[0_20px_50px_rgba(0,0,0,0.5)] object-cover relative z-0 transition-transform duration-500 group-hover:scale-105 bg-card" 
+              className="w-32 h-32 md:w-40 md:h-40 rounded-full border-[4px] border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] object-cover relative z-0 transition-transform duration-500 group-hover:scale-105 bg-black/20" 
               alt="Avatar" 
             />
             <input 
@@ -189,29 +172,44 @@ const ProfilePage = () => {
             />
             <button 
               onClick={() => fileInputRef.current?.click()}
-              className="absolute bottom-4 right-4 p-3.5 bg-foreground text-background rounded-full shadow-xl hover:scale-110 transition-transform z-20 border-2 border-background">
-              <Camera className="w-5 h-5" />
+              className="absolute bottom-2 right-2 p-3 bg-white text-black rounded-full shadow-xl hover:scale-110 transition-transform z-20 border-2 border-transparent">
+              <Camera className="w-4 h-4" />
             </button>
           </div>
           
-          <div className="flex-1 pb-4 text-center md:text-left">
-            <h2 className="text-4xl font-black mb-2 tracking-tight">{displayName}</h2>
-            <div className="flex flex-wrap justify-center md:justify-start gap-5">
-              <span className="flex items-center gap-1.5 text-sm text-muted-foreground font-semibold bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
-                <MapPin className="w-4 h-4 text-foreground/70" /> {displayCity}
+          <div className="flex-1 pb-2 flex flex-col justify-center h-full">
+            <h2 className="text-3xl md:text-4xl font-black mb-3 tracking-tight text-white drop-shadow-md">{displayName}</h2>
+            <div className="flex flex-wrap justify-center md:justify-start gap-3">
+              <span className="flex items-center gap-1.5 text-xs text-white/90 font-bold bg-black/30 px-3 py-1.5 rounded-full border border-white/10 backdrop-blur-md">
+                <MapPin className="w-3.5 h-3.5" /> {displayCity}
               </span>
-              <span className="flex items-center gap-1.5 text-sm text-muted-foreground font-semibold bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
-                <Shield className="w-4 h-4 text-foreground/70" /> Conta {role === 'admin' ? 'Verificada (Admin)' : role === 'professional' ? 'Homologada' : 'Ativa'}
+              <span className="flex items-center gap-1.5 text-xs text-white/90 font-bold bg-black/30 px-3 py-1.5 rounded-full border border-white/10 backdrop-blur-md">
+                <Shield className="w-3.5 h-3.5" /> Conta {role === 'admin' ? 'Verificada (Admin)' : role === 'professional' ? 'Homologada' : 'Ativa'}
               </span>
             </div>
-          </div>
-          
-          <div className="flex gap-3 pb-6 w-full md:w-auto justify-center">
-            <Button className="rounded-xl h-12 px-6 text-xs font-bold gap-2 shadow-lg hover:shadow-primary/20 transition-all bg-foreground text-background hover:bg-foreground/90">
-              <Sparkles className="w-4 h-4" /> Atualizar Capa
-            </Button>
+            <div className="mt-4 flex justify-center md:justify-start">
+              <Button className="rounded-xl h-10 px-5 text-xs font-bold gap-2 shadow-lg bg-white/10 text-white hover:bg-white/20 border border-white/10 backdrop-blur-md transition-all">
+                <Sparkles className="w-3.5 h-3.5" /> Atualizar Capa
+              </Button>
+            </div>
           </div>
         </div>
+
+        {/* Right Side: Floating Role Card Overlay */}
+        <div className="hidden md:flex ml-auto glass-card p-6 rounded-2xl bg-black/40 backdrop-blur-2xl border-white/10 max-w-sm w-80 shadow-[0_0_40px_rgba(0,0,0,0.5)] items-center gap-5 transition-all hover:scale-105 group relative overflow-hidden z-10">
+          <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className={`p-4 bg-white/5 rounded-2xl ${currentRoleStyle.accent} shadow-inner`}>
+            <currentRoleStyle.icon className="w-8 h-8" />
+          </div>
+          <div className="flex-1 space-y-1 z-10">
+            <div className="flex items-center gap-1.5">
+              <span className={`text-[10px] font-black uppercase tracking-widest ${currentRoleStyle.accent}`}>Nível de Acesso</span>
+            </div>
+            <h4 className="font-black text-lg text-white leading-tight">{currentRoleStyle.title}</h4>
+            <p className="text-xs text-white/60 font-medium">{currentRoleStyle.subtitle}</p>
+          </div>
+        </div>
+      </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form Column */}
