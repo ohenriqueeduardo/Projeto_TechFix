@@ -553,14 +553,14 @@ const HomePage = () => {
                 <div className="absolute -right-24 -top-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-all duration-500 pointer-events-none" />
 
                 {/* Avatar container */}
-                <div className="relative shrink-0 flex items-center justify-center p-1 rounded-3xl border-2 border-primary/15 group-hover:border-primary/40 transition-all duration-500 shadow-[0_0_15px_rgba(6,182,212,0.05)] group-hover:shadow-[0_0_25px_rgba(6,182,212,0.15)] bg-card/30">
+                <Link to={`/cliente/profissional/${prof.id}`} className="relative shrink-0 flex items-center justify-center p-1 rounded-3xl border-2 border-primary/15 group-hover:border-primary/40 transition-all duration-500 shadow-[0_0_15px_rgba(6,182,212,0.05)] group-hover:shadow-[0_0_25px_rgba(6,182,212,0.15)] bg-card/30 hover:scale-105 cursor-pointer z-10">
                   <img
                     src={prof.avatar || `https://api.dicebear.com/7.x/adventurer/svg?seed=${encodeURIComponent(prof.name)}`}
                     className="w-20 h-20 md:w-24 md:h-24 rounded-2xl object-cover shadow-inner bg-background"
                     alt={prof.name}
                   />
                   <span className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-green-500 border-2 border-background rounded-full animate-pulse shadow-md" title="Online"></span>
-                </div>
+                </Link>
 
                 {/* Info Container */}
                 <div className="flex-1 space-y-5 text-center sm:text-left w-full flex flex-col justify-between h-full">
@@ -568,9 +568,11 @@ const HomePage = () => {
                     {/* Header */}
                     <div className="space-y-1">
                       <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
-                        <h3 className="text-xl font-black tracking-tight group-hover:text-primary transition-colors duration-300">
-                          {prof.name}
-                        </h3>
+                        <Link to={`/cliente/profissional/${prof.id}`} className="hover:underline z-10">
+                          <h3 className="text-xl font-black tracking-tight group-hover:text-primary transition-colors duration-300">
+                            {prof.name}
+                          </h3>
+                        </Link>
                         <span className="flex items-center gap-1 text-[8px] bg-green-500/10 text-green-500 border border-green-500/20 font-black uppercase px-2 py-0.5 rounded-md">
                           <UserCheck className="w-2.5 h-2.5" /> Verificado
                         </span>
