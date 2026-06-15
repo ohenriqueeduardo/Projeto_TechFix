@@ -62,7 +62,7 @@ export const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({ user, trigge
         <DropdownMenuSeparator className="bg-white/5" />
         
         {/* CLIENT LINKS */}
-        {user.role === 'client' && (
+        {user.role.includes('client') && (
           <>
             <DropdownMenuItem onClick={() => navigate('/cliente/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
               <LayoutDashboard className="w-4 h-4 text-primary" /> Painel de Controle
@@ -80,7 +80,7 @@ export const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({ user, trigge
         )}
 
         {/* PROFESSIONAL LINKS */}
-        {(user.role === 'professional' || user.role === 'both') && (
+        {(user.role.includes('professional') || user.role === 'both') && (
           <>
             <DropdownMenuItem onClick={() => navigate('/profissional/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
               <LayoutDashboard className="w-4 h-4 text-primary" /> Painel Técnico
@@ -97,7 +97,7 @@ export const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({ user, trigge
             <DropdownMenuItem onClick={() => navigate('/profissional/configuracoes')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
               <Settings className="w-4 h-4 text-primary" /> Configurações
             </DropdownMenuItem>
-            {user.role === 'both' && (
+            {(user.role.includes('admin') || user.role === 'both') && (
               <>
                 <DropdownMenuSeparator className="bg-white/5" />
                 <DropdownMenuItem onClick={() => navigate('/cliente/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer text-primary focus:text-primary bg-primary/10 focus:bg-primary/20 font-bold mb-2">
@@ -109,7 +109,7 @@ export const UserDropdownMenu: React.FC<UserDropdownMenuProps> = ({ user, trigge
         )}
 
         {/* ADMIN LINKS */}
-        {user.role === 'admin' && (
+        {user.role.includes('admin') && (
           <>
             <DropdownMenuItem onClick={() => navigate('/admin/dashboard')} className="flex items-center gap-3 p-3 rounded-xl cursor-pointer">
               <LayoutDashboard className="w-4 h-4 text-primary" /> Painel Geral

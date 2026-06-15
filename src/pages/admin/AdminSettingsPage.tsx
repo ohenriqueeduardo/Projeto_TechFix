@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,9 +7,18 @@ import { User, Bell, Shield, Settings as SettingsIcon, AlertTriangle } from "luc
 import { toast } from "sonner";
 
 const AdminSettingsPage = () => {
-  const [activeMenu, setActiveMenu] = useState('Perfil');
+  const [activeMenu, setActiveMenu] = useState('perfil');
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const [avatar, setAvatar] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    if (user) {
+      setCurrentUser(user);
+      setAvatar(user.avatar || '');
+    }
+
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -31,6 +40,24 @@ const AdminSettingsPage = () => {
 
     return () => observer.disconnect();
   }, []);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setAvatar(result);
+        if (currentUser) {
+          const updatedUser = { ...currentUser, avatar: result };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          setCurrentUser(updatedUser);
+          toast.success("Foto de perfil atualizada!");
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSave = () => {
     toast.success("Configurações do painel atualizadas com sucesso!");
@@ -80,13 +107,29 @@ const AdminSettingsPage = () => {
             </h2>
             <div className="glass-card p-8 rounded-3xl space-y-6">
               <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-white/10">
-                <div className="w-24 h-24 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-3xl font-bold overflow-hidden">
-                  HE
-                </div>
+                {avatar ? (
+                  <img src={avatar} alt="Avatar" className="w-24 h-24 rounded-full bg-background border-2 border-primary object-cover" />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center text-3xl font-bold overflow-hidden">
+                    {currentUser?.name?.substring(0, 2).toUpperCase() || 'HE'}
+                  </div>
+                )}
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  accept="image/*" 
+                  onChange={handleFileChange} 
+                />
                 <div className="space-y-2 text-center sm:text-left">
                   <h3 className="font-bold">Foto de Perfil</h3>
                   <p className="text-xs text-muted-foreground">Recomendado imagem quadrada, no formato PNG ou JPG.</p>
-                  <Button variant="outline" size="sm" className="mt-2 text-xs border-white/10 hover:bg-white/5">
+                  <Button 
+                    onClick={() => fileInputRef.current?.click()}
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2 text-xs border-white/10 hover:bg-white/5"
+                  >
                     Alterar Imagem
                   </Button>
                 </div>
@@ -96,11 +139,11 @@ const AdminSettingsPage = () => {
               <div className="grid grid-cols-1 gap-6">
                 <div className="space-y-2">
                   <Label>Nome de Exibição</Label>
-                  <Input defaultValue="Henrique Eduardo" className="bg-background/50 border-white/10" />
+                  <Input defaultValue={currentUser?.name || "Henrique Eduardo"} className="bg-background/50 border-white/10" />
                 </div>
                 <div className="space-y-2">
                   <Label>E-mail Corporativo</Label>
-                  <Input defaultValue="admin@techfix.com" className="bg-background/50 border-white/10" />
+                  <Input defaultValue={currentUser?.email || "admin@techfix.com"} className="bg-background/50 border-white/10" />
                 </div>
               </div>
             </div>

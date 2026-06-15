@@ -98,7 +98,14 @@ const ProfessionalSettingsPage = () => {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setAvatar(reader.result as string);
+        const result = reader.result as string;
+        setAvatar(result);
+        if (currentUser) {
+          const updatedUser = { ...currentUser, avatar: result };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          setCurrentUser(updatedUser);
+          toast.success("Foto de perfil atualizada!");
+        }
       };
       reader.readAsDataURL(file);
     }
