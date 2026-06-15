@@ -10,6 +10,7 @@ export const getProfessionals = async (req: Request, res: Response) => {
 
     let query = db
       .select({
+        id: users.id,
         userId: professionals.userId,
         name: users.name,
         email: users.email,
@@ -58,6 +59,7 @@ export const getProfessionalById = async (req: Request, res: Response) => {
 
     const professionalList = await db
       .select({
+        id: users.id,
         userId: professionals.userId,
         name: users.name,
         email: users.email,
