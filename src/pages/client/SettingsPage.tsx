@@ -3,37 +3,28 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { User, Bell, Shield, CreditCard, Smartphone, Settings as SettingsIcon } from "lucide-react";
+import { User, Bell, Shield, CreditCard, Smartphone, Settings as SettingsIcon, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 const SettingsPage = () => {
   const [activeMenu, setActiveMenu] = useState('Geral');
 
   useEffect(() => {
-    const handleScroll = () => {
-      const sections = ['Geral', 'Perfil', 'Notificações', 'Segurança', 'Pagamentos', 'Dispositivos'];
-      let current = 'Geral';
-      
-      for (const section of sections) {
-        if (section === 'Geral') continue;
-        const element = document.getElementById(section);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          if (rect.top <= window.innerHeight / 2) {
-            current = section;
-          }
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setActiveMenu(entry.target.id);
         }
-      }
-      
-      if (window.scrollY < 100) {
-        current = 'Geral';
-      }
+      });
+    }, { rootMargin: '-20% 0px -60% 0px' });
 
-      setActiveMenu(current);
-    };
+    const sections = ['Geral', 'Perfil', 'Notificações', 'Segurança', 'Pagamentos', 'Dispositivos', 'Zona de Perigo'];
+    sections.forEach(section => {
+      const element = document.getElementById(section);
+      if (element) observer.observe(element);
+    });
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => observer.disconnect();
   }, []);
 
   const handleSave = () => {
@@ -42,15 +33,9 @@ const SettingsPage = () => {
 
   const scrollToSection = (id: string) => {
     setActiveMenu(id);
-    if (id === 'Geral') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      const element = document.getElementById(id);
-      if (element) {
-        const yOffset = -100;
-        const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
-        window.scrollTo({ top: y, behavior: 'smooth' });
-      }
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
@@ -70,6 +55,7 @@ const SettingsPage = () => {
             { icon: Shield, label: "Segurança" },
             { icon: CreditCard, label: "Pagamentos" },
             { icon: Smartphone, label: "Dispositivos" },
+            { icon: AlertTriangle, label: "Zona de Perigo" },
           ].map((item, i) => (
             <button
               key={i}
@@ -225,6 +211,21 @@ const SettingsPage = () => {
                   </div>
                   <Button variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive text-xs">Desconectar</Button>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="Zona de Perigo" className="space-y-8 scroll-mt-28">
+            <h2 className="text-2xl font-bold border-b border-destructive/30 pb-2 flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-6 h-6" /> Zona de Perigo
+            </h2>
+            <div className="glass-card p-8 rounded-3xl border border-destructive/20 bg-destructive/5 space-y-6">
+              <h3 className="text-xl font-bold text-destructive">Excluir Conta</h3>
+              <p className="text-sm text-muted-foreground">
+                Ao excluir sua conta, você perderá acesso permanente a todos os seus dados, histórico de serviços e configurações. Esta ação é irreversível.
+              </p>
+              <div className="pt-2">
+                <Button variant="destructive" className="rounded-xl px-8 font-bold">Excluir Minha Conta Permanentemente</Button>
               </div>
             </div>
           </div>
