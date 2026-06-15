@@ -28,6 +28,8 @@ const ProfessionalSettingsPage = () => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (isLoading) return;
+
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -42,12 +44,18 @@ const ProfessionalSettingsPage = () => {
       { id: 'agenda', label: 'Agenda & Horários' },
       { id: 'zona-perigo', label: 'Zona de Perigo' }
     ];
-    sections.forEach(section => {
-      const element = document.getElementById(section.id);
-      if (element) observer.observe(element);
-    });
 
-    return () => observer.disconnect();
+    const timer = setTimeout(() => {
+      sections.forEach(section => {
+        const element = document.getElementById(section.id);
+        if (element) observer.observe(element);
+      });
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
   }, [isLoading]);
 
   useEffect(() => {
