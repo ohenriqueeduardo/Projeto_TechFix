@@ -91,3 +91,10 @@ Para rodar todo o ecossistema isolado em contêineres:
 ```bash
 docker compose up --build
 ```
+
+---
+
+## 👥 Colaboradores
+
+- **Henrique Eduardo** (Matrícula: UC24201758) — *Frontend e UI/UX*
+- **Guilherme Vaz** (Matrícula: UC24100768) — *Backend*
