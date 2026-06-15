@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { Camera, Shield, Star, MapPin, Award, CheckCircle, Sparkles, Briefcase, Activity } from 'lucide-react';
+import { Camera, Shield, Star, MapPin, Award, CheckCircle, Sparkles, Briefcase, Activity, User as UserIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { calculateUserLevelInfo } from '@/utils/levels';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -219,7 +219,7 @@ const ProfilePage = () => {
             <Card className="p-8 bg-card/40 backdrop-blur-md border-white/5 rounded-3xl shadow-xl">
               <h3 className="text-xl font-bold mb-8 flex items-center gap-3">
                 <span className="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center">
-                  <User className="w-4 h-4" />
+                  <UserIcon className="w-4 h-4" />
                 </span>
                 Informações Pessoais
               </h3>
