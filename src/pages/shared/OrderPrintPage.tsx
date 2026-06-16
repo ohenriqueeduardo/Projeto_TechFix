@@ -32,8 +32,12 @@ const OrderPrintPage = () => {
           window.print();
         }, 800);
 
-      } catch (e: any) {
-        setError(e.message || 'Erro ao carregar');
+      } catch (e: unknown) {
+        if (e instanceof Error) {
+          setError(e.message || 'Erro ao carregar');
+        } else {
+          setError('Erro ao carregar');
+        }
       } finally {
         setIsLoading(false);
       }
