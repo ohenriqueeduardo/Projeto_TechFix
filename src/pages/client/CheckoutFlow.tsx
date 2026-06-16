@@ -260,7 +260,7 @@ const CheckoutFlow = () => {
             createCardToken: (p: Record<string, unknown>) => Promise<{ id?: string }>;
             getPaymentMethods: (p: { bin: string }) => Promise<{ results: Array<{ id: string }> }>;
           } };
-          const mp = new WindowMP.MercadoPago((import.meta as any).env.VITE_MERCADOPAGO_PUBLIC_KEY || 'APP_USR-9af817eb-8387-4c6e-aeb2-634422d3df03');
+          const mp = new WindowMP.MercadoPago((import.meta as unknown as { env: Record<string, string> }).env.VITE_MERCADOPAGO_PUBLIC_KEY || 'APP_USR-9af817eb-8387-4c6e-aeb2-634422d3df03');
           
           const bin = cardNumber.replace(/\D/g, '').substring(0, 6);
           if (bin.length >= 6) {
