@@ -9,11 +9,14 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const rawToken = process.env.MERCADO_PAGO_ACCESS_TOKEN || process.env.MERCADOPAGO_ACCESS_TOKEN || '';
-const validToken = rawToken.trim();
-const accessToken = validToken || 'APP_USR-4714972698787037-061309-ce60a56d73f55aff5375981823d0b434-1730247701';
+const accessToken = rawToken.trim();
+
+if (!accessToken) {
+  console.warn('⚠️ MERCADO_PAGO_ACCESS_TOKEN is missing in environment variables.');
+}
 
 const mpClient = new MercadoPagoConfig({
-  accessToken: accessToken,
+  accessToken: accessToken || 'mock_token', // prevents immediate crash on load if env is missing, but should be handled better in a real setup
 });
 
 // Helper to clean up expired provisional orders

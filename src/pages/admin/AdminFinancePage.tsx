@@ -143,7 +143,7 @@ const AdminFinancePage = () => {
             ].map(btn => (
               <button
                 key={btn.id}
-                onClick={() => setFilter(btn.id as any)}
+                onClick={() => setFilter(btn.id as 'all' | 'income' | 'payout' | 'fee')}
                 className={`px-4 py-2 text-[10px] uppercase tracking-wider font-black rounded-xl transition-all duration-300 ${
                   filter === btn.id
                   ? 'bg-primary/20 text-primary border border-primary/30'
